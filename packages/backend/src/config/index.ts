@@ -14,8 +14,8 @@ export const config = {
   jwt: {
     accessSecret: process.env.JWT_ACCESS_SECRET || 'your-access-secret',
     refreshSecret: process.env.JWT_REFRESH_SECRET || 'your-refresh-secret',
-    accessExpiry: '15m',
-    refreshExpiry: '7d',
+    accessExpiry: '15m' as const,
+    refreshExpiry: '7d' as const,
   },
 
   cors: {
