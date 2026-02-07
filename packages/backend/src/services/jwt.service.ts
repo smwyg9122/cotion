@@ -10,13 +10,13 @@ export interface JWTPayload {
 export class JWTService {
   static generateAccessToken(payload: JWTPayload): string {
     return jwt.sign(payload, config.jwt.accessSecret, {
-      expiresIn: config.jwt.accessExpiry,
+      expiresIn: config.jwt.accessExpiry as string,
     });
   }
 
   static generateRefreshToken(payload: JWTPayload): string {
     return jwt.sign(payload, config.jwt.refreshSecret, {
-      expiresIn: config.jwt.refreshExpiry,
+      expiresIn: config.jwt.refreshExpiry as string,
     });
   }
 

@@ -199,7 +199,7 @@ export class PagesService {
     }
 
     // Convert sanitized IDs back to UUIDs (replace underscores with hyphens)
-    const ancestorIds = sanitizedIds.map(id => id.replace(/_/g, '-'));
+    const ancestorIds = sanitizedIds.map((id: string) => id.replace(/_/g, '-'));
 
     const ancestors = await db('pages')
       .whereIn('id', ancestorIds)

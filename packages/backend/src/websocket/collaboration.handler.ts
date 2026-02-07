@@ -1,5 +1,6 @@
 import { IncomingMessage } from 'http';
-import { WebSocketServer } from 'ws';
+import { WebSocketServer, WebSocket } from 'ws';
+// @ts-ignore - y-websocket doesn't have type definitions
 import { setupWSConnection } from 'y-websocket/bin/utils';
 
 export function initializeWebSocketServer(server: any) {
@@ -13,13 +14,13 @@ export function initializeWebSocketServer(server: any) {
     const pathname = new URL(request.url || '', `http://${request.headers.host}`).pathname;
 
     if (pathname === '/collaboration') {
-      wss.handleUpgrade(request, socket, head, (ws) => {
+      wss.handleUpgrade(request, socket, head, (ws: WebSocket) => {
         wss.emit('connection', ws, request);
       });
     }
   });
 
-  wss.on('connection', (conn, req: IncomingMessage) => {
+  wss.on('connection', (conn: WebSocket, req: IncomingMessage) => {
     const url = new URL(req.url || '', `http://${req.headers.host}`);
     const docName = url.searchParams.get('doc') || 'default';
     const userId = url.searchParams.get('userId') || 'anonymous';
