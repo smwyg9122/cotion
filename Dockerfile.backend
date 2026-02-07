@@ -1,0 +1,50 @@
+# Backend Dockerfile
+FROM node:20-alpine AS base
+
+# Install dependencies only when needed
+FROM base AS deps
+WORKDIR /app
+
+# Copy package files
+COPY package.json package-lock.json* ./
+COPY packages/backend/package.json ./packages/backend/
+COPY packages/shared/package.json ./packages/shared/
+
+# Install dependencies
+RUN npm ci
+
+# Build shared package
+FROM base AS shared-builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY packages/shared ./packages/shared
+COPY package.json turbo.json ./
+RUN npm run build --filter=@cotion/shared
+
+# Build backend
+FROM base AS backend-builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=shared-builder /app/packages/shared/dist ./packages/shared/dist
+COPY packages/backend ./packages/backend
+COPY packages/shared/package.json ./packages/shared/
+COPY package.json turbo.json ./
+RUN npm run build --filter=@cotion/backend
+
+# Production image
+FROM base AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production
+
+# Copy built backend
+COPY --from=backend-builder /app/packages/backend/dist ./packages/backend/dist
+COPY --from=backend-builder /app/packages/backend/package.json ./packages/backend/
+COPY --from=shared-builder /app/packages/shared/dist ./packages/shared/dist
+COPY --from=shared-builder /app/packages/shared/package.json ./packages/shared/
+COPY --from=deps /app/node_modules ./node_modules
+COPY package.json ./
+
+EXPOSE 3000
+
+CMD ["node", "packages/backend/dist/server.js"]
