@@ -102,7 +102,7 @@ export function TrashView({ onClose, onRestore }: TrashViewProps) {
                     )}
                     <span className="truncate text-sm text-gray-700">{page.title}</span>
                     <span className="text-xs text-gray-400">
-                      {page.deleted_at && new Date(page.deleted_at).toLocaleDateString('ko-KR')}
+                      {page.deletedAt && new Date(page.deletedAt).toLocaleDateString('ko-KR')}
                     </span>
                   </div>
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
