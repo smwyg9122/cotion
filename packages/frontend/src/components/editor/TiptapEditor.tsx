@@ -3,6 +3,8 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Collaboration from '@tiptap/extension-collaboration';
 import CollaborationCursor from '@tiptap/extension-collaboration-cursor';
+import Link from '@tiptap/extension-link';
+import Image from '@tiptap/extension-image';
 import { WebsocketProvider } from 'y-websocket';
 import * as Y from 'yjs';
 import {
@@ -16,7 +18,10 @@ import {
   List,
   ListOrdered,
   Quote,
-  Users
+  Users,
+  Link as LinkIcon,
+  Image as ImageIcon,
+  FileText,
 } from 'lucide-react';
 
 interface TiptapEditorProps {
@@ -33,9 +38,14 @@ export function TiptapEditor({ content, onChange, onSave, pageId, userId, userNa
   const [provider, setProvider] = React.useState<WebsocketProvider | null>(null);
   const [isConnected, setIsConnected] = React.useState(false);
   const [activeUsers, setActiveUsers] = React.useState<number>(0);
+  const [isSynced, setIsSynced] = React.useState(false);
+  const contentRef = React.useRef(content);
+  contentRef.current = content;
+  const imageInputRef = React.useRef<HTMLInputElement>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    // Create a new Y.Doc for each page
+    setIsSynced(false);
     const newDoc = new Y.Doc();
     setDoc(newDoc);
 
@@ -56,6 +66,14 @@ export function TiptapEditor({ content, onChange, onSave, pageId, userId, userNa
 
     wsProvider.on('status', (event: { status: string }) => {
       setIsConnected(event.status === 'connected');
+    });
+
+    // y-websocket uses 'sync' event (not 'synced') in most versions
+    wsProvider.on('sync', (synced: boolean) => {
+      if (synced) setIsSynced(true);
+    });
+    wsProvider.on('synced', (synced: boolean) => {
+      if (synced !== false) setIsSynced(true);
     });
 
     wsProvider.awareness.setLocalStateField('user', {
@@ -81,7 +99,24 @@ export function TiptapEditor({ content, onChange, onSave, pageId, userId, userNa
         heading: {
           levels: [1, 2, 3],
         },
-        history: false, // Disable history when using collaboration
+        history: false,
+      }),
+      Link.configure({
+        openOnClick: true,
+        autolink: true,
+        linkOnPaste: true,
+        HTMLAttributes: {
+          class: 'text-blue-600 underline cursor-pointer',
+          target: '_blank',
+          rel: 'noopener noreferrer',
+        },
+      }),
+      Image.configure({
+        inline: false,
+        allowBase64: true,
+        HTMLAttributes: {
+          class: 'max-w-full rounded-lg my-2',
+        },
       }),
       ...(doc ? [Collaboration.configure({
         document: doc,
@@ -105,6 +140,36 @@ export function TiptapEditor({ content, onChange, onSave, pageId, userId, userNa
     },
   }, [doc, provider]);
 
+  // Initialize content from DB when Yjs document is empty after sync
+  useEffect(() => {
+    if (
+      editor &&
+      isSynced &&
+      editor.isEmpty &&
+      contentRef.current &&
+      contentRef.current.trim().length > 0 &&
+      contentRef.current !== '<p></p>'
+    ) {
+      editor.commands.setContent(contentRef.current);
+    }
+  }, [editor, isSynced]);
+
+  // Fallback: if synced event never fires, initialize after 500ms
+  useEffect(() => {
+    if (!editor) return;
+    const timer = setTimeout(() => {
+      if (
+        editor.isEmpty &&
+        contentRef.current &&
+        contentRef.current.trim().length > 0 &&
+        contentRef.current !== '<p></p>'
+      ) {
+        editor.commands.setContent(contentRef.current);
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [editor]);
+
   useEffect(() => {
     if (!editor || !provider) return;
 
@@ -118,6 +183,63 @@ export function TiptapEditor({ content, onChange, onSave, pageId, userId, userNa
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [editor, provider, onSave]);
+
+  function handleLinkAdd() {
+    const previousUrl = editor?.getAttributes('link').href;
+    const url = prompt('링크 URL을 입력하세요:', previousUrl || 'https://');
+    if (url === null) return;
+    if (url === '') {
+      editor?.chain().focus().extendMarkRange('link').unsetLink().run();
+      return;
+    }
+    editor?.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
+  }
+
+  function handleImageUpload() {
+    imageInputRef.current?.click();
+  }
+
+  function handleFileUpload() {
+    fileInputRef.current?.click();
+  }
+
+  function onImageFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      alert('이미지는 2MB 이하만 업로드 가능합니다');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const dataUrl = ev.target?.result as string;
+      editor?.chain().focus().setImage({ src: dataUrl, alt: file.name }).run();
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  }
+
+  function onPdfFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('파일은 5MB 이하만 업로드 가능합니다');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const dataUrl = ev.target?.result as string;
+      editor?.chain().focus().insertContent(
+        `<a href="${dataUrl}" target="_blank" download="${file.name}">📄 ${file.name}</a>`
+      ).run();
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  }
 
   if (!editor) {
     return <div className="p-4 text-gray-500">에디터 로딩 중...</div>;
@@ -202,12 +324,47 @@ export function TiptapEditor({ content, onChange, onSave, pageId, userId, userNa
           icon={<Quote size={18} />}
           title="인용구"
         />
+
+        <div className="w-px h-6 bg-gray-300 mx-1" />
+
+        <ToolbarButton
+          onClick={handleLinkAdd}
+          isActive={editor.isActive('link')}
+          icon={<LinkIcon size={18} />}
+          title="링크 추가"
+        />
+        <ToolbarButton
+          onClick={handleImageUpload}
+          icon={<ImageIcon size={18} />}
+          title="이미지 업로드"
+        />
+        <ToolbarButton
+          onClick={handleFileUpload}
+          icon={<FileText size={18} />}
+          title="파일 업로드"
+        />
       </div>
 
       {/* Editor Content */}
       <div className="px-16 py-8 min-h-[calc(100vh-200px)] max-w-[900px] mx-auto">
         <EditorContent editor={editor} className="notion-editor" />
       </div>
+
+      {/* Hidden file inputs */}
+      <input
+        ref={imageInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={onImageFileSelected}
+      />
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,application/pdf"
+        className="hidden"
+        onChange={onPdfFileSelected}
+      />
     </div>
   );
 }

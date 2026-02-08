@@ -64,6 +64,7 @@ export class PagesService {
         content: input.content || '',
         icon: input.icon,
         parent_id: input.parentId || null,
+        category: input.category || null,
         created_by: userId,
         updated_by: userId,
         position,

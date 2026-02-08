@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { usePages } from '../hooks/usePages';
 import { useNavigate } from 'react-router-dom';
@@ -8,15 +8,12 @@ import { NewPageModal } from '../components/pages/NewPageModal';
 import { PasswordChangeModal } from '../components/auth/PasswordChangeModal';
 import { TrashView } from '../components/pages/TrashView';
 import { TiptapEditor } from '../components/editor/TiptapEditor';
-import { Menu, X, FileText, Trash2 } from 'lucide-react';
+import { Menu, X, Trash2, Tag } from 'lucide-react';
 import type { Page } from '@cotion/shared';
-import axios from 'axios';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 export function HomePage() {
   const { user, logout } = useAuth();
-  const { pages, isLoading, createPage, updatePage, getPage, refreshPages } = usePages();
+  const { pages, isLoading, createPage, updatePage, deletePage, getPage, refreshPages } = usePages();
   const navigate = useNavigate();
   const { showToast } = useToast();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -28,6 +25,18 @@ export function HomePage() {
   const [newPageParentId, setNewPageParentId] = useState<string | undefined>();
   const [editedTitle, setEditedTitle] = useState('');
   const [editedContent, setEditedContent] = useState('');
+  const [editedCategory, setEditedCategory] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [isEditingCategory, setIsEditingCategory] = useState(false);
+
+  // Collect all existing categories from pages
+  const existingCategories = useMemo(() => {
+    const cats = new Set<string>();
+    pages.forEach((page) => {
+      if (page.category) cats.add(page.category);
+    });
+    return Array.from(cats).sort();
+  }, [pages]);
 
   async function handleLogout() {
     await logout();
@@ -41,18 +50,21 @@ export function HomePage() {
       setSelectedPage(page);
       setEditedTitle(page.title);
       setEditedContent(page.content || '');
+      setEditedCategory(page.category || '');
+      setIsEditingCategory(false);
     } catch (error) {
       showToast('페이지를 불러오는데 실패했습니다', 'error');
       console.error('Failed to load page:', error);
     }
   }
 
-  async function handleCreatePage(title: string, icon?: string) {
+  async function handleCreatePage(title: string, icon?: string, category?: string) {
     try {
       await createPage({
         title,
         icon,
         parentId: newPageParentId,
+        category,
       });
       setNewPageParentId(undefined);
       showToast('페이지가 생성되었습니다', 'success');
@@ -69,17 +81,21 @@ export function HomePage() {
   }
 
   async function handleSave() {
-    if (selectedPageId && selectedPage) {
+    if (selectedPageId && selectedPage && !isSaving) {
       try {
+        setIsSaving(true);
         await updatePage(selectedPageId, {
           title: editedTitle,
           content: editedContent,
+          category: editedCategory || undefined,
         });
-        setSelectedPage({ ...selectedPage, title: editedTitle, content: editedContent });
+        setSelectedPage({ ...selectedPage, title: editedTitle, content: editedContent, category: editedCategory || undefined });
         showToast('저장되었습니다', 'success', 1500);
       } catch (error) {
         showToast('저장에 실패했습니다', 'error');
         console.error('Failed to save page:', error);
+      } finally {
+        setIsSaving(false);
       }
     }
   }
@@ -90,19 +106,13 @@ export function HomePage() {
     }
 
     try {
-      await axios.delete(`${API_URL}/pages/${pageId}`, {
-        withCredentials: true,
-      });
+      await deletePage(pageId);
       showToast('페이지가 휴지통으로 이동되었습니다', 'success');
 
-      // If the deleted page is currently selected, clear selection
       if (selectedPageId === pageId) {
         setSelectedPageId(null);
         setSelectedPage(null);
       }
-
-      // Refresh the page tree
-      refreshPages();
     } catch (error) {
       showToast('페이지 삭제에 실패했습니다', 'error');
       console.error('Failed to delete page:', error);
@@ -123,7 +133,7 @@ export function HomePage() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedPageId, editedTitle, editedContent]);
+  }, [selectedPageId, editedTitle, editedContent, editedCategory]);
 
   return (
     <div className="flex h-screen bg-white">
@@ -203,9 +213,67 @@ export function HomePage() {
                 value={editedTitle}
                 onChange={(e) => setEditedTitle(e.target.value)}
                 onBlur={handleSave}
-                className="text-[2.75rem] font-bold border-none outline-none focus:ring-0 w-full mb-4 text-gray-900 placeholder-gray-300"
+                className="text-[2.75rem] font-bold border-none outline-none focus:ring-0 w-full mb-2 text-gray-900 placeholder-gray-300"
                 placeholder="제목 없음"
               />
+
+              {/* Category + Save bar */}
+              <div className="flex items-center gap-3 mb-6 text-sm text-gray-400 flex-wrap">
+                {/* Category badge */}
+                <div className="flex items-center gap-1">
+                  <Tag size={13} />
+                  {isEditingCategory ? (
+                    <input
+                      type="text"
+                      list="category-edit-list"
+                      value={editedCategory}
+                      onChange={(e) => setEditedCategory(e.target.value)}
+                      onBlur={() => {
+                        setIsEditingCategory(false);
+                        handleSave();
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          setIsEditingCategory(false);
+                          handleSave();
+                        }
+                        if (e.key === 'Escape') setIsEditingCategory(false);
+                      }}
+                      placeholder="카테고리 입력"
+                      autoFocus
+                      className="text-sm border-b border-gray-300 outline-none bg-transparent w-28 text-gray-600"
+                    />
+                  ) : (
+                    <button
+                      onClick={() => setIsEditingCategory(true)}
+                      className="hover:text-gray-600 transition-colors"
+                      title="카테고리 변경"
+                    >
+                      {editedCategory || '카테고리 없음'}
+                    </button>
+                  )}
+                  {existingCategories.length > 0 && (
+                    <datalist id="category-edit-list">
+                      {existingCategories.map((cat) => (
+                        <option key={cat} value={cat} />
+                      ))}
+                    </datalist>
+                  )}
+                </div>
+
+                <span className="text-gray-300">|</span>
+
+                <span className="select-none">
+                  {navigator.platform.includes('Mac') ? '⌘S' : 'Ctrl+S'} 또는 버튼으로 저장
+                </span>
+                <button
+                  onClick={handleSave}
+                  disabled={isSaving}
+                  className="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-medium transition-colors"
+                >
+                  {isSaving ? '저장 중...' : '저장'}
+                </button>
+              </div>
 
               {/* Editor */}
               <TiptapEditor
@@ -253,6 +321,7 @@ export function HomePage() {
           setNewPageParentId(undefined);
         }}
         onSubmit={handleCreatePage}
+        existingCategories={existingCategories}
       />
 
       <PasswordChangeModal

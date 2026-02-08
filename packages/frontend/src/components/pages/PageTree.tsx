@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { PageTreeNode } from '@cotion/shared';
-import { ChevronRight, ChevronDown, FileText, Plus, Trash2 } from 'lucide-react';
+import { ChevronRight, ChevronDown, FileText, Plus, Trash2, Folder } from 'lucide-react';
 
 interface PageTreeProps {
   pages: PageTreeNode[];
@@ -11,9 +11,38 @@ interface PageTreeProps {
 }
 
 export function PageTree({ pages, onPageSelect, onCreatePage, onDeletePage, selectedPageId }: PageTreeProps) {
+  // Group root pages by category
+  const categoryMap = new Map<string, PageTreeNode[]>();
+  const uncategorized: PageTreeNode[] = [];
+
+  pages.forEach((page) => {
+    if (page.category) {
+      if (!categoryMap.has(page.category)) {
+        categoryMap.set(page.category, []);
+      }
+      categoryMap.get(page.category)!.push(page);
+    } else {
+      uncategorized.push(page);
+    }
+  });
+
   return (
     <div className="space-y-0.5">
-      {pages.map((page) => (
+      {/* Categorized page groups */}
+      {Array.from(categoryMap.entries()).map(([category, categoryPages]) => (
+        <CategorySection
+          key={category}
+          name={category}
+          pages={categoryPages}
+          onPageSelect={onPageSelect}
+          onCreatePage={onCreatePage}
+          onDeletePage={onDeletePage}
+          selectedPageId={selectedPageId}
+        />
+      ))}
+
+      {/* Uncategorized pages */}
+      {uncategorized.map((page) => (
         <PageNode
           key={page.id}
           page={page}
@@ -24,6 +53,7 @@ export function PageTree({ pages, onPageSelect, onCreatePage, onDeletePage, sele
           level={0}
         />
       ))}
+
       <button
         onClick={() => onCreatePage?.()}
         className="flex items-center gap-2 px-2 py-1.5 text-sm text-gray-600 hover:bg-gray-200/70 rounded-md w-full mt-2 transition-colors font-medium"
@@ -31,6 +61,48 @@ export function PageTree({ pages, onPageSelect, onCreatePage, onDeletePage, sele
         <Plus size={16} />
         <span>새 페이지</span>
       </button>
+    </div>
+  );
+}
+
+interface CategorySectionProps {
+  name: string;
+  pages: PageTreeNode[];
+  onPageSelect?: (pageId: string) => void;
+  onCreatePage?: (parentId?: string) => void;
+  onDeletePage?: (pageId: string) => void;
+  selectedPageId?: string;
+}
+
+function CategorySection({ name, pages, onPageSelect, onCreatePage, onDeletePage, selectedPageId }: CategorySectionProps) {
+  const [isExpanded, setIsExpanded] = useState(true);
+
+  return (
+    <div className="mb-1">
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="flex items-center gap-1.5 px-2 py-1 text-xs font-semibold text-gray-500 hover:text-gray-700 hover:bg-gray-200/50 rounded-md w-full transition-colors uppercase tracking-wide"
+      >
+        {isExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+        <Folder size={12} />
+        <span className="flex-1 text-left">{name}</span>
+        <span className="text-gray-400 font-normal normal-case tracking-normal">{pages.length}</span>
+      </button>
+      {isExpanded && (
+        <div>
+          {pages.map((page) => (
+            <PageNode
+              key={page.id}
+              page={page}
+              onPageSelect={onPageSelect}
+              onCreatePage={onCreatePage}
+              onDeletePage={onDeletePage}
+              selectedPageId={selectedPageId}
+              level={0}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

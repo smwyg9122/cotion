@@ -7,19 +7,22 @@ import { EmojiPicker } from '../common/EmojiPicker';
 interface NewPageModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (title: string, icon?: string) => void;
+  onSubmit: (title: string, icon?: string, category?: string) => void;
   parentTitle?: string;
+  existingCategories?: string[];
 }
 
-export function NewPageModal({ isOpen, onClose, onSubmit, parentTitle }: NewPageModalProps) {
+export function NewPageModal({ isOpen, onClose, onSubmit, parentTitle, existingCategories = [] }: NewPageModalProps) {
   const [title, setTitle] = useState('');
   const [icon, setIcon] = useState('');
+  const [category, setCategory] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!isOpen) {
       setTitle('');
       setIcon('');
+      setCategory('');
       setIsSubmitting(false);
     }
   }, [isOpen]);
@@ -29,7 +32,7 @@ export function NewPageModal({ isOpen, onClose, onSubmit, parentTitle }: NewPage
     if (title.trim() && !isSubmitting) {
       setIsSubmitting(true);
       try {
-        await onSubmit(title.trim(), icon || undefined);
+        await onSubmit(title.trim(), icon || undefined, category.trim() || undefined);
         onClose();
       } catch (error) {
         console.error('Failed to create page:', error);
@@ -65,6 +68,29 @@ export function NewPageModal({ isOpen, onClose, onSubmit, parentTitle }: NewPage
           autoFocus
           required
         />
+
+        {!parentTitle && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              카테고리 (선택사항)
+            </label>
+            <input
+              type="text"
+              list="category-list"
+              placeholder="예: 운영, 메뉴, 직원"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            {existingCategories.length > 0 && (
+              <datalist id="category-list">
+                {existingCategories.map((cat) => (
+                  <option key={cat} value={cat} />
+                ))}
+              </datalist>
+            )}
+          </div>
+        )}
 
         <div className="flex gap-2 justify-end pt-2">
           <Button

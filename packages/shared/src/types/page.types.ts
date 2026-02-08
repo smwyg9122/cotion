@@ -4,6 +4,7 @@ export interface Page {
   content?: string;
   icon?: string;
   coverImage?: string;
+  category?: string;
   path: string;
   parentId?: string;
   createdBy: string;
@@ -20,6 +21,7 @@ export interface PageCreateInput {
   content?: string;
   icon?: string;
   parentId?: string;
+  category?: string;
 }
 
 export interface PageUpdateInput {
@@ -27,6 +29,7 @@ export interface PageUpdateInput {
   content?: string;
   icon?: string;
   coverImage?: string;
+  category?: string | null;
 }
 
 export interface PageMoveInput {
