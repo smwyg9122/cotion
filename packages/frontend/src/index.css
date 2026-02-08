@@ -108,6 +108,15 @@ code {
   font-style: italic;
 }
 
+/* Hide scrollbar but keep scrollable */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 /* Placeholder */
 .notion-editor .ProseMirror p.is-editor-empty:first-child::before {
   content: '내용을 입력하세요...';

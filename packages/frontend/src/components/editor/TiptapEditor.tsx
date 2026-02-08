@@ -220,15 +220,15 @@ export function TiptapEditor({ content, onChange, onSave, pageId, userId, userNa
   return (
     <div className="w-full">
       {/* Toolbar */}
-      <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 py-2 flex flex-wrap gap-1 items-center shadow-sm">
+      <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-2 sm:px-4 py-1.5 sm:py-2 flex flex-nowrap overflow-x-auto scrollbar-hide gap-0.5 sm:gap-1 items-center shadow-sm">
         {/* Connection Status */}
-        <div className="flex items-center gap-2 mr-3 px-3 py-1.5 bg-gray-50 rounded-md text-xs text-gray-600 font-medium">
-          <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-gray-400'}`} />
-          <Users size={14} />
-          <span>{activeUsers}명</span>
+        <div className="flex items-center gap-1.5 mr-2 px-2 py-1.5 bg-gray-50 rounded-md text-xs text-gray-600 font-medium flex-shrink-0">
+          <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isConnected ? 'bg-green-500' : 'bg-gray-400'}`} />
+          <Users size={13} />
+          <span className="hidden sm:inline">{activeUsers}명</span>
         </div>
 
-        <div className="w-px h-5 bg-gray-300 mx-1" />
+        <div className="w-px h-5 bg-gray-300 mx-0.5 flex-shrink-0" />
 
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleBold().run()}
@@ -255,7 +255,7 @@ export function TiptapEditor({ content, onChange, onSave, pageId, userId, userNa
           title="인라인 코드"
         />
 
-        <div className="w-px h-6 bg-gray-300 mx-1" />
+        <div className="w-px h-5 bg-gray-300 mx-0.5 flex-shrink-0" />
 
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
@@ -276,7 +276,7 @@ export function TiptapEditor({ content, onChange, onSave, pageId, userId, userNa
           title="제목 3"
         />
 
-        <div className="w-px h-6 bg-gray-300 mx-1" />
+        <div className="w-px h-5 bg-gray-300 mx-0.5 flex-shrink-0" />
 
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleBulletList().run()}
@@ -297,7 +297,7 @@ export function TiptapEditor({ content, onChange, onSave, pageId, userId, userNa
           title="인용구"
         />
 
-        <div className="w-px h-6 bg-gray-300 mx-1" />
+        <div className="w-px h-5 bg-gray-300 mx-0.5 flex-shrink-0" />
 
         <ToolbarButton
           onClick={handleLinkAdd}
@@ -318,7 +318,7 @@ export function TiptapEditor({ content, onChange, onSave, pageId, userId, userNa
       </div>
 
       {/* Editor Content */}
-      <div className="px-16 py-8 min-h-[calc(100vh-200px)] max-w-[900px] mx-auto">
+      <div className="px-4 py-4 sm:px-16 sm:py-8 min-h-[calc(100vh-200px)] max-w-[900px] mx-auto">
         <EditorContent editor={editor} className="notion-editor" />
       </div>
 
@@ -355,7 +355,7 @@ function ToolbarButton({ onClick, isActive, disabled, icon, title }: ToolbarButt
       onClick={onClick}
       disabled={disabled}
       title={title}
-      className={`p-2 rounded-md transition-all ${
+      className={`p-1.5 sm:p-2 rounded-md transition-all flex-shrink-0 ${
         isActive
           ? 'bg-blue-50 text-blue-600 shadow-sm'
           : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'

@@ -17,7 +17,18 @@ export function HomePage() {
   const { pages, isLoading, createPage, updatePage, deletePage, getPage, refreshPages } = usePages();
   const navigate = useNavigate();
   const { showToast } = useToast();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => window.innerWidth >= 768);
+
+  useEffect(() => {
+    function handleResize() {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      if (!mobile) setIsSidebarOpen(true);
+    }
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   const [selectedPageId, setSelectedPageId] = useState<string | null>(null);
   const [selectedPage, setSelectedPage] = useState<Page | null>(null);
   const [isNewPageModalOpen, setIsNewPageModalOpen] = useState(false);
@@ -45,6 +56,7 @@ export function HomePage() {
 
   async function handlePageSelect(pageId: string) {
     try {
+      if (isMobile) setIsSidebarOpen(false);
       setSelectedPageId(pageId);
       // Reset content immediately so the editor doesn't use stale content
       setEditedTitle('');
@@ -140,18 +152,30 @@ export function HomePage() {
 
   return (
     <div className="flex h-screen bg-white">
+      {/* Mobile overlay backdrop */}
+      {isMobile && isSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/40 z-30"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
       <div
         className={`${
-          isSidebarOpen ? 'w-64' : 'w-0'
-        } bg-[#f7f6f3] border-r border-gray-200 transition-all duration-200 overflow-hidden flex flex-col`}
+          isMobile
+            ? `fixed top-0 bottom-0 left-0 z-40 w-72 transform transition-transform duration-200 ${
+                isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+              }`
+            : `${isSidebarOpen ? 'w-64' : 'w-0'} transition-all duration-200`
+        } bg-[#f7f6f3] border-r border-gray-200 overflow-hidden flex flex-col`}
       >
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center justify-between mb-3">
             <h1 className="text-xl font-bold text-gray-900">Cotion</h1>
             <button
               onClick={() => setIsSidebarOpen(false)}
-              className="lg:hidden p-1 text-gray-500 hover:bg-gray-200 rounded"
+              className="p-1 text-gray-500 hover:bg-gray-200 rounded"
             >
               <X size={18} />
             </button>
@@ -174,20 +198,20 @@ export function HomePage() {
         <div className="p-3 border-t border-gray-200 space-y-1">
           <button
             onClick={() => setIsTrashViewOpen(true)}
-            className="w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-200/70 rounded-md text-left transition-colors flex items-center gap-2"
+            className="w-full px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-200/70 rounded-md text-left transition-colors flex items-center gap-2"
           >
             <Trash2 size={16} />
             휴지통
           </button>
           <button
             onClick={() => setIsPasswordChangeModalOpen(true)}
-            className="w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-200/70 rounded-md text-left transition-colors"
+            className="w-full px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-200/70 rounded-md text-left transition-colors"
           >
             비밀번호 변경
           </button>
           <button
             onClick={handleLogout}
-            className="w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-200/70 rounded-md text-left transition-colors"
+            className="w-full px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-200/70 rounded-md text-left transition-colors"
           >
             로그아웃
           </button>
@@ -195,16 +219,31 @@ export function HomePage() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden bg-white">
+      <div className="flex-1 flex flex-col overflow-hidden bg-white min-w-0">
+        {/* Mobile top bar */}
+        {isMobile && (
+          <div className="sticky top-0 z-20 bg-white border-b border-gray-100 px-3 py-2 flex items-center gap-2 flex-shrink-0">
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              className="p-2 text-gray-500 hover:bg-gray-100 rounded-md"
+            >
+              <Menu size={20} />
+            </button>
+            <span className="font-semibold text-gray-800 text-sm truncate">
+              {selectedPage?.title || 'Cotion'}
+            </span>
+          </div>
+        )}
+
         {/* Content Area */}
         <div className="flex-1 overflow-y-auto">
           {selectedPage ? (
-            <div className="max-w-[900px] mx-auto px-16 py-8">
-              {/* Menu Button for Mobile */}
-              {!isSidebarOpen && (
+            <div className="max-w-[900px] mx-auto px-4 py-4 sm:px-16 sm:py-8">
+              {/* Menu Button for Desktop when sidebar collapsed */}
+              {!isMobile && !isSidebarOpen && (
                 <button
                   onClick={() => setIsSidebarOpen(true)}
-                  className="mb-4 p-2 text-gray-500 hover:bg-gray-100 rounded-md lg:hidden"
+                  className="mb-4 p-2 text-gray-500 hover:bg-gray-100 rounded-md"
                 >
                   <Menu size={20} />
                 </button>
@@ -216,14 +255,14 @@ export function HomePage() {
                 value={editedTitle}
                 onChange={(e) => setEditedTitle(e.target.value)}
                 onBlur={handleSave}
-                className="text-[2.75rem] font-bold border-none outline-none focus:ring-0 w-full mb-2 text-gray-900 placeholder-gray-300"
+                className="text-2xl sm:text-[2.75rem] font-bold border-none outline-none focus:ring-0 w-full mb-2 text-gray-900 placeholder-gray-300"
                 placeholder="제목 없음"
               />
 
               {/* Category + Save bar */}
-              <div className="flex items-center gap-3 mb-6 text-sm text-gray-400 flex-wrap">
+              <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6 text-sm text-gray-400 flex-wrap">
                 {/* Category select */}
-                <div className="w-52">
+                <div className="w-44 sm:w-52">
                   <CategorySelect
                     value={editedCategory}
                     onChange={(val) => {
@@ -234,15 +273,15 @@ export function HomePage() {
                   />
                 </div>
 
-                <span className="text-gray-300">|</span>
+                <span className="hidden sm:inline text-gray-300">|</span>
 
-                <span className="select-none">
+                <span className="hidden sm:inline select-none">
                   {navigator.platform.includes('Mac') ? '⌘S' : 'Ctrl+S'} 또는 버튼으로 저장
                 </span>
                 <button
                   onClick={handleSave}
                   disabled={isSaving}
-                  className="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-medium transition-colors"
+                  className="px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-medium transition-colors"
                 >
                   {isSaving ? '저장 중...' : '저장'}
                 </button>
@@ -260,28 +299,28 @@ export function HomePage() {
               />
             </div>
           ) : (
-            <div className="flex items-center justify-center h-full relative">
+            <div className="flex items-center justify-center h-full relative px-4">
               {/* Background Logo */}
               <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none">
                 <img
                   src="/logo.png"
                   alt="Ayuta Coffee Logo"
-                  className="h-96 w-auto object-contain"
+                  className="h-64 sm:h-96 w-auto object-contain"
                 />
               </div>
 
               {/* Content */}
               <div className="text-center relative z-10">
-                <div className="mb-6">
+                <div className="mb-4 sm:mb-6">
                   <img
                     src="/logo.png"
                     alt="Ayuta Coffee Logo"
-                    className="h-32 w-auto object-contain mx-auto mb-4"
+                    className="h-20 sm:h-32 w-auto object-contain mx-auto mb-3 sm:mb-4"
                   />
                 </div>
-                <h2 className="text-3xl font-bold text-gray-900 mb-3">Cotion</h2>
-                <p className="text-xl font-semibold text-gray-700 mb-6">Ayuta 전용 협업 문서 관리 시스템</p>
-                <p className="text-lg text-gray-500">페이지를 선택하거나 새로 만들어보세요</p>
+                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 sm:mb-3">Cotion</h2>
+                <p className="text-base sm:text-xl font-semibold text-gray-700 mb-3 sm:mb-6">Ayuta 전용 협업 문서 관리 시스템</p>
+                <p className="text-sm sm:text-lg text-gray-500">페이지를 선택하거나 새로 만들어보세요</p>
               </div>
             </div>
           )}

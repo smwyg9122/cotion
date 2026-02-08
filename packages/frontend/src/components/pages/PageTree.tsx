@@ -127,7 +127,7 @@ function PageNode({ page, onPageSelect, onCreatePage, onDeletePage, selectedPage
       <div
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        className={`group flex items-center gap-1 px-2 py-1 text-sm rounded-md cursor-pointer transition-colors ${
+        className={`group flex items-center gap-1 px-2 py-1.5 text-sm rounded-md cursor-pointer transition-colors ${
           isSelected
             ? 'bg-gray-200/80 text-gray-900 font-medium'
             : 'text-gray-700 hover:bg-gray-200/50'
@@ -155,7 +155,7 @@ function PageNode({ page, onPageSelect, onCreatePage, onDeletePage, selectedPage
           )}
           <span className="truncate">{page.title}</span>
         </div>
-        {isHovered && (
+        {(isHovered || isSelected) && (
           <div className="flex items-center gap-0.5">
             <button
               onClick={(e) => {
