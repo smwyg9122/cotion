@@ -38,14 +38,10 @@ export function TiptapEditor({ content, onChange, onSave, pageId, userId, userNa
   const [provider, setProvider] = React.useState<WebsocketProvider | null>(null);
   const [isConnected, setIsConnected] = React.useState(false);
   const [activeUsers, setActiveUsers] = React.useState<number>(0);
-  const [isSynced, setIsSynced] = React.useState(false);
-  const contentRef = React.useRef(content);
-  contentRef.current = content;
   const imageInputRef = React.useRef<HTMLInputElement>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    setIsSynced(false);
     const newDoc = new Y.Doc();
     setDoc(newDoc);
 
@@ -66,14 +62,6 @@ export function TiptapEditor({ content, onChange, onSave, pageId, userId, userNa
 
     wsProvider.on('status', (event: { status: string }) => {
       setIsConnected(event.status === 'connected');
-    });
-
-    // y-websocket uses 'sync' event (not 'synced') in most versions
-    wsProvider.on('sync', (synced: boolean) => {
-      if (synced) setIsSynced(true);
-    });
-    wsProvider.on('synced', (synced: boolean) => {
-      if (synced !== false) setIsSynced(true);
     });
 
     wsProvider.awareness.setLocalStateField('user', {
@@ -140,35 +128,19 @@ export function TiptapEditor({ content, onChange, onSave, pageId, userId, userNa
     },
   }, [doc, provider]);
 
-  // Initialize content from DB when Yjs document is empty after sync
+  // Initialize content from DB when editor is empty and content prop arrives
   useEffect(() => {
     if (
       editor &&
-      isSynced &&
       editor.isEmpty &&
-      contentRef.current &&
-      contentRef.current.trim().length > 0 &&
-      contentRef.current !== '<p></p>'
+      content &&
+      content.trim().length > 0 &&
+      content !== '<p></p>' &&
+      content !== '<p><br></p>'
     ) {
-      editor.commands.setContent(contentRef.current);
+      editor.commands.setContent(content);
     }
-  }, [editor, isSynced]);
-
-  // Fallback: if synced event never fires, initialize after 500ms
-  useEffect(() => {
-    if (!editor) return;
-    const timer = setTimeout(() => {
-      if (
-        editor.isEmpty &&
-        contentRef.current &&
-        contentRef.current.trim().length > 0 &&
-        contentRef.current !== '<p></p>'
-      ) {
-        editor.commands.setContent(contentRef.current);
-      }
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [editor]);
+  }, [editor, content]);
 
   useEffect(() => {
     if (!editor || !provider) return;

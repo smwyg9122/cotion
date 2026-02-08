@@ -46,6 +46,10 @@ export function HomePage() {
   async function handlePageSelect(pageId: string) {
     try {
       setSelectedPageId(pageId);
+      // Reset content immediately so the editor doesn't use stale content
+      setEditedTitle('');
+      setEditedContent('');
+      setEditedCategory('');
       const page = await getPage(pageId);
       setSelectedPage(page);
       setEditedTitle(page.title);
