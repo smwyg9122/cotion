@@ -3,6 +3,7 @@ import { Modal } from '../common/Modal';
 import { Input } from '../common/Input';
 import { Button } from '../common/Button';
 import { EmojiPicker } from '../common/EmojiPicker';
+import { CategorySelect } from '../common/CategorySelect';
 
 interface NewPageModalProps {
   isOpen: boolean;
@@ -74,21 +75,12 @@ export function NewPageModal({ isOpen, onClose, onSubmit, parentTitle, existingC
             <label className="block text-sm font-medium text-gray-700 mb-1">
               카테고리 (선택사항)
             </label>
-            <input
-              type="text"
-              list="category-list"
-              placeholder="예: 운영, 메뉴, 직원"
+            <CategorySelect
               value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onChange={setCategory}
+              options={existingCategories}
+              placeholder="예: 운영, 메뉴, 직원"
             />
-            {existingCategories.length > 0 && (
-              <datalist id="category-list">
-                {existingCategories.map((cat) => (
-                  <option key={cat} value={cat} />
-                ))}
-              </datalist>
-            )}
           </div>
         )}
 

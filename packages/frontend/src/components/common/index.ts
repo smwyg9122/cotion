@@ -5,3 +5,4 @@ export { Spinner, LoadingOverlay } from './Spinner';
 export { Alert } from './Alert';
 export { EmojiPicker } from './EmojiPicker';
 export { ToastProvider, useToast } from './Toast';
+export { CategorySelect } from './CategorySelect';

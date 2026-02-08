@@ -8,7 +8,8 @@ import { NewPageModal } from '../components/pages/NewPageModal';
 import { PasswordChangeModal } from '../components/auth/PasswordChangeModal';
 import { TrashView } from '../components/pages/TrashView';
 import { TiptapEditor } from '../components/editor/TiptapEditor';
-import { Menu, X, Trash2, Tag } from 'lucide-react';
+import { Menu, X, Trash2 } from 'lucide-react';
+import { CategorySelect } from '../components/common';
 import type { Page } from '@cotion/shared';
 
 export function HomePage() {
@@ -27,7 +28,6 @@ export function HomePage() {
   const [editedContent, setEditedContent] = useState('');
   const [editedCategory, setEditedCategory] = useState('');
   const [isSaving, setIsSaving] = useState(false);
-  const [isEditingCategory, setIsEditingCategory] = useState(false);
 
   // Collect all existing categories from pages
   const existingCategories = useMemo(() => {
@@ -55,7 +55,6 @@ export function HomePage() {
       setEditedTitle(page.title);
       setEditedContent(page.content || '');
       setEditedCategory(page.category || '');
-      setIsEditingCategory(false);
     } catch (error) {
       showToast('페이지를 불러오는데 실패했습니다', 'error');
       console.error('Failed to load page:', error);
@@ -223,46 +222,16 @@ export function HomePage() {
 
               {/* Category + Save bar */}
               <div className="flex items-center gap-3 mb-6 text-sm text-gray-400 flex-wrap">
-                {/* Category badge */}
-                <div className="flex items-center gap-1">
-                  <Tag size={13} />
-                  {isEditingCategory ? (
-                    <input
-                      type="text"
-                      list="category-edit-list"
-                      value={editedCategory}
-                      onChange={(e) => setEditedCategory(e.target.value)}
-                      onBlur={() => {
-                        setIsEditingCategory(false);
-                        handleSave();
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          setIsEditingCategory(false);
-                          handleSave();
-                        }
-                        if (e.key === 'Escape') setIsEditingCategory(false);
-                      }}
-                      placeholder="카테고리 입력"
-                      autoFocus
-                      className="text-sm border-b border-gray-300 outline-none bg-transparent w-28 text-gray-600"
-                    />
-                  ) : (
-                    <button
-                      onClick={() => setIsEditingCategory(true)}
-                      className="hover:text-gray-600 transition-colors"
-                      title="카테고리 변경"
-                    >
-                      {editedCategory || '카테고리 없음'}
-                    </button>
-                  )}
-                  {existingCategories.length > 0 && (
-                    <datalist id="category-edit-list">
-                      {existingCategories.map((cat) => (
-                        <option key={cat} value={cat} />
-                      ))}
-                    </datalist>
-                  )}
+                {/* Category select */}
+                <div className="w-52">
+                  <CategorySelect
+                    value={editedCategory}
+                    onChange={(val) => {
+                      setEditedCategory(val);
+                    }}
+                    options={existingCategories}
+                    placeholder="카테고리 없음"
+                  />
                 </div>
 
                 <span className="text-gray-300">|</span>
@@ -281,6 +250,7 @@ export function HomePage() {
 
               {/* Editor */}
               <TiptapEditor
+                key={selectedPageId}
                 content={editedContent}
                 onChange={setEditedContent}
                 onSave={handleSave}
