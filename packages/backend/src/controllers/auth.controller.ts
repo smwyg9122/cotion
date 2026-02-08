@@ -12,14 +12,6 @@ export const authController = {
     // Create user
     const result = await AuthService.signup(input);
 
-    // Set refresh token in HTTP-only cookie
-    res.cookie('refreshToken', result.accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    });
-
     res.status(201).json({
       success: true,
       data: result,
@@ -32,14 +24,6 @@ export const authController = {
 
     // Login user
     const result = await AuthService.login(input);
-
-    // Set refresh token in HTTP-only cookie
-    res.cookie('refreshToken', result.accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    });
 
     res.json({
       success: true,
