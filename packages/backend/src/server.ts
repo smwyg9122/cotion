@@ -8,6 +8,7 @@ import { testConnection } from './database/connection';
 import { errorHandler } from './middleware/error.middleware';
 import authRoutes from './routes/auth.routes';
 import pagesRoutes from './routes/pages.routes';
+import filesRoutes from './routes/files.routes';
 import { initializeWebSocketServer } from './websocket/collaboration.handler';
 
 const app = express();
@@ -29,7 +30,7 @@ app.get('/health', (req, res) => {
 // API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/pages', pagesRoutes);
-// app.use('/api/users', usersRoutes);
+app.use('/api/files', filesRoutes);
 
 // Error handling middleware (must be last)
 app.use(errorHandler);

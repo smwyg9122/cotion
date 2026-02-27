@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
+import { api } from '../../services/api';
 import StarterKit from '@tiptap/starter-kit';
 import Collaboration from '@tiptap/extension-collaboration';
 import CollaborationCursor from '@tiptap/extension-collaboration-cursor';
@@ -175,41 +176,51 @@ export function TiptapEditor({ content, onChange, onSave, pageId, userId, userNa
     fileInputRef.current?.click();
   }
 
-  function onImageFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (file.size > 2 * 1024 * 1024) {
-      alert('이미지는 2MB 이하만 업로드 가능합니다');
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const dataUrl = ev.target?.result as string;
-      editor?.chain().focus().setImage({ src: dataUrl, alt: file.name }).run();
-    };
-    reader.readAsDataURL(file);
-    e.target.value = '';
-  }
-
-  function onPdfFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
+  async function onImageFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
 
     if (file.size > 5 * 1024 * 1024) {
-      alert('파일은 5MB 이하만 업로드 가능합니다');
+      alert('이미지는 5MB 이하만 업로드 가능합니다');
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const dataUrl = ev.target?.result as string;
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await api.post('/files/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      const { url } = res.data.data;
+      editor?.chain().focus().setImage({ src: url, alt: file.name }).run();
+    } catch {
+      alert('이미지 업로드에 실패했습니다');
+    }
+    e.target.value = '';
+  }
+
+  async function onPdfFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      alert('파일은 10MB 이하만 업로드 가능합니다');
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await api.post('/files/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      const { url, originalName } = res.data.data;
       editor?.chain().focus().insertContent(
-        `<a href="${dataUrl}" target="_blank" download="${file.name}">📄 ${file.name}</a>`
+        `<a href="${url}" target="_blank" download="${originalName}">📄 ${originalName}</a>`
       ).run();
-    };
-    reader.readAsDataURL(file);
+    } catch {
+      alert('파일 업로드에 실패했습니다');
+    }
     e.target.value = '';
   }
 
