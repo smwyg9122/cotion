@@ -6,7 +6,9 @@ const isProduction = process.env.NODE_ENV === 'production';
 
 const knexConfig: Knex.Config = {
   client: 'postgresql',
-  connection: config.database.url,
+  connection: isProduction
+    ? { connectionString: config.database.url, ssl: { rejectUnauthorized: false } }
+    : config.database.url,
   pool: {
     min: 2,
     max: 10,

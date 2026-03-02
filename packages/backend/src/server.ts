@@ -47,12 +47,16 @@ async function startServer() {
     }
 
     // Run pending migrations
-    const { db } = await import('./database/connection');
-    const [batch, migrations] = await db.migrate.latest();
-    if (migrations.length > 0) {
-      console.log(`✅ Ran ${migrations.length} migrations (batch ${batch})`);
-    } else {
-      console.log('✅ Database migrations up to date');
+    try {
+      const { db } = await import('./database/connection');
+      const [batch, migrations] = await db.migrate.latest();
+      if (migrations.length > 0) {
+        console.log(`✅ Ran ${migrations.length} migrations (batch ${batch})`);
+      } else {
+        console.log('✅ Database migrations up to date');
+      }
+    } catch (migrationError) {
+      console.error('⚠️ Migration failed (server will continue):', migrationError);
     }
 
     // Create HTTP server
