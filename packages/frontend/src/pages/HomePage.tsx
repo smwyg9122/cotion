@@ -10,6 +10,7 @@ import { TrashView } from '../components/pages/TrashView';
 import { SearchBar } from '../components/pages/SearchBar';
 import { NotificationBell } from '../components/notifications/NotificationBell';
 import { TiptapEditor } from '../components/editor/TiptapEditor';
+import { CommentSection } from '../components/comments/CommentSection';
 import { Menu, X, Trash2, Plus } from 'lucide-react';
 import { CategorySelect } from '../components/common';
 import type { Page } from '@cotion/shared';
@@ -313,6 +314,13 @@ export function HomePage() {
                 content={editedContent}
                 onChange={setEditedContent}
                 onSave={handleSave}
+                pageId={selectedPageId!}
+                userId={user?.id || ''}
+                userName={user?.name || 'Anonymous'}
+              />
+
+              {/* Comments */}
+              <CommentSection
                 pageId={selectedPageId!}
                 userId={user?.id || ''}
                 userName={user?.name || 'Anonymous'}
