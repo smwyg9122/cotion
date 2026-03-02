@@ -1,5 +1,8 @@
 import knex, { Knex } from 'knex';
+import path from 'path';
 import { config } from '../config';
+
+const isProduction = process.env.NODE_ENV === 'production';
 
 const knexConfig: Knex.Config = {
   client: 'postgresql',
@@ -9,8 +12,8 @@ const knexConfig: Knex.Config = {
     max: 10,
   },
   migrations: {
-    directory: './migrations',
-    extension: 'ts',
+    directory: path.join(__dirname, 'migrations'),
+    extension: isProduction ? 'js' : 'ts',
   },
 };
 

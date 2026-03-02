@@ -189,7 +189,7 @@ export function TiptapEditor({ content, onChange, onSave, pageId, userId, userNa
       const formData = new FormData();
       formData.append('file', file);
       const res = await api.post('/files/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+        headers: { 'Content-Type': undefined },
       });
       const { url } = res.data.data;
       editor?.chain().focus().setImage({ src: url, alt: file.name }).run();
@@ -212,7 +212,7 @@ export function TiptapEditor({ content, onChange, onSave, pageId, userId, userNa
       const formData = new FormData();
       formData.append('file', file);
       const res = await api.post('/files/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+        headers: { 'Content-Type': undefined },
       });
       const { url, originalName } = res.data.data;
       editor?.chain().focus().insertContent(

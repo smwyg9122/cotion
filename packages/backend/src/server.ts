@@ -44,6 +44,15 @@ async function startServer() {
       process.exit(1);
     }
 
+    // Run pending migrations
+    const { db } = await import('./database/connection');
+    const [batch, migrations] = await db.migrate.latest();
+    if (migrations.length > 0) {
+      console.log(`✅ Ran ${migrations.length} migrations (batch ${batch})`);
+    } else {
+      console.log('✅ Database migrations up to date');
+    }
+
     // Create HTTP server
     const server = http.createServer(app);
 
