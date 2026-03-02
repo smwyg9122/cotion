@@ -11,14 +11,26 @@ export interface FileRecord {
   created_at: string;
 }
 
+function fixFilename(name: string): string {
+  try {
+    // multer/busboy decodes filenames as latin1 — re-decode as utf8
+    const decoded = Buffer.from(name, 'latin1').toString('utf8');
+    if (decoded !== name && !decoded.includes('\ufffd')) {
+      return decoded.normalize('NFC');
+    }
+  } catch {}
+  return name.normalize('NFC');
+}
+
 export class FilesService {
   static async saveFile(
     file: { originalname: string; mimetype: string; size: number; buffer: Buffer },
     userId: string
   ): Promise<{ id: string; originalName: string; mimeType: string; size: number }> {
+    const originalName = fixFilename(file.originalname);
     const [record] = await db('files')
       .insert({
-        original_name: file.originalname,
+        original_name: originalName,
         mime_type: file.mimetype,
         size: file.size,
         data: file.buffer,
