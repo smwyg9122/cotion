@@ -123,6 +123,54 @@ code {
   box-decoration-break: clone;
 }
 
+/* Checklist Table Styles */
+.notion-editor .ProseMirror table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.notion-editor .ProseMirror th {
+  background-color: #f7f6f3;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #6b7280;
+  text-align: left;
+  padding: 8px 12px;
+  border: 1px solid #e5e7eb;
+}
+
+.notion-editor .ProseMirror td {
+  padding: 8px 12px;
+  border: 1px solid #e5e7eb;
+  min-height: 36px;
+  vertical-align: middle;
+}
+
+.notion-editor .ProseMirror th:first-child,
+.notion-editor .ProseMirror td:first-child {
+  width: 50px;
+  text-align: center;
+  font-size: 1.1rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.notion-editor .ProseMirror td:first-child p {
+  text-align: center;
+}
+
+.notion-editor .ProseMirror .selectedCell {
+  background-color: rgba(35, 131, 226, 0.08);
+}
+
+.notion-editor .ProseMirror tr:hover td {
+  background-color: #fafafa;
+}
+
 /* Hide scrollbar but keep scrollable */
 .scrollbar-hide {
   -ms-overflow-style: none;

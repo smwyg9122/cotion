@@ -7,6 +7,10 @@ import CollaborationCursor from '@tiptap/extension-collaboration-cursor';
 import Link from '@tiptap/extension-link';
 import Image from '@tiptap/extension-image';
 import Mention from '@tiptap/extension-mention';
+import { Table } from '@tiptap/extension-table';
+import { TableRow } from '@tiptap/extension-table-row';
+import { TableCell } from '@tiptap/extension-table-cell';
+import { TableHeader } from '@tiptap/extension-table-header';
 import { WebsocketProvider } from 'y-websocket';
 import * as Y from 'yjs';
 import tippy, { type Instance as TippyInstance } from 'tippy.js';
@@ -27,6 +31,9 @@ import {
   Image as ImageIcon,
   FileText,
   Minus,
+  ListChecks,
+  Plus,
+  Trash2,
 } from 'lucide-react';
 
 interface TiptapEditorProps {
@@ -111,6 +118,15 @@ export function TiptapEditor({ content, onChange, onSave, pageId, userId, userNa
           class: 'max-w-full rounded-lg my-2',
         },
       }),
+      Table.configure({
+        resizable: false,
+        HTMLAttributes: {
+          class: 'checklist-table',
+        },
+      }),
+      TableRow,
+      TableCell,
+      TableHeader,
       (Mention as any).configure({
         HTMLAttributes: {
           class: 'mention',
@@ -255,6 +271,17 @@ export function TiptapEditor({ content, onChange, onSave, pageId, userId, userNa
 
   function handleFileUpload() {
     fileInputRef.current?.click();
+  }
+
+  function insertChecklist() {
+    editor?.chain().focus().insertContent(
+      `<table>
+        <tr><th>체크</th><th>할 일</th><th>담당자</th><th>기한</th></tr>
+        <tr><td>☐</td><td></td><td></td><td></td></tr>
+        <tr><td>☐</td><td></td><td></td><td></td></tr>
+        <tr><td>☐</td><td></td><td></td><td></td></tr>
+      </table>`
+    ).run();
   }
 
   async function onImageFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
@@ -412,6 +439,29 @@ export function TiptapEditor({ content, onChange, onSave, pageId, userId, userNa
           icon={<FileText size={18} />}
           title="파일 업로드"
         />
+
+        <div className="w-px h-5 bg-gray-300 mx-0.5 flex-shrink-0" />
+
+        <ToolbarButton
+          onClick={insertChecklist}
+          icon={<ListChecks size={18} />}
+          title="체크리스트 표"
+        />
+
+        {editor.isActive('table') && (
+          <>
+            <ToolbarButton
+              onClick={() => (editor.chain().focus() as any).addRowAfter().run()}
+              icon={<Plus size={18} />}
+              title="행 추가"
+            />
+            <ToolbarButton
+              onClick={() => (editor.chain().focus() as any).deleteRow().run()}
+              icon={<Trash2 size={18} />}
+              title="행 삭제"
+            />
+          </>
+        )}
       </div>
 
       {/* Editor Content */}
