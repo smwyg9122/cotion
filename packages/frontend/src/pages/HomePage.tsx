@@ -7,6 +7,8 @@ import { PageTree } from '../components/pages/PageTree';
 import { NewPageModal } from '../components/pages/NewPageModal';
 import { PasswordChangeModal } from '../components/auth/PasswordChangeModal';
 import { TrashView } from '../components/pages/TrashView';
+import { SearchBar } from '../components/pages/SearchBar';
+import { NotificationBell } from '../components/notifications/NotificationBell';
 import { TiptapEditor } from '../components/editor/TiptapEditor';
 import { Menu, X, Trash2 } from 'lucide-react';
 import { CategorySelect } from '../components/common';
@@ -14,7 +16,7 @@ import type { Page } from '@cotion/shared';
 
 export function HomePage() {
   const { user, logout } = useAuth();
-  const { pages, isLoading, createPage, updatePage, deletePage, getPage, refreshPages } = usePages();
+  const { pages, isLoading, createPage, updatePage, deletePage, getPage, refreshPages, searchPages, movePage } = usePages();
   const navigate = useNavigate();
   const { showToast } = useToast();
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
@@ -173,15 +175,19 @@ export function HomePage() {
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center justify-between mb-3">
             <h1 className="text-xl font-bold text-gray-900">Cotion</h1>
-            <button
-              onClick={() => setIsSidebarOpen(false)}
-              className="p-1 text-gray-500 hover:bg-gray-200 rounded"
-            >
-              <X size={18} />
-            </button>
+            <div className="flex items-center gap-1">
+              <NotificationBell onPageSelect={handlePageSelect} />
+              <button
+                onClick={() => setIsSidebarOpen(false)}
+                className="p-1 text-gray-500 hover:bg-gray-200 rounded"
+              >
+                <X size={18} />
+              </button>
+            </div>
           </div>
           <div className="text-sm text-gray-600 font-medium">{user?.name}</div>
         </div>
+        <SearchBar onSearch={searchPages} onPageSelect={handlePageSelect} />
         <div className="flex-1 overflow-y-auto px-2 py-3">
           {isLoading ? (
             <div className="text-center py-8 text-gray-400 text-sm">로딩 중...</div>
@@ -191,6 +197,13 @@ export function HomePage() {
               onPageSelect={handlePageSelect}
               onCreatePage={openNewPageModal}
               onDeletePage={handleDeletePage}
+              onMovePage={async (pageId, parentId, position) => {
+                try {
+                  await movePage(pageId, parentId, position);
+                } catch {
+                  showToast('페이지 이동에 실패했습니다', 'error');
+                }
+              }}
               selectedPageId={selectedPageId || undefined}
             />
           )}

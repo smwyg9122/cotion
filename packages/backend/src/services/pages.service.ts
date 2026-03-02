@@ -272,6 +272,22 @@ export class PagesService {
     return updatedPage;
   }
 
+  static async searchPages(query: string, userId: string): Promise<Page[]> {
+    const searchPattern = `%${query}%`;
+
+    const pages = await db('pages')
+      .where({ is_deleted: false })
+      .andWhere(function () {
+        this.where('title', 'ILIKE', searchPattern)
+          .orWhere('content', 'ILIKE', searchPattern);
+      })
+      .orderBy('updated_at', 'desc')
+      .limit(20)
+      .select('id', 'title', 'icon', 'category', 'path', 'parent_id', 'updated_at');
+
+    return pages;
+  }
+
   private static async calculateNewPath(parentId: string): Promise<string> {
     const parent = await db('pages').where({ id: parentId }).first();
     return parent.path;
@@ -296,6 +312,17 @@ export class PagesService {
         roots.push(node);
       }
     });
+
+    // Sort children by position at every level
+    function sortByPosition(nodes: PageTreeNode[]) {
+      nodes.sort((a: any, b: any) => (a.position ?? 0) - (b.position ?? 0));
+      nodes.forEach((node) => {
+        if (node.children && node.children.length > 0) {
+          sortByPosition(node.children);
+        }
+      });
+    }
+    sortByPosition(roots);
 
     return roots;
   }

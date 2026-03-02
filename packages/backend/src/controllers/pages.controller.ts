@@ -14,6 +14,20 @@ export const pagesController = {
     });
   }),
 
+  search: asyncHandler(async (req: AuthRequest, res: Response) => {
+    const query = (req.query.q as string) || '';
+    if (!query.trim()) {
+      return res.json({ success: true, data: [] });
+    }
+
+    const results = await PagesService.searchPages(query.trim(), req.user!.userId);
+
+    res.json({
+      success: true,
+      data: results,
+    });
+  }),
+
   getById: asyncHandler(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     const page = await PagesService.getPageById(id, req.user!.userId);

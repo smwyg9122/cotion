@@ -96,6 +96,11 @@ export const authController = {
     });
   }),
 
+  getUsers: asyncHandler(async (req: AuthRequest, res: Response) => {
+    const users = await AuthService.getAllUsers();
+    res.json({ success: true, data: users });
+  }),
+
   changePassword: asyncHandler(async (req: AuthRequest, res: Response) => {
     if (!req.user) {
       return res.status(401).json({

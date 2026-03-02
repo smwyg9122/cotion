@@ -8,6 +8,7 @@ const router = Router();
 router.use(authMiddleware);
 
 router.get('/', pagesController.getAll);
+router.get('/search', pagesController.search);
 router.get('/trash/all', pagesController.getDeleted);
 router.get('/:id', pagesController.getById);
 router.post('/', pagesController.create);

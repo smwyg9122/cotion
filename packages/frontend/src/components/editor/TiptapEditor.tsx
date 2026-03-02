@@ -1,13 +1,16 @@
 import React, { useEffect } from 'react';
-import { useEditor, EditorContent } from '@tiptap/react';
+import { useEditor, EditorContent, ReactRenderer } from '@tiptap/react';
 import { api } from '../../services/api';
 import StarterKit from '@tiptap/starter-kit';
 import Collaboration from '@tiptap/extension-collaboration';
 import CollaborationCursor from '@tiptap/extension-collaboration-cursor';
 import Link from '@tiptap/extension-link';
 import Image from '@tiptap/extension-image';
+import Mention from '@tiptap/extension-mention';
 import { WebsocketProvider } from 'y-websocket';
 import * as Y from 'yjs';
+import tippy, { type Instance as TippyInstance } from 'tippy.js';
+import { MentionList } from './MentionList';
 import {
   Bold,
   Italic,
@@ -23,6 +26,7 @@ import {
   Link as LinkIcon,
   Image as ImageIcon,
   FileText,
+  Minus,
 } from 'lucide-react';
 
 interface TiptapEditorProps {
@@ -105,6 +109,83 @@ export function TiptapEditor({ content, onChange, onSave, pageId, userId, userNa
         allowBase64: true,
         HTMLAttributes: {
           class: 'max-w-full rounded-lg my-2',
+        },
+      }),
+      (Mention as any).configure({
+        HTMLAttributes: {
+          class: 'mention',
+        },
+        suggestion: {
+          items: async ({ query }: { query: string }) => {
+            try {
+              const res = await api.get('/auth/users');
+              const users = res.data.data;
+              return users
+                .filter((u: any) =>
+                  u.name.toLowerCase().includes(query.toLowerCase()) ||
+                  u.username.toLowerCase().includes(query.toLowerCase())
+                )
+                .slice(0, 5);
+            } catch {
+              return [];
+            }
+          },
+          command: ({ editor, range, props }: any) => {
+            editor
+              .chain()
+              .focus()
+              .insertContentAt(range, [
+                { type: 'mention', attrs: { id: props.id, label: props.label } },
+                { type: 'text', text: ' ' },
+              ])
+              .run();
+
+            // Fire notification
+            api.post('/notifications/mention', {
+              mentionedUserId: props.id,
+              pageId,
+            }).catch(() => {});
+          },
+          render: () => {
+            let component: ReactRenderer;
+            let popup: TippyInstance[];
+
+            return {
+              onStart: (props: any) => {
+                component = new ReactRenderer(MentionList, {
+                  props,
+                  editor: props.editor,
+                });
+                if (!props.clientRect) return;
+                popup = tippy('body', {
+                  getReferenceClientRect: props.clientRect,
+                  appendTo: () => document.body,
+                  content: component.element,
+                  showOnCreate: true,
+                  interactive: true,
+                  trigger: 'manual',
+                  placement: 'bottom-start',
+                });
+              },
+              onUpdate: (props: any) => {
+                component?.updateProps(props);
+                if (props.clientRect) {
+                  popup?.[0]?.setProps({ getReferenceClientRect: props.clientRect });
+                }
+              },
+              onKeyDown: (props: any) => {
+                if (props.event.key === 'Escape') {
+                  popup?.[0]?.hide();
+                  return true;
+                }
+                return (component?.ref as any)?.onKeyDown(props);
+              },
+              onExit: () => {
+                popup?.[0]?.destroy();
+                component?.destroy();
+              },
+            };
+          },
         },
       }),
       ...(doc ? [Collaboration.configure({
@@ -306,6 +387,11 @@ export function TiptapEditor({ content, onChange, onSave, pageId, userId, userNa
           isActive={editor.isActive('blockquote')}
           icon={<Quote size={18} />}
           title="인용구"
+        />
+        <ToolbarButton
+          onClick={() => editor.chain().focus().setHorizontalRule().run()}
+          icon={<Minus size={18} />}
+          title="구분선"
         />
 
         <div className="w-px h-5 bg-gray-300 mx-0.5 flex-shrink-0" />

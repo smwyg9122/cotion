@@ -46,6 +46,17 @@ export function usePages() {
     return response.data.data;
   }
 
+  async function searchPages(query: string): Promise<Page[]> {
+    if (!query.trim()) return [];
+    const response = await api.get('/pages/search', { params: { q: query } });
+    return response.data.data;
+  }
+
+  async function movePage(pageId: string, newParentId?: string, position?: number): Promise<void> {
+    await api.put(`/pages/${pageId}/move`, { newParentId, position });
+    await fetchPages();
+  }
+
   return {
     pages,
     isLoading,
@@ -55,5 +66,7 @@ export function usePages() {
     deletePage,
     getPage,
     refreshPages: fetchPages,
+    searchPages,
+    movePage,
   };
 }

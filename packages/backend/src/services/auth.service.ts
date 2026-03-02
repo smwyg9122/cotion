@@ -152,6 +152,13 @@ export class AuthService {
     return userWithoutPassword;
   }
 
+  static async getAllUsers() {
+    const users = await db('users')
+      .select('id', 'username', 'email', 'name', 'avatar_url', 'role')
+      .orderBy('name');
+    return users;
+  }
+
   private static async storeRefreshToken(userId: string, refreshToken: string): Promise<void> {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7); // 7 days

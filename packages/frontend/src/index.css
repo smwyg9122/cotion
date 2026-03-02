@@ -108,6 +108,21 @@ code {
   font-style: italic;
 }
 
+.notion-editor .ProseMirror hr {
+  border: none;
+  border-top: 1px solid #e5e7eb;
+  margin: 1.5rem 0;
+}
+
+.notion-editor .ProseMirror .mention {
+  background-color: rgba(35, 131, 226, 0.14);
+  color: #2383e2;
+  border-radius: 3px;
+  padding: 1px 3px;
+  font-weight: 500;
+  box-decoration-break: clone;
+}
+
 /* Hide scrollbar but keep scrollable */
 .scrollbar-hide {
   -ms-overflow-style: none;

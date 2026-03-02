@@ -1,16 +1,35 @@
 import React, { useState } from 'react';
 import { PageTreeNode } from '@cotion/shared';
-import { ChevronRight, ChevronDown, FileText, Plus, Trash2, Folder } from 'lucide-react';
+import { ChevronRight, ChevronDown, FileText, Plus, Trash2, Folder, GripVertical } from 'lucide-react';
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface PageTreeProps {
   pages: PageTreeNode[];
   onPageSelect?: (pageId: string) => void;
   onCreatePage?: (parentId?: string) => void;
   onDeletePage?: (pageId: string) => void;
+  onMovePage?: (pageId: string, newParentId?: string, position?: number) => void;
   selectedPageId?: string;
 }
 
-export function PageTree({ pages, onPageSelect, onCreatePage, onDeletePage, selectedPageId }: PageTreeProps) {
+export function PageTree({ pages, onPageSelect, onCreatePage, onDeletePage, onMovePage, selectedPageId }: PageTreeProps) {
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
+  );
+
   // Group root pages by category
   const categoryMap = new Map<string, PageTreeNode[]>();
   const uncategorized: PageTreeNode[] = [];
@@ -26,43 +45,81 @@ export function PageTree({ pages, onPageSelect, onCreatePage, onDeletePage, sele
     }
   });
 
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!active || !over || active.id === over.id) return;
+
+    const activeId = active.id as string;
+    const overId = over.id as string;
+
+    // Find pages in the flat list
+    const allPages = flattenPages(pages);
+    const activePage = allPages.find((p) => p.id === activeId);
+    const overPage = allPages.find((p) => p.id === overId);
+
+    if (!activePage || !overPage) return;
+
+    // Only reorder within the same parent
+    if ((activePage as any).parent_id === (overPage as any).parent_id) {
+      onMovePage?.(activeId, (activePage as any).parent_id || undefined, (overPage as any).position ?? 0);
+    }
+  }
+
   return (
-    <div className="space-y-0.5">
-      {/* Categorized page groups */}
-      {Array.from(categoryMap.entries()).map(([category, categoryPages]) => (
-        <CategorySection
-          key={category}
-          name={category}
-          pages={categoryPages}
-          onPageSelect={onPageSelect}
-          onCreatePage={onCreatePage}
-          onDeletePage={onDeletePage}
-          selectedPageId={selectedPageId}
-        />
-      ))}
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+      <div className="space-y-0.5">
+        {/* Categorized page groups */}
+        {Array.from(categoryMap.entries()).map(([category, categoryPages]) => (
+          <CategorySection
+            key={category}
+            name={category}
+            pages={categoryPages}
+            onPageSelect={onPageSelect}
+            onCreatePage={onCreatePage}
+            onDeletePage={onDeletePage}
+            selectedPageId={selectedPageId}
+          />
+        ))}
 
-      {/* Uncategorized pages */}
-      {uncategorized.map((page) => (
-        <PageNode
-          key={page.id}
-          page={page}
-          onPageSelect={onPageSelect}
-          onCreatePage={onCreatePage}
-          onDeletePage={onDeletePage}
-          selectedPageId={selectedPageId}
-          level={0}
-        />
-      ))}
+        {/* Uncategorized pages */}
+        <SortableContext items={uncategorized.map((p) => p.id)} strategy={verticalListSortingStrategy}>
+          {uncategorized.map((page) => (
+            <SortablePageNode
+              key={page.id}
+              page={page}
+              onPageSelect={onPageSelect}
+              onCreatePage={onCreatePage}
+              onDeletePage={onDeletePage}
+              selectedPageId={selectedPageId}
+              level={0}
+            />
+          ))}
+        </SortableContext>
 
-      <button
-        onClick={() => onCreatePage?.()}
-        className="flex items-center gap-2 px-2 py-1.5 text-sm text-gray-600 hover:bg-gray-200/70 rounded-md w-full mt-2 transition-colors font-medium"
-      >
-        <Plus size={16} />
-        <span>새 페이지</span>
-      </button>
-    </div>
+        <button
+          onClick={() => onCreatePage?.()}
+          className="flex items-center gap-2 px-2 py-1.5 text-sm text-gray-600 hover:bg-gray-200/70 rounded-md w-full mt-2 transition-colors font-medium"
+        >
+          <Plus size={16} />
+          <span>새 페이지</span>
+        </button>
+      </div>
+    </DndContext>
   );
+}
+
+function flattenPages(pages: PageTreeNode[]): PageTreeNode[] {
+  const result: PageTreeNode[] = [];
+  function traverse(nodes: PageTreeNode[]) {
+    nodes.forEach((node) => {
+      result.push(node);
+      if (node.children && node.children.length > 0) {
+        traverse(node.children);
+      }
+    });
+  }
+  traverse(pages);
+  return result;
 }
 
 interface CategorySectionProps {
@@ -89,9 +146,9 @@ function CategorySection({ name, pages, onPageSelect, onCreatePage, onDeletePage
         <span className="text-gray-400 font-normal normal-case tracking-normal">{pages.length}</span>
       </button>
       {isExpanded && (
-        <div>
+        <SortableContext items={pages.map((p) => p.id)} strategy={verticalListSortingStrategy}>
           {pages.map((page) => (
-            <PageNode
+            <SortablePageNode
               key={page.id}
               page={page}
               onPageSelect={onPageSelect}
@@ -101,7 +158,7 @@ function CategorySection({ name, pages, onPageSelect, onCreatePage, onDeletePage
               level={0}
             />
           ))}
-        </div>
+        </SortableContext>
       )}
     </div>
   );
@@ -114,9 +171,33 @@ interface PageNodeProps {
   onDeletePage?: (pageId: string) => void;
   selectedPageId?: string;
   level: number;
+  dragHandleProps?: Record<string, any>;
 }
 
-function PageNode({ page, onPageSelect, onCreatePage, onDeletePage, selectedPageId, level }: PageNodeProps) {
+function SortablePageNode(props: Omit<PageNodeProps, 'dragHandleProps'>) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: props.page.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style}>
+      <PageNode {...props} dragHandleProps={{ ...attributes, ...listeners }} />
+    </div>
+  );
+}
+
+function PageNode({ page, onPageSelect, onCreatePage, onDeletePage, selectedPageId, level, dragHandleProps }: PageNodeProps) {
   const [isExpanded, setIsExpanded] = useState(true);
   const [isHovered, setIsHovered] = useState(false);
   const hasChildren = page.children && page.children.length > 0;
@@ -134,6 +215,17 @@ function PageNode({ page, onPageSelect, onCreatePage, onDeletePage, selectedPage
         }`}
         style={{ paddingLeft: `${level * 20 + 8}px` }}
       >
+        {/* Drag handle */}
+        <div
+          {...dragHandleProps}
+          className={`p-0.5 rounded transition-all cursor-grab active:cursor-grabbing ${
+            isHovered ? 'opacity-100' : 'opacity-0'
+          }`}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <GripVertical size={14} className="text-gray-400" />
+        </div>
+
         {hasChildren ? (
           <button
             onClick={() => setIsExpanded(!isExpanded)}
@@ -181,9 +273,9 @@ function PageNode({ page, onPageSelect, onCreatePage, onDeletePage, selectedPage
         )}
       </div>
       {isExpanded && hasChildren && (
-        <div>
+        <SortableContext items={page.children!.map((c) => c.id)} strategy={verticalListSortingStrategy}>
           {page.children!.map((child) => (
-            <PageNode
+            <SortablePageNode
               key={child.id}
               page={child}
               onPageSelect={onPageSelect}
@@ -193,7 +285,7 @@ function PageNode({ page, onPageSelect, onCreatePage, onDeletePage, selectedPage
               level={level + 1}
             />
           ))}
-        </div>
+        </SortableContext>
       )}
     </div>
   );
