@@ -10,7 +10,7 @@ import { TrashView } from '../components/pages/TrashView';
 import { SearchBar } from '../components/pages/SearchBar';
 import { NotificationBell } from '../components/notifications/NotificationBell';
 import { TiptapEditor } from '../components/editor/TiptapEditor';
-import { Menu, X, Trash2 } from 'lucide-react';
+import { Menu, X, Trash2, Plus } from 'lucide-react';
 import { CategorySelect } from '../components/common';
 import type { Page } from '@cotion/shared';
 
@@ -186,6 +186,13 @@ export function HomePage() {
             </div>
           </div>
           <div className="text-sm text-gray-600 font-medium">{user?.name}</div>
+          <button
+            onClick={() => openNewPageModal()}
+            className="mt-2 w-full px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-medium transition-colors flex items-center justify-center gap-1.5"
+          >
+            <Plus size={16} />
+            새 페이지
+          </button>
         </div>
         <SearchBar onSearch={searchPages} onPageSelect={handlePageSelect} />
         <div className="flex-1 overflow-y-auto px-2 py-3">
