@@ -15,6 +15,7 @@ import { WebsocketProvider } from 'y-websocket';
 import * as Y from 'yjs';
 import tippy, { type Instance as TippyInstance } from 'tippy.js';
 import { MentionList } from './MentionList';
+import { DatePickerPopup } from './DatePickerPopup';
 import {
   Bold,
   Italic,
@@ -34,6 +35,7 @@ import {
   ListChecks,
   Plus,
   Trash2,
+  CalendarDays,
 } from 'lucide-react';
 
 interface TiptapEditorProps {
@@ -52,6 +54,7 @@ export function TiptapEditor({ content, onChange, onSave, pageId, userId, userNa
   const [activeUsers, setActiveUsers] = React.useState<number>(0);
   const imageInputRef = React.useRef<HTMLInputElement>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const [isDatePickerOpen, setIsDatePickerOpen] = React.useState(false);
 
   useEffect(() => {
     const newDoc = new Y.Doc();
@@ -273,6 +276,11 @@ export function TiptapEditor({ content, onChange, onSave, pageId, userId, userNa
     fileInputRef.current?.click();
   }
 
+  function handleDateSelect(dateStr: string) {
+    editor?.chain().focus().insertContent(dateStr).run();
+    setIsDatePickerOpen(false);
+  }
+
   function insertChecklist() {
     const row = (check: string) => ({
       type: 'tableRow',
@@ -479,9 +487,21 @@ export function TiptapEditor({ content, onChange, onSave, pageId, userId, userNa
               icon={<Trash2 size={18} />}
               title="행 삭제"
             />
+            <ToolbarButton
+              onClick={() => setIsDatePickerOpen(true)}
+              icon={<CalendarDays size={18} />}
+              title="날짜 삽입"
+            />
           </>
         )}
       </div>
+
+      {isDatePickerOpen && (
+        <DatePickerPopup
+          onSelect={handleDateSelect}
+          onClose={() => setIsDatePickerOpen(false)}
+        />
+      )}
 
       {/* Editor Content */}
       <div className="px-4 py-4 sm:px-16 sm:py-8 min-h-[calc(100vh-200px)] max-w-[900px] mx-auto">
