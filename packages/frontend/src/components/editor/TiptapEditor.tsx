@@ -274,14 +274,33 @@ export function TiptapEditor({ content, onChange, onSave, pageId, userId, userNa
   }
 
   function insertChecklist() {
-    editor?.chain().focus().insertContent(
-      `<table>
-        <tr><th>체크</th><th>할 일</th><th>담당자</th><th>기한</th></tr>
-        <tr><td>☐</td><td></td><td></td><td></td></tr>
-        <tr><td>☐</td><td></td><td></td><td></td></tr>
-        <tr><td>☐</td><td></td><td></td><td></td></tr>
-      </table>`
-    ).run();
+    const row = (check: string) => ({
+      type: 'tableRow',
+      content: [
+        { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: check }] }] },
+        { type: 'tableCell', content: [{ type: 'paragraph' }] },
+        { type: 'tableCell', content: [{ type: 'paragraph' }] },
+        { type: 'tableCell', content: [{ type: 'paragraph' }] },
+      ],
+    });
+
+    editor?.chain().focus().insertContent({
+      type: 'table',
+      content: [
+        {
+          type: 'tableRow',
+          content: [
+            { type: 'tableHeader', content: [{ type: 'paragraph', content: [{ type: 'text', text: '체크' }] }] },
+            { type: 'tableHeader', content: [{ type: 'paragraph', content: [{ type: 'text', text: '할 일' }] }] },
+            { type: 'tableHeader', content: [{ type: 'paragraph', content: [{ type: 'text', text: '담당자' }] }] },
+            { type: 'tableHeader', content: [{ type: 'paragraph', content: [{ type: 'text', text: '기한' }] }] },
+          ],
+        },
+        row('☐'),
+        row('☐'),
+        row('☐'),
+      ],
+    }).run();
   }
 
   async function onImageFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
