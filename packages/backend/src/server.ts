@@ -14,8 +14,13 @@ import { initializeWebSocketServer } from './websocket/collaboration.handler';
 
 const app = express();
 
+// Trust proxy (Railway, Heroku, etc.)
+app.set('trust proxy', 1);
+
 // Security middleware
-app.use(helmet());
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+}));
 app.use(cors(config.cors));
 
 // Body parsing middleware
