@@ -157,17 +157,23 @@ code {
   line-height: 1.4;
 }
 
-.notion-editor .ProseMirror th:first-child,
-.notion-editor .ProseMirror td:first-child {
+/* Checklist table: narrow first column for checkbox */
+.notion-editor .ProseMirror table.checklist-table th:first-child,
+.notion-editor .ProseMirror table.checklist-table td:first-child {
   width: 44px;
   text-align: center;
   font-size: 1rem;
 }
 
-.notion-editor .ProseMirror td:first-child p {
+.notion-editor .ProseMirror table.checklist-table td:first-child p {
   text-align: center;
   cursor: pointer;
   user-select: none;
+}
+
+/* Plain table: equal column widths */
+.notion-editor .ProseMirror table:not(.checklist-table) {
+  table-layout: auto;
 }
 
 .notion-editor .ProseMirror .selectedCell {
