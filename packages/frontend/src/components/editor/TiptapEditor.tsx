@@ -525,7 +525,42 @@ export function TiptapEditor({ content, onChange, onSave, pageId, userId, userNa
         {editor.isActive('table') && (
           <>
             <ToolbarButton
-              onClick={() => (editor.chain().focus() as any).addRowAfter().run()}
+              onClick={() => {
+                (editor.chain().focus() as any).addRowAfter().run();
+                // If checklist table, fill ☐ in the first cell of the new row
+                setTimeout(() => {
+                  const { state } = editor;
+                  const { $from } = state.selection;
+                  // Walk up to find the table node
+                  for (let d = $from.depth; d > 0; d--) {
+                    const node = $from.node(d);
+                    if (node.type.name === 'table') {
+                      const firstRow = node.firstChild;
+                      const firstHeader = firstRow?.firstChild;
+                      if (firstHeader?.textContent.trim() === '체크') {
+                        // Find current row and set first cell to ☐
+                        for (let rd = $from.depth; rd > 0; rd--) {
+                          if ($from.node(rd).type.name === 'tableRow') {
+                            const rowStart = $from.start(rd);
+                            const firstCell = $from.node(rd).firstChild;
+                            if (firstCell && !firstCell.textContent.trim()) {
+                              const cellStart = rowStart;
+                              const tr = state.tr.replaceWith(
+                                cellStart,
+                                cellStart + firstCell.content.size,
+                                state.schema.nodes.paragraph.create(null, state.schema.text('☐'))
+                              );
+                              editor.view.dispatch(tr);
+                            }
+                            break;
+                          }
+                        }
+                      }
+                      break;
+                    }
+                  }
+                }, 0);
+              }}
               icon={<Plus size={18} />}
               title="행 추가"
             />
