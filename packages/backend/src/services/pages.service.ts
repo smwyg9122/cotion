@@ -246,28 +246,50 @@ export class PagesService {
 
     // Update the page and all its descendants
     const oldPath = page.path;
-    const targetPosition = input.position ?? page.position;
     const newParentId = input.newParentId || null;
+    const targetPosition = input.position ?? page.position;
 
     await db.transaction(async (trx) => {
-      // Shift sibling positions to make room at the target position
-      await trx('pages')
-        .where({ parent_id: newParentId, is_deleted: false })
+      // 1. Get all siblings (excluding the moved page) in current position order
+      const siblingsQuery = trx('pages')
+        .where({ is_deleted: false })
         .where('id', '!=', pageId)
-        .where('position', '>=', targetPosition)
-        .increment('position', 1);
+        .orderBy('position');
 
-      // Update the page itself
+      if (newParentId) {
+        siblingsQuery.where({ parent_id: newParentId });
+      } else {
+        siblingsQuery.whereNull('parent_id');
+        // For root-level pages, filter by category to reorder within the same group
+        if (input.category) {
+          siblingsQuery.where({ category: input.category });
+        } else {
+          siblingsQuery.whereNull('category');
+        }
+      }
+
+      const siblings = await siblingsQuery.select('id');
+
+      // 2. Insert the moved page at the target position
+      const reordered = [...siblings.map((s) => s.id)];
+      const clampedPos = Math.max(0, Math.min(targetPosition, reordered.length));
+      reordered.splice(clampedPos, 0, pageId);
+
+      // 3. Update all positions sequentially
+      for (let i = 0; i < reordered.length; i++) {
+        await trx('pages').where({ id: reordered[i] }).update({ position: i });
+      }
+
+      // 4. Update the moved page's parent and path
       await trx('pages')
         .where({ id: pageId })
         .update({
           parent_id: newParentId,
           path: finalPath,
-          position: targetPosition,
           updated_by: userId,
         });
 
-      // Update all descendants' paths
+      // 5. Update all descendants' paths
       await trx.raw(
         `
         UPDATE pages
@@ -276,15 +298,6 @@ export class PagesService {
       `,
         [finalPath, oldPath, oldPath, pageId]
       );
-
-      // Re-normalize sibling positions to remove gaps
-      const siblings = await trx('pages')
-        .where({ parent_id: newParentId, is_deleted: false })
-        .orderBy('position')
-        .select('id');
-      for (let i = 0; i < siblings.length; i++) {
-        await trx('pages').where({ id: siblings[i].id }).update({ position: i });
-      }
     });
 
     const [updatedPage] = await db('pages').where({ id: pageId }).select('*');

@@ -211,9 +211,9 @@ export function HomePage() {
               onPageSelect={handlePageSelect}
               onCreatePage={openNewPageModal}
               onDeletePage={handleDeletePage}
-              onMovePage={async (pageId, parentId, position) => {
+              onMovePage={async (pageId, parentId, position, category) => {
                 try {
-                  await movePage(pageId, parentId, position);
+                  await movePage(pageId, parentId, position, category);
                 } catch {
                   showToast('페이지 이동에 실패했습니다', 'error');
                 }

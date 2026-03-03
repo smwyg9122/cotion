@@ -21,7 +21,7 @@ interface PageTreeProps {
   onPageSelect?: (pageId: string) => void;
   onCreatePage?: (parentId?: string) => void;
   onDeletePage?: (pageId: string) => void;
-  onMovePage?: (pageId: string, newParentId?: string, position?: number) => void;
+  onMovePage?: (pageId: string, newParentId?: string, position?: number, category?: string) => void;
   selectedPageId?: string;
 }
 
@@ -81,7 +81,8 @@ export function PageTree({ pages, onPageSelect, onCreatePage, onDeletePage, onMo
 
       if (oldIndex === -1 || newIndex === -1) return;
 
-      onMovePage?.(activeId, parentId || undefined, newIndex);
+      const category = (activePage as any).category || undefined;
+      onMovePage?.(activeId, parentId || undefined, newIndex, category);
     }
   }
 

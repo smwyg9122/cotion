@@ -35,6 +35,7 @@ export interface PageUpdateInput {
 export interface PageMoveInput {
   newParentId?: string;
   position?: number;
+  category?: string;
 }
 
 export interface PageTreeNode extends Page {

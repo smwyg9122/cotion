@@ -52,8 +52,8 @@ export function usePages() {
     return response.data.data;
   }
 
-  async function movePage(pageId: string, newParentId?: string, position?: number): Promise<void> {
-    await api.put(`/pages/${pageId}/move`, { newParentId, position });
+  async function movePage(pageId: string, newParentId?: string, position?: number, category?: string): Promise<void> {
+    await api.put(`/pages/${pageId}/move`, { newParentId, position, category });
     await fetchPages();
   }
 
