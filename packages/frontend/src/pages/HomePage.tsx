@@ -175,7 +175,13 @@ export function HomePage() {
       >
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center justify-between mb-3">
-            <h1 className="text-xl font-bold text-gray-900">Cotion</h1>
+            <button
+              onClick={() => { setSelectedPageId(null); setSelectedPage(null); }}
+              className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+            >
+              <img src="/logo.png" alt="Cotion" className="h-7 w-7 object-contain" />
+              <span className="text-xl font-bold text-gray-900">Cotion</span>
+            </button>
             <div className="flex items-center gap-1">
               <NotificationBell onPageSelect={handlePageSelect} />
               <button

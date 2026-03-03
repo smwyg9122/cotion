@@ -246,14 +246,24 @@ export class PagesService {
 
     // Update the page and all its descendants
     const oldPath = page.path;
+    const targetPosition = input.position ?? page.position;
+    const newParentId = input.newParentId || null;
+
     await db.transaction(async (trx) => {
+      // Shift sibling positions to make room at the target position
+      await trx('pages')
+        .where({ parent_id: newParentId, is_deleted: false })
+        .where('id', '!=', pageId)
+        .where('position', '>=', targetPosition)
+        .increment('position', 1);
+
       // Update the page itself
       await trx('pages')
         .where({ id: pageId })
         .update({
-          parent_id: input.newParentId || null,
+          parent_id: newParentId,
           path: finalPath,
-          position: input.position ?? page.position,
+          position: targetPosition,
           updated_by: userId,
         });
 
@@ -266,6 +276,15 @@ export class PagesService {
       `,
         [finalPath, oldPath, oldPath, pageId]
       );
+
+      // Re-normalize sibling positions to remove gaps
+      const siblings = await trx('pages')
+        .where({ parent_id: newParentId, is_deleted: false })
+        .orderBy('position')
+        .select('id');
+      for (let i = 0; i < siblings.length; i++) {
+        await trx('pages').where({ id: siblings[i].id }).update({ position: i });
+      }
     });
 
     const [updatedPage] = await db('pages').where({ id: pageId }).select('*');

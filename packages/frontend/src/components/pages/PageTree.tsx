@@ -59,9 +59,29 @@ export function PageTree({ pages, onPageSelect, onCreatePage, onDeletePage, onMo
 
     if (!activePage || !overPage) return;
 
+    const activeParentId = (activePage as any).parent_id;
+    const overParentId = (overPage as any).parent_id;
+
     // Only reorder within the same parent
-    if ((activePage as any).parent_id === (overPage as any).parent_id) {
-      onMovePage?.(activeId, (activePage as any).parent_id || undefined, (overPage as any).position ?? 0);
+    if (activeParentId === overParentId) {
+      // Find the siblings list to determine correct index
+      const parentId = activeParentId;
+      let siblings: PageTreeNode[];
+      if (parentId) {
+        const parent = allPages.find((p) => p.id === parentId);
+        siblings = parent?.children || [];
+      } else {
+        // Root-level: find all pages in the same category group
+        const activeCat = (activePage as any).category || '';
+        siblings = pages.filter((p) => (p.category || '') === activeCat);
+      }
+
+      const oldIndex = siblings.findIndex((p) => p.id === activeId);
+      const newIndex = siblings.findIndex((p) => p.id === overId);
+
+      if (oldIndex === -1 || newIndex === -1) return;
+
+      onMovePage?.(activeId, parentId || undefined, newIndex);
     }
   }
 
