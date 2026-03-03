@@ -36,6 +36,7 @@ import {
   Plus,
   Trash2,
   CalendarDays,
+  Table2,
 } from 'lucide-react';
 
 interface TiptapEditorProps {
@@ -222,6 +223,33 @@ export function TiptapEditor({ content, onChange, onSave, pageId, userId, userNa
       attributes: {
         class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-xl focus:outline-none max-w-none',
       },
+      handleClick: (view, pos) => {
+        const { state } = view;
+        const $pos = state.doc.resolve(pos);
+        // Check if we're inside a table cell
+        for (let d = $pos.depth; d > 0; d--) {
+          const node = $pos.node(d);
+          if (node.type.name === 'tableCell') {
+            const cellText = node.textContent.trim();
+            if (cellText === '☐' || cellText === '☑') {
+              const newChar = cellText === '☐' ? '☑' : '☐';
+              const cellStart = $pos.start(d);
+              const tr = state.tr.replaceWith(
+                cellStart,
+                cellStart + node.content.size,
+                state.schema.nodes.paragraph.create(
+                  null,
+                  state.schema.text(newChar)
+                )
+              );
+              view.dispatch(tr);
+              return true;
+            }
+            break;
+          }
+        }
+        return false;
+      },
     },
     onUpdate: ({ editor }) => {
       const html = editor.getHTML();
@@ -307,6 +335,20 @@ export function TiptapEditor({ content, onChange, onSave, pageId, userId, userNa
         row('☐'),
         row('☐'),
         row('☐'),
+      ],
+    }).run();
+  }
+
+  function insertPlainTable() {
+    const cell = () => ({ type: 'tableCell', content: [{ type: 'paragraph' }] });
+    const header = (text: string) => ({ type: 'tableHeader', content: [{ type: 'paragraph', content: [{ type: 'text', text }] }] });
+
+    editor?.chain().focus().insertContent({
+      type: 'table',
+      content: [
+        { type: 'tableRow', content: [header('제목 1'), header('제목 2'), header('제목 3')] },
+        { type: 'tableRow', content: [cell(), cell(), cell()] },
+        { type: 'tableRow', content: [cell(), cell(), cell()] },
       ],
     }).run();
   }
@@ -473,6 +515,11 @@ export function TiptapEditor({ content, onChange, onSave, pageId, userId, userNa
           onClick={insertChecklist}
           icon={<ListChecks size={18} />}
           title="체크리스트 표"
+        />
+        <ToolbarButton
+          onClick={insertPlainTable}
+          icon={<Table2 size={18} />}
+          title="표 삽입"
         />
 
         {editor.isActive('table') && (

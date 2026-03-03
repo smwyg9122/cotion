@@ -166,6 +166,8 @@ code {
 
 .notion-editor .ProseMirror td:first-child p {
   text-align: center;
+  cursor: pointer;
+  user-select: none;
 }
 
 .notion-editor .ProseMirror .selectedCell {
