@@ -610,6 +610,18 @@ export function TiptapEditor({ content, onChange, onSave, pageId, userId, userNa
       {/* Editor Content */}
       <div className="px-4 py-4 sm:px-16 sm:py-8 min-h-[calc(100vh-200px)] max-w-[900px] mx-auto">
         <EditorContent editor={editor} className="notion-editor" />
+        {/* Table bottom add-row handle */}
+        {editor.isActive('table') && (
+          <div className="flex justify-center -mt-2 mb-4">
+            <button
+              onClick={handleAddRow}
+              className="w-full max-w-[900px] py-1 border border-dashed border-gray-300 rounded-b-md text-gray-400 hover:text-blue-500 hover:border-blue-400 hover:bg-blue-50/50 transition-all text-sm flex items-center justify-center gap-1"
+            >
+              <Plus size={14} />
+              행 추가
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Hidden file inputs */}
