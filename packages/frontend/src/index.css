@@ -123,13 +123,32 @@ code {
   box-decoration-break: clone;
 }
 
-/* Checklist Table Styles */
+/* Table Styles */
 .notion-editor .ProseMirror table {
   width: 100%;
   border-collapse: collapse;
   margin: 1rem 0;
   border: 1px solid #e5e7eb;
-  table-layout: fixed;
+  overflow: hidden;
+}
+
+/* Column resize handle */
+.notion-editor .ProseMirror .column-resize-handle {
+  position: absolute;
+  right: -2px;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background-color: #2383e2;
+  pointer-events: none;
+}
+
+.notion-editor .ProseMirror.resize-cursor {
+  cursor: col-resize;
+}
+
+.notion-editor .ProseMirror table .tableWrapper {
+  overflow-x: auto;
 }
 
 .notion-editor .ProseMirror th,
@@ -137,6 +156,7 @@ code {
   border: 1px solid #e5e7eb;
   padding: 6px 10px;
   vertical-align: middle;
+  position: relative;
 }
 
 .notion-editor .ProseMirror th {
@@ -171,9 +191,10 @@ code {
   user-select: none;
 }
 
-/* Plain table: equal column widths */
-.notion-editor .ProseMirror table:not(.checklist-table) {
-  table-layout: auto;
+/* Column add/delete buttons for table */
+.notion-editor .ProseMirror .tableWrapper {
+  overflow-x: auto;
+  margin: 1rem 0;
 }
 
 .notion-editor .ProseMirror .selectedCell {

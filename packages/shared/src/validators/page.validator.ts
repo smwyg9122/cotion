@@ -19,4 +19,5 @@ export const pageUpdateSchema = z.object({
 export const pageMoveSchema = z.object({
   newParentId: z.string().uuid().optional(),
   position: z.number().int().min(0).optional(),
+  category: z.string().max(100).optional(),
 });

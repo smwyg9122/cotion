@@ -139,7 +139,7 @@ export function TiptapEditor({ content, onChange, onSave, pageId, userId, userNa
         },
       }),
       CustomTable.configure({
-        resizable: false,
+        resizable: true,
       }),
       TableRow,
       TableCell,
