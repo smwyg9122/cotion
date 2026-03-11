@@ -14,7 +14,6 @@ export interface Page {
   isDeleted: boolean;
   deletedAt?: Date;
   position: number;
-  isWorkspace?: boolean;
 }
 
 export interface PageCreateInput {
