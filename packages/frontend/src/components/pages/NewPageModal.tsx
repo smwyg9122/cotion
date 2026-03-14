@@ -11,22 +11,25 @@ interface NewPageModalProps {
   onSubmit: (title: string, icon?: string, category?: string) => void;
   parentTitle?: string;
   existingCategories?: string[];
+  defaultCategory?: string;
 }
 
-export function NewPageModal({ isOpen, onClose, onSubmit, parentTitle, existingCategories = [] }: NewPageModalProps) {
+export function NewPageModal({ isOpen, onClose, onSubmit, parentTitle, existingCategories = [], defaultCategory }: NewPageModalProps) {
   const [title, setTitle] = useState('');
   const [icon, setIcon] = useState('');
   const [category, setCategory] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!isOpen) {
+    if (isOpen) {
+      setCategory(defaultCategory || '');
+    } else {
       setTitle('');
       setIcon('');
       setCategory('');
       setIsSubmitting(false);
     }
-  }, [isOpen]);
+  }, [isOpen, defaultCategory]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

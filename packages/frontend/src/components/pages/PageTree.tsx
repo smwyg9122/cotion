@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { PageTreeNode } from '@cotion/shared';
-import { ChevronRight, ChevronDown, FileText, Plus, Trash2, Folder, GripVertical } from 'lucide-react';
+import { ChevronRight, ChevronDown, FileText, Plus, Trash2, GripVertical } from 'lucide-react';
 import {
   DndContext,
   closestCenter,
@@ -16,10 +16,16 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
+// Hardcoded workspace definitions
+const WORKSPACES = [
+  { name: '아유타', icon: '☕' },
+  { name: '제이로텍', icon: '🏢' },
+];
+
 interface PageTreeProps {
   pages: PageTreeNode[];
   onPageSelect?: (pageId: string) => void;
-  onCreatePage?: (parentId?: string) => void;
+  onCreatePage?: (parentId?: string, category?: string) => void;
   onDeletePage?: (pageId: string) => void;
   onMovePage?: (pageId: string, newParentId?: string, position?: number, category?: string) => void;
   selectedPageId?: string;
@@ -32,17 +38,12 @@ export function PageTree({ pages, onPageSelect, onCreatePage, onDeletePage, onMo
 
   // Group root pages by category
   const categoryMap = new Map<string, PageTreeNode[]>();
-  const uncategorized: PageTreeNode[] = [];
-
   pages.forEach((page) => {
-    if (page.category) {
-      if (!categoryMap.has(page.category)) {
-        categoryMap.set(page.category, []);
-      }
-      categoryMap.get(page.category)!.push(page);
-    } else {
-      uncategorized.push(page);
+    const cat = page.category || '';
+    if (!categoryMap.has(cat)) {
+      categoryMap.set(cat, []);
     }
+    categoryMap.get(cat)!.push(page);
   });
 
   function handleDragEnd(event: DragEndEvent) {
@@ -62,17 +63,20 @@ export function PageTree({ pages, onPageSelect, onCreatePage, onDeletePage, onMo
     const activeParentId = (activePage as any).parent_id;
     const overParentId = (overPage as any).parent_id;
 
-    // Only reorder within the same parent
+    // Only reorder within the same parent and same category
     if (activeParentId === overParentId) {
-      // Find the siblings list to determine correct index
+      const activeCat = (activePage as any).category || '';
+      const overCat = (overPage as any).category || '';
+
+      // Prevent drag across different categories at root level
+      if (!activeParentId && activeCat !== overCat) return;
+
       const parentId = activeParentId;
       let siblings: PageTreeNode[];
       if (parentId) {
         const parent = allPages.find((p) => p.id === parentId);
         siblings = parent?.children || [];
       } else {
-        // Root-level: find all pages in the same category group
-        const activeCat = (activePage as any).category || '';
         siblings = pages.filter((p) => (p.category || '') === activeCat);
       }
 
@@ -88,42 +92,19 @@ export function PageTree({ pages, onPageSelect, onCreatePage, onDeletePage, onMo
 
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-      <div className="space-y-0.5">
-        {/* Categorized page groups */}
-        {Array.from(categoryMap.entries()).map(([category, categoryPages]) => (
-          <CategorySection
-            key={category}
-            name={category}
-            pages={categoryPages}
+      <div className="space-y-1">
+        {WORKSPACES.map((ws) => (
+          <WorkspaceSection
+            key={ws.name}
+            name={ws.name}
+            icon={ws.icon}
+            pages={categoryMap.get(ws.name) || []}
             onPageSelect={onPageSelect}
             onCreatePage={onCreatePage}
             onDeletePage={onDeletePage}
             selectedPageId={selectedPageId}
           />
         ))}
-
-        {/* Uncategorized pages */}
-        <SortableContext items={uncategorized.map((p) => p.id)} strategy={verticalListSortingStrategy}>
-          {uncategorized.map((page) => (
-            <SortablePageNode
-              key={page.id}
-              page={page}
-              onPageSelect={onPageSelect}
-              onCreatePage={onCreatePage}
-              onDeletePage={onDeletePage}
-              selectedPageId={selectedPageId}
-              level={0}
-            />
-          ))}
-        </SortableContext>
-
-        <button
-          onClick={() => onCreatePage?.()}
-          className="flex items-center gap-2 px-2 py-1.5 text-sm text-gray-600 hover:bg-gray-200/70 rounded-md w-full mt-2 transition-colors font-medium"
-        >
-          <Plus size={16} />
-          <span>새 페이지</span>
-        </button>
       </div>
     </DndContext>
   );
@@ -143,43 +124,71 @@ function flattenPages(pages: PageTreeNode[]): PageTreeNode[] {
   return result;
 }
 
-interface CategorySectionProps {
+interface WorkspaceSectionProps {
   name: string;
+  icon: string;
   pages: PageTreeNode[];
   onPageSelect?: (pageId: string) => void;
-  onCreatePage?: (parentId?: string) => void;
+  onCreatePage?: (parentId?: string, category?: string) => void;
   onDeletePage?: (pageId: string) => void;
   selectedPageId?: string;
 }
 
-function CategorySection({ name, pages, onPageSelect, onCreatePage, onDeletePage, selectedPageId }: CategorySectionProps) {
+function WorkspaceSection({ name, icon, pages, onPageSelect, onCreatePage, onDeletePage, selectedPageId }: WorkspaceSectionProps) {
   const [isExpanded, setIsExpanded] = useState(true);
+  const [isHovered, setIsHovered] = useState(false);
 
   return (
-    <div className="mb-1">
-      <button
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="flex items-center gap-1.5 px-2 py-1 text-xs font-semibold text-gray-500 hover:text-gray-700 hover:bg-gray-200/50 rounded-md w-full transition-colors uppercase tracking-wide"
+    <div className="mb-2">
+      {/* Workspace header */}
+      <div
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        className="flex items-center gap-1.5 px-2 py-1.5 text-sm font-semibold text-gray-600 hover:bg-gray-200/60 rounded-md cursor-pointer transition-colors group"
       >
-        {isExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-        <Folder size={12} />
-        <span className="flex-1 text-left">{name}</span>
-        <span className="text-gray-400 font-normal normal-case tracking-normal">{pages.length}</span>
-      </button>
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="flex items-center gap-1.5 flex-1 min-w-0"
+        >
+          {isExpanded ? <ChevronDown size={14} className="text-gray-400 flex-shrink-0" /> : <ChevronRight size={14} className="text-gray-400 flex-shrink-0" />}
+          <span className="text-base flex-shrink-0">{icon}</span>
+          <span className="truncate">{name}</span>
+          <span className="text-xs text-gray-400 font-normal ml-1">{pages.length}</span>
+        </button>
+        {isHovered && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onCreatePage?.(undefined, name);
+            }}
+            className="p-0.5 hover:bg-gray-300/60 rounded transition-colors flex-shrink-0"
+            title={`${name}에 새 페이지 추가`}
+          >
+            <Plus size={14} className="text-gray-500" />
+          </button>
+        )}
+      </div>
+
+      {/* Pages list */}
       {isExpanded && (
-        <SortableContext items={pages.map((p) => p.id)} strategy={verticalListSortingStrategy}>
-          {pages.map((page) => (
-            <SortablePageNode
-              key={page.id}
-              page={page}
-              onPageSelect={onPageSelect}
-              onCreatePage={onCreatePage}
-              onDeletePage={onDeletePage}
-              selectedPageId={selectedPageId}
-              level={0}
-            />
-          ))}
-        </SortableContext>
+        <div className="ml-1">
+          <SortableContext items={pages.map((p) => p.id)} strategy={verticalListSortingStrategy}>
+            {pages.map((page) => (
+              <SortablePageNode
+                key={page.id}
+                page={page}
+                onPageSelect={onPageSelect}
+                onCreatePage={onCreatePage}
+                onDeletePage={onDeletePage}
+                selectedPageId={selectedPageId}
+                level={0}
+              />
+            ))}
+          </SortableContext>
+          {pages.length === 0 && (
+            <div className="px-6 py-2 text-xs text-gray-400 italic">페이지 없음</div>
+          )}
+        </div>
       )}
     </div>
   );
@@ -188,7 +197,7 @@ function CategorySection({ name, pages, onPageSelect, onCreatePage, onDeletePage
 interface PageNodeProps {
   page: PageTreeNode;
   onPageSelect?: (pageId: string) => void;
-  onCreatePage?: (parentId?: string) => void;
+  onCreatePage?: (parentId?: string, category?: string) => void;
   onDeletePage?: (pageId: string) => void;
   selectedPageId?: string;
   level: number;

@@ -38,6 +38,7 @@ export function HomePage() {
   const [isPasswordChangeModalOpen, setIsPasswordChangeModalOpen] = useState(false);
   const [isTrashViewOpen, setIsTrashViewOpen] = useState(false);
   const [newPageParentId, setNewPageParentId] = useState<string | undefined>();
+  const [newPageCategory, setNewPageCategory] = useState<string | undefined>();
   const [editedTitle, setEditedTitle] = useState('');
   const [editedContent, setEditedContent] = useState('');
   const [editedCategory, setEditedCategory] = useState('');
@@ -93,8 +94,9 @@ export function HomePage() {
     }
   }
 
-  function openNewPageModal(parentId?: string) {
+  function openNewPageModal(parentId?: string, category?: string) {
     setNewPageParentId(parentId);
+    setNewPageCategory(category);
     setIsNewPageModalOpen(true);
   }
 
@@ -366,9 +368,11 @@ export function HomePage() {
         onClose={() => {
           setIsNewPageModalOpen(false);
           setNewPageParentId(undefined);
+          setNewPageCategory(undefined);
         }}
         onSubmit={handleCreatePage}
         existingCategories={existingCategories}
+        defaultCategory={newPageCategory}
       />
 
       <PasswordChangeModal
