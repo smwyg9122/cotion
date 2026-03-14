@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { PageTreeNode } from '@cotion/shared';
-import { ChevronRight, ChevronDown, FileText, Plus, Trash2, GripVertical } from 'lucide-react';
+import { ChevronRight, ChevronDown, FileText, Plus, Trash2, GripVertical, Folder } from 'lucide-react';
 import {
   DndContext,
   closestCenter,
@@ -30,6 +30,21 @@ export function PageTree({ pages, onPageSelect, onCreatePage, onDeletePage, onMo
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
   );
 
+  // Group root pages by category
+  const categoryMap = new Map<string, PageTreeNode[]>();
+  const uncategorized: PageTreeNode[] = [];
+
+  pages.forEach((page) => {
+    if (page.category) {
+      if (!categoryMap.has(page.category)) {
+        categoryMap.set(page.category, []);
+      }
+      categoryMap.get(page.category)!.push(page);
+    } else {
+      uncategorized.push(page);
+    }
+  });
+
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
     if (!active || !over || active.id === over.id) return;
@@ -47,13 +62,18 @@ export function PageTree({ pages, onPageSelect, onCreatePage, onDeletePage, onMo
     const overParentId = (overPage as any).parent_id;
 
     if (activeParentId === overParentId) {
+      const activeCat = (activePage as any).category || '';
+      const overCat = (overPage as any).category || '';
+
+      if (!activeParentId && activeCat !== overCat) return;
+
       const parentId = activeParentId;
       let siblings: PageTreeNode[];
       if (parentId) {
         const parent = allPages.find((p) => p.id === parentId);
         siblings = parent?.children || [];
       } else {
-        siblings = pages;
+        siblings = pages.filter((p) => (p.category || '') === activeCat);
       }
 
       const oldIndex = siblings.findIndex((p) => p.id === activeId);
@@ -69,8 +89,20 @@ export function PageTree({ pages, onPageSelect, onCreatePage, onDeletePage, onMo
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
       <div className="space-y-0.5">
-        <SortableContext items={pages.map((p) => p.id)} strategy={verticalListSortingStrategy}>
-          {pages.map((page) => (
+        {Array.from(categoryMap.entries()).map(([category, categoryPages]) => (
+          <CategorySection
+            key={category}
+            name={category}
+            pages={categoryPages}
+            onPageSelect={onPageSelect}
+            onCreatePage={onCreatePage}
+            onDeletePage={onDeletePage}
+            selectedPageId={selectedPageId}
+          />
+        ))}
+
+        <SortableContext items={uncategorized.map((p) => p.id)} strategy={verticalListSortingStrategy}>
+          {uncategorized.map((page) => (
             <SortablePageNode
               key={page.id}
               page={page}
@@ -82,6 +114,7 @@ export function PageTree({ pages, onPageSelect, onCreatePage, onDeletePage, onMo
             />
           ))}
         </SortableContext>
+
         {pages.length === 0 && (
           <div className="px-4 py-6 text-center text-sm text-gray-400">페이지 없음</div>
         )}
@@ -102,6 +135,48 @@ function flattenPages(pages: PageTreeNode[]): PageTreeNode[] {
   }
   traverse(pages);
   return result;
+}
+
+interface CategorySectionProps {
+  name: string;
+  pages: PageTreeNode[];
+  onPageSelect?: (pageId: string) => void;
+  onCreatePage?: (parentId?: string, category?: string) => void;
+  onDeletePage?: (pageId: string) => void;
+  selectedPageId?: string;
+}
+
+function CategorySection({ name, pages, onPageSelect, onCreatePage, onDeletePage, selectedPageId }: CategorySectionProps) {
+  const [isExpanded, setIsExpanded] = useState(true);
+
+  return (
+    <div className="mb-1">
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="flex items-center gap-1.5 px-2 py-1 text-xs font-semibold text-gray-500 hover:text-gray-700 hover:bg-gray-200/50 rounded-md w-full transition-colors uppercase tracking-wide"
+      >
+        {isExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+        <Folder size={12} />
+        <span className="flex-1 text-left">{name}</span>
+        <span className="text-gray-400 font-normal normal-case tracking-normal">{pages.length}</span>
+      </button>
+      {isExpanded && (
+        <SortableContext items={pages.map((p) => p.id)} strategy={verticalListSortingStrategy}>
+          {pages.map((page) => (
+            <SortablePageNode
+              key={page.id}
+              page={page}
+              onPageSelect={onPageSelect}
+              onCreatePage={onCreatePage}
+              onDeletePage={onDeletePage}
+              selectedPageId={selectedPageId}
+              level={0}
+            />
+          ))}
+        </SortableContext>
+      )}
+    </div>
+  );
 }
 
 interface PageNodeProps {
@@ -155,7 +230,6 @@ function PageNode({ page, onPageSelect, onCreatePage, onDeletePage, selectedPage
         }`}
         style={{ paddingLeft: `${level * 20 + 8}px` }}
       >
-        {/* Drag handle */}
         <div
           {...dragHandleProps}
           className={`p-0.5 rounded transition-all cursor-grab active:cursor-grabbing ${

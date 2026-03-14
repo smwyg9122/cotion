@@ -5,6 +5,7 @@ export interface Page {
   icon?: string;
   coverImage?: string;
   category?: string;
+  workspace?: string;
   path: string;
   parentId?: string;
   createdBy: string;
@@ -22,6 +23,7 @@ export interface PageCreateInput {
   icon?: string;
   parentId?: string;
   category?: string;
+  workspace?: string;
 }
 
 export interface PageUpdateInput {

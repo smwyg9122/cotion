@@ -53,7 +53,7 @@ export function HomePage() {
 
   // Filter pages by selected workspace
   const filteredPages = useMemo(() => {
-    return pages.filter((page) => page.category === selectedWorkspace.name);
+    return pages.filter((page) => page.workspace === selectedWorkspace.name);
   }, [pages, selectedWorkspace]);
 
   // Collect all existing categories from pages
@@ -96,6 +96,7 @@ export function HomePage() {
         icon,
         parentId: newPageParentId,
         category,
+        workspace: selectedWorkspace.name,
       });
       setNewPageParentId(undefined);
       showToast('페이지가 생성되었습니다', 'success');
