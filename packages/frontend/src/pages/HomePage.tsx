@@ -11,9 +11,14 @@ import { SearchBar } from '../components/pages/SearchBar';
 import { NotificationBell } from '../components/notifications/NotificationBell';
 import { TiptapEditor } from '../components/editor/TiptapEditor';
 import { CommentSection } from '../components/comments/CommentSection';
-import { Menu, X, Trash2, Plus } from 'lucide-react';
+import { Menu, X, Trash2, Plus, ChevronDown, Check } from 'lucide-react';
 import { CategorySelect } from '../components/common';
 import type { Page } from '@cotion/shared';
+
+const WORKSPACES = [
+  { name: '아유타', icon: '☕', label: 'Ayuta' },
+  { name: '제이로텍', icon: '🏢', label: '제이로텍' },
+];
 
 export function HomePage() {
   const { user, logout } = useAuth();
@@ -22,6 +27,8 @@ export function HomePage() {
   const { showToast } = useToast();
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => window.innerWidth >= 768);
+  const [selectedWorkspace, setSelectedWorkspace] = useState(WORKSPACES[0]);
+  const [isWorkspaceSwitcherOpen, setIsWorkspaceSwitcherOpen] = useState(false);
 
   useEffect(() => {
     function handleResize() {
@@ -43,6 +50,11 @@ export function HomePage() {
   const [editedContent, setEditedContent] = useState('');
   const [editedCategory, setEditedCategory] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+
+  // Filter pages by selected workspace
+  const filteredPages = useMemo(() => {
+    return pages.filter((page) => page.category === selectedWorkspace.name);
+  }, [pages, selectedWorkspace]);
 
   // Collect all existing categories from pages
   const existingCategories = useMemo(() => {
@@ -194,9 +206,44 @@ export function HomePage() {
               </button>
             </div>
           </div>
-          <div className="text-sm text-gray-600 font-medium">{user?.name}</div>
+          {/* Workspace Switcher */}
+          <div className="relative">
+            <button
+              onClick={() => setIsWorkspaceSwitcherOpen(!isWorkspaceSwitcherOpen)}
+              className="flex items-center gap-1.5 px-2 py-1.5 -mx-2 rounded-md hover:bg-gray-200/70 transition-colors w-full"
+            >
+              <span className="text-base">{selectedWorkspace.icon}</span>
+              <span className="text-sm font-semibold text-gray-800">{selectedWorkspace.label}</span>
+              <ChevronDown size={14} className="text-gray-400 ml-auto" />
+            </button>
+            {isWorkspaceSwitcherOpen && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setIsWorkspaceSwitcherOpen(false)} />
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                  {WORKSPACES.map((ws) => (
+                    <button
+                      key={ws.name}
+                      onClick={() => {
+                        setSelectedWorkspace(ws);
+                        setIsWorkspaceSwitcherOpen(false);
+                        setSelectedPageId(null);
+                        setSelectedPage(null);
+                      }}
+                      className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-gray-100 transition-colors"
+                    >
+                      <span className="text-base">{ws.icon}</span>
+                      <span className="font-medium text-gray-700">{ws.label}</span>
+                      {selectedWorkspace.name === ws.name && (
+                        <Check size={14} className="text-blue-600 ml-auto" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
           <button
-            onClick={() => openNewPageModal()}
+            onClick={() => openNewPageModal(undefined, selectedWorkspace.name)}
             className="mt-2 w-full px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-medium transition-colors flex items-center justify-center gap-1.5"
           >
             <Plus size={16} />
@@ -209,7 +256,7 @@ export function HomePage() {
             <div className="text-center py-8 text-gray-400 text-sm">로딩 중...</div>
           ) : (
             <PageTree
-              pages={pages}
+              pages={filteredPages}
               onPageSelect={handlePageSelect}
               onCreatePage={openNewPageModal}
               onDeletePage={handleDeletePage}

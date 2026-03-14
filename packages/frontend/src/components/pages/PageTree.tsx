@@ -16,12 +16,6 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-// Hardcoded workspace definitions
-const WORKSPACES = [
-  { name: '아유타', icon: '☕' },
-  { name: '제이로텍', icon: '🏢' },
-];
-
 interface PageTreeProps {
   pages: PageTreeNode[];
   onPageSelect?: (pageId: string) => void;
@@ -36,16 +30,6 @@ export function PageTree({ pages, onPageSelect, onCreatePage, onDeletePage, onMo
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
   );
 
-  // Group root pages by category
-  const categoryMap = new Map<string, PageTreeNode[]>();
-  pages.forEach((page) => {
-    const cat = page.category || '';
-    if (!categoryMap.has(cat)) {
-      categoryMap.set(cat, []);
-    }
-    categoryMap.get(cat)!.push(page);
-  });
-
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
     if (!active || !over || active.id === over.id) return;
@@ -53,7 +37,6 @@ export function PageTree({ pages, onPageSelect, onCreatePage, onDeletePage, onMo
     const activeId = active.id as string;
     const overId = over.id as string;
 
-    // Find pages in the flat list
     const allPages = flattenPages(pages);
     const activePage = allPages.find((p) => p.id === activeId);
     const overPage = allPages.find((p) => p.id === overId);
@@ -63,21 +46,14 @@ export function PageTree({ pages, onPageSelect, onCreatePage, onDeletePage, onMo
     const activeParentId = (activePage as any).parent_id;
     const overParentId = (overPage as any).parent_id;
 
-    // Only reorder within the same parent and same category
     if (activeParentId === overParentId) {
-      const activeCat = (activePage as any).category || '';
-      const overCat = (overPage as any).category || '';
-
-      // Prevent drag across different categories at root level
-      if (!activeParentId && activeCat !== overCat) return;
-
       const parentId = activeParentId;
       let siblings: PageTreeNode[];
       if (parentId) {
         const parent = allPages.find((p) => p.id === parentId);
         siblings = parent?.children || [];
       } else {
-        siblings = pages.filter((p) => (p.category || '') === activeCat);
+        siblings = pages;
       }
 
       const oldIndex = siblings.findIndex((p) => p.id === activeId);
@@ -92,19 +68,23 @@ export function PageTree({ pages, onPageSelect, onCreatePage, onDeletePage, onMo
 
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-      <div className="space-y-1">
-        {WORKSPACES.map((ws) => (
-          <WorkspaceSection
-            key={ws.name}
-            name={ws.name}
-            icon={ws.icon}
-            pages={categoryMap.get(ws.name) || []}
-            onPageSelect={onPageSelect}
-            onCreatePage={onCreatePage}
-            onDeletePage={onDeletePage}
-            selectedPageId={selectedPageId}
-          />
-        ))}
+      <div className="space-y-0.5">
+        <SortableContext items={pages.map((p) => p.id)} strategy={verticalListSortingStrategy}>
+          {pages.map((page) => (
+            <SortablePageNode
+              key={page.id}
+              page={page}
+              onPageSelect={onPageSelect}
+              onCreatePage={onCreatePage}
+              onDeletePage={onDeletePage}
+              selectedPageId={selectedPageId}
+              level={0}
+            />
+          ))}
+        </SortableContext>
+        {pages.length === 0 && (
+          <div className="px-4 py-6 text-center text-sm text-gray-400">페이지 없음</div>
+        )}
       </div>
     </DndContext>
   );
@@ -122,76 +102,6 @@ function flattenPages(pages: PageTreeNode[]): PageTreeNode[] {
   }
   traverse(pages);
   return result;
-}
-
-interface WorkspaceSectionProps {
-  name: string;
-  icon: string;
-  pages: PageTreeNode[];
-  onPageSelect?: (pageId: string) => void;
-  onCreatePage?: (parentId?: string, category?: string) => void;
-  onDeletePage?: (pageId: string) => void;
-  selectedPageId?: string;
-}
-
-function WorkspaceSection({ name, icon, pages, onPageSelect, onCreatePage, onDeletePage, selectedPageId }: WorkspaceSectionProps) {
-  const [isExpanded, setIsExpanded] = useState(true);
-  const [isHovered, setIsHovered] = useState(false);
-
-  return (
-    <div className="mb-2">
-      {/* Workspace header */}
-      <div
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-        className="flex items-center gap-1.5 px-2 py-1.5 text-sm font-semibold text-gray-600 hover:bg-gray-200/60 rounded-md cursor-pointer transition-colors group"
-      >
-        <button
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="flex items-center gap-1.5 flex-1 min-w-0"
-        >
-          {isExpanded ? <ChevronDown size={14} className="text-gray-400 flex-shrink-0" /> : <ChevronRight size={14} className="text-gray-400 flex-shrink-0" />}
-          <span className="text-base flex-shrink-0">{icon}</span>
-          <span className="truncate">{name}</span>
-          <span className="text-xs text-gray-400 font-normal ml-1">{pages.length}</span>
-        </button>
-        {isHovered && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onCreatePage?.(undefined, name);
-            }}
-            className="p-0.5 hover:bg-gray-300/60 rounded transition-colors flex-shrink-0"
-            title={`${name}에 새 페이지 추가`}
-          >
-            <Plus size={14} className="text-gray-500" />
-          </button>
-        )}
-      </div>
-
-      {/* Pages list */}
-      {isExpanded && (
-        <div className="ml-1">
-          <SortableContext items={pages.map((p) => p.id)} strategy={verticalListSortingStrategy}>
-            {pages.map((page) => (
-              <SortablePageNode
-                key={page.id}
-                page={page}
-                onPageSelect={onPageSelect}
-                onCreatePage={onCreatePage}
-                onDeletePage={onDeletePage}
-                selectedPageId={selectedPageId}
-                level={0}
-              />
-            ))}
-          </SortableContext>
-          {pages.length === 0 && (
-            <div className="px-6 py-2 text-xs text-gray-400 italic">페이지 없음</div>
-          )}
-        </div>
-      )}
-    </div>
-  );
 }
 
 interface PageNodeProps {
