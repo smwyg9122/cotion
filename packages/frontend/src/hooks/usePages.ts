@@ -11,34 +11,34 @@ export function usePages() {
     fetchPages();
   }, []);
 
-  async function fetchPages() {
+  async function fetchPages(showLoading = true) {
     try {
-      setIsLoading(true);
+      if (showLoading) setIsLoading(true);
       const response = await api.get('/pages');
       setPages(response.data.data);
       setError(null);
     } catch (err: any) {
       setError(err.response?.data?.error?.message || '페이지를 불러오는데 실패했습니다');
     } finally {
-      setIsLoading(false);
+      if (showLoading) setIsLoading(false);
     }
   }
 
   async function createPage(input: PageCreateInput): Promise<Page> {
     const response = await api.post('/pages', input);
-    await fetchPages(); // Refresh the tree
+    await fetchPages(false);
     return response.data.data;
   }
 
   async function updatePage(id: string, input: PageUpdateInput): Promise<Page> {
     const response = await api.put(`/pages/${id}`, input);
-    await fetchPages();
+    await fetchPages(false);
     return response.data.data;
   }
 
   async function deletePage(id: string): Promise<void> {
     await api.delete(`/pages/${id}`);
-    await fetchPages();
+    await fetchPages(false);
   }
 
   async function getPage(id: string): Promise<Page> {
@@ -54,7 +54,7 @@ export function usePages() {
 
   async function movePage(pageId: string, newParentId?: string, position?: number, category?: string): Promise<void> {
     await api.put(`/pages/${pageId}/move`, { newParentId, position, category });
-    await fetchPages();
+    await fetchPages(false);
   }
 
   return {

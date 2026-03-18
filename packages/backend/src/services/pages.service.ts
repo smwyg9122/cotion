@@ -281,14 +281,18 @@ export class PagesService {
         await trx('pages').where({ id: reordered[i] }).update({ position: i });
       }
 
-      // 4. Update the moved page's parent and path
+      // 4. Update the moved page's parent, path, and category
+      const updateFields: any = {
+        parent_id: newParentId,
+        path: finalPath,
+        updated_by: userId,
+      };
+      if (input.category !== undefined) {
+        updateFields.category = input.category || null;
+      }
       await trx('pages')
         .where({ id: pageId })
-        .update({
-          parent_id: newParentId,
-          path: finalPath,
-          updated_by: userId,
-        });
+        .update(updateFields);
 
       // 5. Update all descendants' paths
       await trx.raw(

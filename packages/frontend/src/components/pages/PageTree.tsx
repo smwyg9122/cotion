@@ -61,47 +61,48 @@ export function PageTree({ pages, onPageSelect, onCreatePage, onDeletePage, onMo
     const activeParentId = (activePage as any).parent_id;
     const overParentId = (overPage as any).parent_id;
 
-    if (activeParentId === overParentId) {
-      const activeCat = (activePage as any).category || '';
-      const overCat = (overPage as any).category || '';
+    // Only allow reordering among same-level siblings
+    if (activeParentId !== overParentId) return;
 
-      if (!activeParentId && activeCat !== overCat) return;
+    const overCat = (overPage as any).category || '';
+    const parentId = activeParentId;
 
-      const parentId = activeParentId;
-      let siblings: PageTreeNode[];
-      if (parentId) {
-        const parent = allPages.find((p) => p.id === parentId);
-        siblings = parent?.children || [];
-      } else {
-        siblings = pages.filter((p) => (p.category || '') === activeCat);
-      }
-
-      const oldIndex = siblings.findIndex((p) => p.id === activeId);
-      const newIndex = siblings.findIndex((p) => p.id === overId);
-
-      if (oldIndex === -1 || newIndex === -1) return;
-
-      const category = (activePage as any).category || undefined;
-      onMovePage?.(activeId, parentId || undefined, newIndex, category);
+    // Get siblings in the target category
+    let siblings: PageTreeNode[];
+    if (parentId) {
+      const parent = allPages.find((p) => p.id === parentId);
+      siblings = parent?.children || [];
+    } else {
+      siblings = pages.filter((p) => (p.category || '') === overCat);
     }
+
+    const newIndex = siblings.findIndex((p) => p.id === overId);
+    if (newIndex === -1) return;
+
+    // Use the target page's category (allows cross-category moves)
+    const targetCategory = (overPage as any).category || undefined;
+    onMovePage?.(activeId, parentId || undefined, newIndex, targetCategory);
   }
+
+  // All root page IDs in one sortable context for cross-category drag
+  const allRootIds = pages.map((p) => p.id);
 
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-      <div className="space-y-0.5">
-        {Array.from(categoryMap.entries()).map(([category, categoryPages]) => (
-          <CategorySection
-            key={category}
-            name={category}
-            pages={categoryPages}
-            onPageSelect={onPageSelect}
-            onCreatePage={onCreatePage}
-            onDeletePage={onDeletePage}
-            selectedPageId={selectedPageId}
-          />
-        ))}
+      <SortableContext items={allRootIds} strategy={verticalListSortingStrategy}>
+        <div className="space-y-0.5">
+          {Array.from(categoryMap.entries()).map(([category, categoryPages]) => (
+            <CategorySection
+              key={category}
+              name={category}
+              pages={categoryPages}
+              onPageSelect={onPageSelect}
+              onCreatePage={onCreatePage}
+              onDeletePage={onDeletePage}
+              selectedPageId={selectedPageId}
+            />
+          ))}
 
-        <SortableContext items={uncategorized.map((p) => p.id)} strategy={verticalListSortingStrategy}>
           {uncategorized.map((page) => (
             <SortablePageNode
               key={page.id}
@@ -113,12 +114,12 @@ export function PageTree({ pages, onPageSelect, onCreatePage, onDeletePage, onMo
               level={0}
             />
           ))}
-        </SortableContext>
 
-        {pages.length === 0 && (
-          <div className="px-4 py-6 text-center text-sm text-gray-400">페이지 없음</div>
-        )}
-      </div>
+          {pages.length === 0 && (
+            <div className="px-4 py-6 text-center text-sm text-gray-400">페이지 없음</div>
+          )}
+        </div>
+      </SortableContext>
     </DndContext>
   );
 }
@@ -161,19 +162,17 @@ function CategorySection({ name, pages, onPageSelect, onCreatePage, onDeletePage
         <span className="text-gray-400 font-normal normal-case tracking-normal">{pages.length}</span>
       </button>
       {isExpanded && (
-        <SortableContext items={pages.map((p) => p.id)} strategy={verticalListSortingStrategy}>
-          {pages.map((page) => (
-            <SortablePageNode
-              key={page.id}
-              page={page}
-              onPageSelect={onPageSelect}
-              onCreatePage={onCreatePage}
-              onDeletePage={onDeletePage}
-              selectedPageId={selectedPageId}
-              level={0}
-            />
-          ))}
-        </SortableContext>
+        pages.map((page) => (
+          <SortablePageNode
+            key={page.id}
+            page={page}
+            onPageSelect={onPageSelect}
+            onCreatePage={onCreatePage}
+            onDeletePage={onDeletePage}
+            selectedPageId={selectedPageId}
+            level={0}
+          />
+        ))
       )}
     </div>
   );
