@@ -6,6 +6,7 @@ export const pageCreateSchema = z.object({
   icon: z.string().max(50).optional(),
   parentId: z.string().uuid().optional(),
   category: z.string().max(100).optional(),
+  workspace: z.string().max(100).optional(),
 });
 
 export const pageUpdateSchema = z.object({
@@ -14,6 +15,7 @@ export const pageUpdateSchema = z.object({
   icon: z.string().max(50).optional(),
   coverImage: z.string().url().optional(),
   category: z.string().max(100).optional().nullable(),
+  workspace: z.string().max(100).optional().nullable(),
 });
 
 export const pageMoveSchema = z.object({

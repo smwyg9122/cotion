@@ -244,7 +244,7 @@ export function HomePage() {
             )}
           </div>
           <button
-            onClick={() => openNewPageModal(undefined, selectedWorkspace.name)}
+            onClick={() => openNewPageModal(undefined, undefined)}
             className="mt-2 w-full px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-medium transition-colors flex items-center justify-center gap-1.5"
           >
             <Plus size={16} />
