@@ -15,7 +15,7 @@ import { Menu, X, Trash2, Plus, ChevronDown, Check } from 'lucide-react';
 import { CategorySelect } from '../components/common';
 import type { Page } from '@cotion/shared';
 
-const WORKSPACES = [
+const ALL_WORKSPACES = [
   { name: '아유타', icon: '☕', label: 'Ayuta' },
   { name: '제이로텍', icon: '🏢', label: '제이로텍' },
 ];
@@ -27,8 +27,22 @@ export function HomePage() {
   const { showToast } = useToast();
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => window.innerWidth >= 768);
-  const [selectedWorkspace, setSelectedWorkspace] = useState(WORKSPACES[0]);
+
+  // Filter workspaces based on user permissions
+  const allowedWorkspaces = useMemo(() => {
+    const userWorkspaces = (user as any)?.allowed_workspaces || ['아유타', '제이로텍'];
+    return ALL_WORKSPACES.filter((ws) => userWorkspaces.includes(ws.name));
+  }, [user]);
+
+  const [selectedWorkspace, setSelectedWorkspace] = useState(ALL_WORKSPACES[0]);
   const [isWorkspaceSwitcherOpen, setIsWorkspaceSwitcherOpen] = useState(false);
+
+  // Set initial workspace to first allowed workspace
+  useEffect(() => {
+    if (allowedWorkspaces.length > 0 && !allowedWorkspaces.find((ws) => ws.name === selectedWorkspace.name)) {
+      setSelectedWorkspace(allowedWorkspaces[0]);
+    }
+  }, [allowedWorkspaces]);
 
   useEffect(() => {
     function handleResize() {
@@ -221,7 +235,7 @@ export function HomePage() {
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setIsWorkspaceSwitcherOpen(false)} />
                 <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
-                  {WORKSPACES.map((ws) => (
+                  {allowedWorkspaces.map((ws) => (
                     <button
                       key={ws.name}
                       onClick={() => {

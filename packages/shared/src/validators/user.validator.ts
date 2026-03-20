@@ -5,6 +5,7 @@ export const userCreateSchema = z.object({
   email: z.string().email('유효한 이메일 주소를 입력하세요'),
   password: z.string().min(8, '비밀번호는 최소 8자 이상이어야 합니다'),
   name: z.string().min(2, '이름은 최소 2자 이상이어야 합니다').max(100),
+  workspace: z.string().max(100).optional(),
 });
 
 export const userLoginSchema = z.object({

@@ -5,6 +5,7 @@ export interface User {
   name: string;
   avatarUrl?: string;
   role: 'admin' | 'member';
+  allowed_workspaces?: string[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -14,6 +15,7 @@ export interface UserCreateInput {
   email: string;
   password: string;
   name: string;
+  workspace?: string;
 }
 
 export interface UserUpdateInput {

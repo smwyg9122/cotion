@@ -32,6 +32,7 @@ export class AuthService {
         password_hash: passwordHash,
         name: input.name,
         role: 'member',
+        allowed_workspaces: input.workspace ? JSON.stringify([input.workspace]) : JSON.stringify(['아유타']),
       })
       .returning('*');
 
@@ -50,6 +51,7 @@ export class AuthService {
 
     // Remove password from response
     const { password_hash, ...userWithoutPassword } = user;
+    userWithoutPassword.allowed_workspaces = user.allowed_workspaces ? JSON.parse(user.allowed_workspaces) : ['아유타'];
 
     return {
       user: userWithoutPassword,
@@ -88,6 +90,7 @@ export class AuthService {
 
     // Remove password from response
     const { password_hash, ...userWithoutPassword } = user;
+    userWithoutPassword.allowed_workspaces = user.allowed_workspaces ? JSON.parse(user.allowed_workspaces) : ['아유타', '제이로텍'];
 
     return {
       user: userWithoutPassword,
@@ -149,12 +152,13 @@ export class AuthService {
     }
 
     const { password_hash, ...userWithoutPassword } = user;
+    userWithoutPassword.allowed_workspaces = user.allowed_workspaces ? JSON.parse(user.allowed_workspaces) : ['아유타', '제이로텍'];
     return userWithoutPassword;
   }
 
   static async getAllUsers() {
     const users = await db('users')
-      .select('id', 'username', 'email', 'name', 'avatar_url', 'role')
+      .select('id', 'username', 'email', 'name', 'avatar_url', 'role', 'allowed_workspaces')
       .orderBy('name');
     return users;
   }
