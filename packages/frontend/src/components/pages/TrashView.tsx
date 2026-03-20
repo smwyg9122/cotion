@@ -1,9 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Page } from '@cotion/shared';
 import { Trash2, RotateCcw, X, FileText } from 'lucide-react';
-import axios from 'axios';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+import { api } from '../../services/api';
 
 interface TrashViewProps {
   onClose: () => void;
@@ -21,9 +19,7 @@ export function TrashView({ onClose, onRestore }: TrashViewProps) {
   const loadDeletedPages = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API_URL}/pages/trash/all`, {
-        withCredentials: true,
-      });
+      const response = await api.get('/pages/trash/all');
       setDeletedPages(response.data.data);
     } catch (error) {
       console.error('Failed to load trash:', error);
@@ -34,9 +30,7 @@ export function TrashView({ onClose, onRestore }: TrashViewProps) {
 
   const handleRestore = async (pageId: string) => {
     try {
-      await axios.put(`${API_URL}/pages/${pageId}/restore`, {}, {
-        withCredentials: true,
-      });
+      await api.put(`/pages/${pageId}/restore`, {});
       await loadDeletedPages();
       onRestore();
     } catch (error) {
@@ -51,9 +45,7 @@ export function TrashView({ onClose, onRestore }: TrashViewProps) {
     }
 
     try {
-      await axios.delete(`${API_URL}/pages/${pageId}/permanent`, {
-        withCredentials: true,
-      });
+      await api.delete(`/pages/${pageId}/permanent`);
       await loadDeletedPages();
     } catch (error) {
       console.error('Failed to permanently delete page:', error);

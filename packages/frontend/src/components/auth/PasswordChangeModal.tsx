@@ -3,7 +3,7 @@ import { Modal } from '../common/Modal';
 import { Input } from '../common/Input';
 import { Button } from '../common/Button';
 import { useToast } from '../common';
-import axios from 'axios';
+import { api } from '../../services/api';
 
 interface PasswordChangeModalProps {
   isOpen: boolean;
@@ -35,12 +35,7 @@ export function PasswordChangeModal({ isOpen, onClose }: PasswordChangeModalProp
     setIsLoading(true);
 
     try {
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
-      await axios.post(
-        `${API_URL}/auth/change-password`,
-        { currentPassword, newPassword },
-        { withCredentials: true }
-      );
+      await api.post('/auth/change-password', { currentPassword, newPassword });
 
       showToast('비밀번호가 변경되었습니다', 'success');
       setCurrentPassword('');
