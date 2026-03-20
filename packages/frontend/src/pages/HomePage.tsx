@@ -6,6 +6,7 @@ import { useToast } from '../components/common';
 import { PageTree } from '../components/pages/PageTree';
 import { NewPageModal } from '../components/pages/NewPageModal';
 import { PasswordChangeModal } from '../components/auth/PasswordChangeModal';
+import { NicknameModal } from '../components/auth/NicknameModal';
 import { TrashView } from '../components/pages/TrashView';
 import { SearchBar } from '../components/pages/SearchBar';
 import { NotificationBell } from '../components/notifications/NotificationBell';
@@ -53,6 +54,12 @@ export function HomePage() {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  useEffect(() => {
+    if (user && user.name && /^Admin \d+$/.test(user.name)) {
+      setShowNicknameModal(true);
+    }
+  }, [user]);
   const [selectedPageId, setSelectedPageId] = useState<string | null>(null);
   const [selectedPage, setSelectedPage] = useState<Page | null>(null);
   const [isNewPageModalOpen, setIsNewPageModalOpen] = useState(false);
@@ -64,6 +71,7 @@ export function HomePage() {
   const [editedContent, setEditedContent] = useState('');
   const [editedCategory, setEditedCategory] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [showNicknameModal, setShowNicknameModal] = useState(false);
 
   // Filter pages by selected workspace
   const filteredPages = useMemo(() => {
@@ -440,6 +448,15 @@ export function HomePage() {
       <PasswordChangeModal
         isOpen={isPasswordChangeModalOpen}
         onClose={() => setIsPasswordChangeModalOpen(false)}
+      />
+
+      <NicknameModal
+        isOpen={showNicknameModal}
+        currentName={user?.name || ''}
+        onComplete={(newName) => {
+          setShowNicknameModal(false);
+          window.location.reload();
+        }}
       />
 
       {isTrashViewOpen && (

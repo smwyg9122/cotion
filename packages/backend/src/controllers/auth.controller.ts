@@ -3,6 +3,7 @@ import { AuthService } from '../services/auth.service';
 import { asyncHandler } from '../middleware/error.middleware';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { userCreateSchema, userLoginSchema, passwordChangeSchema } from '@cotion/shared';
+import { db } from '../database/connection';
 
 export const authController = {
   signup: asyncHandler(async (req: AuthRequest, res: Response) => {
@@ -121,6 +122,39 @@ export const authController = {
     res.json({
       success: true,
       data: { message: '비밀번호가 변경되었습니다' },
+    });
+  }),
+
+  updateMe: asyncHandler(async (req: AuthRequest, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        error: {
+          code: 'UNAUTHORIZED',
+          message: '인증이 필요합니다',
+        },
+      });
+    }
+
+    const { name } = req.body;
+    if (!name || name.trim().length < 2) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: '닉네임은 최소 2자 이상이어야 합니다' },
+      });
+    }
+
+    const [updatedUser] = await db('users')
+      .where({ id: req.user.userId })
+      .update({ name: name.trim() })
+      .returning('*');
+
+    const { password_hash, ...userWithoutPassword } = updatedUser;
+    userWithoutPassword.allowed_workspaces = updatedUser.allowed_workspaces ? JSON.parse(updatedUser.allowed_workspaces) : ['아유타', '제이로텍'];
+
+    res.json({
+      success: true,
+      data: userWithoutPassword,
     });
   }),
 };

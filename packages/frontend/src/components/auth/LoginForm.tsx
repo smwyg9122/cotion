@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../common';
 import { Input } from '../common/Input';
@@ -84,14 +84,6 @@ export function LoginForm() {
             </Button>
           </form>
 
-          <div className="text-center pt-4 border-t border-gray-200">
-            <Link
-              to="/signup"
-              className="text-sm font-medium text-blue-600 hover:text-blue-500"
-            >
-              계정이 없으신가요? <span className="underline">회원가입</span>
-            </Link>
-          </div>
         </div>
       </div>
     </div>
