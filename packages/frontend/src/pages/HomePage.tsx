@@ -410,7 +410,7 @@ export function HomePage() {
               <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none">
                 <img
                   src="/logo.png"
-                  alt="Ayuta Coffee Logo"
+                  alt="Cotion Logo"
                   className="h-64 sm:h-96 w-auto object-contain"
                 />
               </div>
@@ -420,12 +420,12 @@ export function HomePage() {
                 <div className="mb-4 sm:mb-6">
                   <img
                     src="/logo.png"
-                    alt="Ayuta Coffee Logo"
+                    alt="Cotion Logo"
                     className="h-20 sm:h-32 w-auto object-contain mx-auto mb-3 sm:mb-4"
                   />
                 </div>
                 <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 sm:mb-3">Cotion</h2>
-                <p className="text-base sm:text-xl font-semibold text-gray-700 mb-3 sm:mb-6">Ayuta 전용 협업 문서 관리 시스템</p>
+                <p className="text-base sm:text-xl font-semibold text-gray-700 mb-3 sm:mb-6">우리만의 워크스페이스</p>
                 <p className="text-sm sm:text-lg text-gray-500">페이지를 선택하거나 새로 만들어보세요</p>
               </div>
             </div>

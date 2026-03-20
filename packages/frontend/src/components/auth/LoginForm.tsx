@@ -41,12 +41,12 @@ export function LoginForm() {
             <div className="flex justify-center mb-4">
               <img
                 src="/logo.png"
-                alt="Ayuta Coffee Logo"
+                alt="Cotion Logo"
                 className="h-24 w-auto object-contain"
               />
             </div>
             <h1 className="text-4xl font-bold text-gray-900 mb-2">Cotion</h1>
-            <p className="text-gray-600 font-medium">Ayuta 전용 협업 문서 관리 시스템</p>
+            <p className="text-gray-600 font-medium">우리만의 워크스페이스</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -57,7 +57,7 @@ export function LoginForm() {
             <Input
               label="아이디"
               type="text"
-              placeholder="ayuta1"
+              placeholder="admin1"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               autoComplete="username"
