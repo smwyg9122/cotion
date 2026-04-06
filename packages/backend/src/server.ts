@@ -11,6 +11,7 @@ import pagesRoutes from './routes/pages.routes';
 import filesRoutes from './routes/files.routes';
 import notificationsRoutes from './routes/notifications.routes';
 import commentsRoutes from './routes/comments.routes';
+import calendarRoutes from './routes/calendar.routes';
 import { initializeWebSocketServer } from './websocket/collaboration.handler';
 
 const app = express();
@@ -40,6 +41,7 @@ app.use('/api/pages', pagesRoutes);
 app.use('/api/files', filesRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/comments', commentsRoutes);
+app.use('/api/calendar', calendarRoutes);
 
 // Error handling middleware (must be last)
 app.use(errorHandler);

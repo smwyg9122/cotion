@@ -12,7 +12,8 @@ import { SearchBar } from '../components/pages/SearchBar';
 import { NotificationBell } from '../components/notifications/NotificationBell';
 import { TiptapEditor } from '../components/editor/TiptapEditor';
 import { CommentSection } from '../components/comments/CommentSection';
-import { Menu, X, Trash2, Plus, ChevronDown, Check } from 'lucide-react';
+import { Menu, X, Trash2, Plus, ChevronDown, Check, Calendar } from 'lucide-react';
+import { CalendarPage } from '../components/calendar/CalendarPage';
 import { CategorySelect } from '../components/common';
 import type { Page } from '@cotion/shared';
 
@@ -72,6 +73,7 @@ export function HomePage() {
   const [editedCategory, setEditedCategory] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [showNicknameModal, setShowNicknameModal] = useState(false);
+  const [currentView, setCurrentView] = useState<'pages' | 'calendar'>('pages');
 
   // Filter pages by selected workspace
   const filteredPages = useMemo(() => {
@@ -95,6 +97,7 @@ export function HomePage() {
   async function handlePageSelect(pageId: string) {
     try {
       if (isMobile) setIsSidebarOpen(false);
+      setCurrentView('pages');
       setSelectedPageId(pageId);
       // Reset content immediately so the editor doesn't use stale content
       setEditedTitle('');
@@ -296,6 +299,22 @@ export function HomePage() {
         </div>
         <div className="p-3 border-t border-gray-200 space-y-1">
           <button
+            onClick={() => {
+              setCurrentView('calendar');
+              setSelectedPageId(null);
+              setSelectedPage(null);
+              if (isMobile) setIsSidebarOpen(false);
+            }}
+            className={`w-full px-3 py-2.5 text-sm rounded-md text-left transition-colors flex items-center gap-2 ${
+              currentView === 'calendar'
+                ? 'bg-blue-50 text-blue-700 font-medium'
+                : 'text-gray-700 hover:bg-gray-200/70'
+            }`}
+          >
+            <Calendar size={16} />
+            캘린더
+          </button>
+          <button
             onClick={() => setIsTrashViewOpen(true)}
             className="w-full px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-200/70 rounded-md text-left transition-colors flex items-center gap-2"
           >
@@ -336,7 +355,12 @@ export function HomePage() {
 
         {/* Content Area */}
         <div className="flex-1 overflow-y-auto">
-          {selectedPage ? (
+          {currentView === 'calendar' ? (
+            <CalendarPage
+              workspace={selectedWorkspace.name}
+              onNavigateToPage={handlePageSelect}
+            />
+          ) : selectedPage ? (
             <div className="max-w-[900px] mx-auto px-4 py-4 sm:px-16 sm:py-8">
               {/* Menu Button for Desktop when sidebar collapsed */}
               {!isMobile && !isSidebarOpen && (
