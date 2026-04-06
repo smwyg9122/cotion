@@ -1,0 +1,62 @@
+{
+  "project_name": "Cotion",
+  "harness_version": "1.0",
+  "language": "TypeScript",
+  "framework": {
+    "frontend": "React 18 + Vite + TailwindCSS",
+    "backend": "Express 4 + Knex.js",
+    "shared": "Zod validators + TypeScript types"
+  },
+  "monorepo": {
+    "tool": "Turbo + npm workspaces",
+    "packages": ["packages/frontend", "packages/backend", "packages/shared"]
+  },
+  "database": "PostgreSQL 15 (LTREE extension)",
+  "deployment": {
+    "frontend": "Vercel",
+    "backend": "Railway (Docker)",
+    "database": "Railway PostgreSQL"
+  },
+
+  "gates": {
+    "pre_commit": true,
+    "post_task": true,
+    "destructive_action": true
+  },
+
+  "permissions": {
+    "file_create": "auto",
+    "file_delete": "gate",
+    "file_modify": "auto",
+    "external_api": "gate",
+    "database_write": "gate",
+    "database_migration": "require_approval",
+    "deploy": "require_approval",
+    "install_package": "gate",
+    "production_db_direct_sql": "require_approval"
+  },
+
+  "eval": {
+    "auto_eval_after_task": true,
+    "eval_criteria": ["correctness", "completeness", "code_quality", "no_regression"],
+    "min_pass_score": 3
+  },
+
+  "failure_tracking": {
+    "auto_collect": true,
+    "auto_rule_threshold": 2,
+    "categories": ["direction", "execution", "quality", "scope_creep", "schema_mismatch", "deploy_failure"]
+  },
+
+  "build_commands": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "commit_and_push": "git add -A && git commit -m \"MESSAGE\" && git push"
+  },
+
+  "production_db": {
+    "note": "Always backup before any changes",
+    "host": "maglev.proxy.rlwy.net:21228",
+    "requires": "require_approval"
+  }
+}

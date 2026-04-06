@@ -1,0 +1,34 @@
+{
+  "default": {
+    "file_read": "auto",
+    "file_create": "auto",
+    "file_modify": "auto",
+    "file_delete": "gate",
+    "run_tests": "auto",
+    "run_build": "auto",
+    "run_lint": "auto",
+    "external_api_call": "gate",
+    "database_read": "auto",
+    "database_write": "gate",
+    "database_migration": "require_approval",
+    "production_db_direct_sql": "require_approval",
+    "deploy": "require_approval",
+    "install_package": "gate",
+    "git_push": "gate",
+    "delete_user_data": "require_approval"
+  },
+  "roles": {
+    "engineer": {
+      "inherits": "default"
+    },
+    "reviewer": {
+      "file_modify": "gate",
+      "inherits": "default"
+    },
+    "deployer": {
+      "deploy": "gate",
+      "git_push": "auto",
+      "inherits": "default"
+    }
+  }
+}
