@@ -12,16 +12,26 @@ import {
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { Modal } from '../common/Modal';
-import type { CalendarEvent } from '@cotion/shared';
 
 interface CalendarPageProps {
   workspace: string;
   onNavigateToPage?: (pageId: string) => void;
 }
 
-interface EventWithPageDeadline extends CalendarEvent {
-  isDeadline?: boolean;
+interface EventWithPageDeadline {
+  id: string;
+  title: string;
+  description?: string;
+  startDate: string;
+  endDate?: string;
+  allDay: boolean;
+  color?: string;
+  workspace: string;
   pageId?: string;
+  isDeadline?: boolean;
+  createdBy?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 interface EventModalData {
@@ -177,7 +187,7 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
     const dateStr = date.toISOString().split('T')[0];
     return events.filter((event) => {
       const eventStart = new Date(event.startDate).toISOString().split('T')[0];
-      const eventEnd = new Date(event.endDate).toISOString().split('T')[0];
+      const eventEnd = event.endDate ? new Date(event.endDate).toISOString().split('T')[0] : eventStart;
       return dateStr >= eventStart && dateStr <= eventEnd;
     });
   }, [events]);
@@ -190,13 +200,13 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
 
     return events.filter((event) => {
       const eventStart = new Date(event.startDate).toISOString().split('T')[0];
-      const eventEnd = new Date(event.endDate).toISOString().split('T')[0];
+      const eventEnd = event.endDate ? new Date(event.endDate).toISOString().split('T')[0] : eventStart;
 
       if (dateStr < eventStart || dateStr > eventEnd) return false;
       if (event.allDay) return false;
 
       const eventStartTime = event.startDate.split('T')[1]?.substring(0, 5) || '00:00';
-      const eventEndTime = event.endDate.split('T')[1]?.substring(0, 5) || '23:59';
+      const eventEndTime = event.endDate?.split('T')[1]?.substring(0, 5) || '23:59';
 
       return eventStartTime < slotEnd && eventEndTime > slotStart;
     });
@@ -265,8 +275,8 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
       description: event.description || '',
       startDate: event.startDate.split('T')[0],
       startTime: event.startDate.split('T')[1]?.substring(0, 5) || '09:00',
-      endDate: event.endDate.split('T')[0],
-      endTime: event.endDate.split('T')[1]?.substring(0, 5) || '10:00',
+      endDate: (event.endDate || event.startDate).split('T')[0],
+      endTime: (event.endDate || event.startDate).split('T')[1]?.substring(0, 5) || '10:00',
       allDay: event.allDay || false,
       color: event.color || COLORS[4].value,
       workspace: event.workspace,
@@ -520,7 +530,7 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
           {hours.map((hour) => {
             const slotEvents = timedEvents.filter((event) => {
               const eventStartTime = event.startDate.split('T')[1]?.substring(0, 5) || '00:00';
-              const eventEndTime = event.endDate.split('T')[1]?.substring(0, 5) || '23:59';
+              const eventEndTime = event.endDate?.split('T')[1]?.substring(0, 5) || '23:59';
               const slotStart = `${hour.toString().padStart(2, '0')}:00`;
               const slotEnd = `${(hour + 1).toString().padStart(2, '0')}:00`;
               return eventStartTime < slotEnd && eventEndTime > slotStart;
