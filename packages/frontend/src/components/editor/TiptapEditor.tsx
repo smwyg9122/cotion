@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback, useState } from 'react';
 import { useEditor, EditorContent, ReactRenderer } from '@tiptap/react';
 import { api } from '../../services/api';
 import StarterKit from '@tiptap/starter-kit';
@@ -53,6 +53,7 @@ import {
   Trash2,
   CalendarDays,
   Table2,
+  Upload,
 } from 'lucide-react';
 
 interface TiptapEditorProps {
@@ -72,6 +73,10 @@ export function TiptapEditor({ content, onChange, onSave, pageId, userId, userNa
   const imageInputRef = React.useRef<HTMLInputElement>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [isDatePickerOpen, setIsDatePickerOpen] = React.useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<string | null>(null);
+  const dragCounterRef = React.useRef(0);
+  const uploadFilesRef = React.useRef<(files: File[]) => Promise<void>>();
 
   useEffect(() => {
     const newDoc = new Y.Doc();
@@ -236,6 +241,32 @@ export function TiptapEditor({ content, onChange, onSave, pageId, userId, userNa
       attributes: {
         class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-xl focus:outline-none max-w-none',
       },
+      handlePaste: (_view: any, event: any) => {
+        const items = event.clipboardData?.items;
+        if (!items) return false;
+        const files: File[] = [];
+        for (let i = 0; i < items.length; i++) {
+          if (items[i].kind === 'file') {
+            const file = items[i].getAsFile();
+            if (file) files.push(file);
+          }
+        }
+        if (files.length > 0) {
+          event.preventDefault();
+          uploadFilesRef.current?.(files);
+          return true;
+        }
+        return false;
+      },
+      handleDrop: (_view: any, event: any) => {
+        const files = Array.from(event.dataTransfer?.files || []);
+        if (files.length > 0) {
+          event.preventDefault();
+          uploadFilesRef.current?.(files);
+          return true;
+        }
+        return false;
+      },
       handleClick: (view, pos) => {
         const { state } = view;
         const $pos = state.doc.resolve(pos);
@@ -321,6 +352,90 @@ export function TiptapEditor({ content, onChange, onSave, pageId, userId, userNa
     editor?.chain().focus().insertContent(dateStr).run();
     setIsDatePickerOpen(false);
   }
+
+  // Shared upload helper for a single file
+  const uploadSingleFile = useCallback(async (file: File) => {
+    const isImage = file.type.startsWith('image/');
+    const maxSize = isImage ? 5 * 1024 * 1024 : 10 * 1024 * 1024;
+
+    if (file.size > maxSize) {
+      alert(`${file.name}: ${isImage ? '이미지는 5MB' : '파일은 10MB'} 이하만 업로드 가능합니다`);
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await api.post('/files/upload', formData, {
+      headers: { 'Content-Type': undefined },
+    });
+    const { url, originalName } = res.data.data;
+
+    if (isImage) {
+      editor?.chain().focus().setImage({ src: url, alt: file.name }).run();
+    } else {
+      editor?.chain().focus().insertContent(
+        `<a href="${url}" target="_blank" download="${originalName}">📄 ${originalName}</a>`
+      ).run();
+    }
+  }, [editor]);
+
+  // Upload multiple files
+  const uploadFiles = useCallback(async (files: File[]) => {
+    if (files.length === 0) return;
+    setUploadProgress(`파일 업로드 중... (0/${files.length})`);
+    let completed = 0;
+
+    for (const file of files) {
+      try {
+        await uploadSingleFile(file);
+        completed++;
+        setUploadProgress(`파일 업로드 중... (${completed}/${files.length})`);
+      } catch {
+        alert(`${file.name} 업로드에 실패했습니다`);
+        completed++;
+      }
+    }
+    setUploadProgress(null);
+  }, [uploadSingleFile]);
+
+  // Keep ref updated for editorProps closure
+  uploadFilesRef.current = uploadFiles;
+
+  // Drag and drop handlers
+  const handleDragEnter = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current++;
+    if (e.dataTransfer.types.includes('Files')) {
+      setIsDragOver(true);
+    }
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current--;
+    if (dragCounterRef.current === 0) {
+      setIsDragOver(false);
+    }
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current = 0;
+    setIsDragOver(false);
+
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0) {
+      uploadFiles(files);
+    }
+  }, [uploadFiles]);
 
   function isChecklistTable(): boolean {
     if (!editor) return false;
@@ -411,50 +526,16 @@ export function TiptapEditor({ content, onChange, onSave, pageId, userId, userNa
   }
 
   async function onImageFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (file.size > 5 * 1024 * 1024) {
-      alert('이미지는 5MB 이하만 업로드 가능합니다');
-      return;
-    }
-
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      const res = await api.post('/files/upload', formData, {
-        headers: { 'Content-Type': undefined },
-      });
-      const { url } = res.data.data;
-      editor?.chain().focus().setImage({ src: url, alt: file.name }).run();
-    } catch {
-      alert('이미지 업로드에 실패했습니다');
-    }
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    await uploadFiles(files);
     e.target.value = '';
   }
 
   async function onPdfFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (file.size > 10 * 1024 * 1024) {
-      alert('파일은 10MB 이하만 업로드 가능합니다');
-      return;
-    }
-
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      const res = await api.post('/files/upload', formData, {
-        headers: { 'Content-Type': undefined },
-      });
-      const { url, originalName } = res.data.data;
-      editor?.chain().focus().insertContent(
-        `<a href="${url}" target="_blank" download="${originalName}">📄 ${originalName}</a>`
-      ).run();
-    } catch {
-      alert('파일 업로드에 실패했습니다');
-    }
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    await uploadFiles(files);
     e.target.value = '';
   }
 
@@ -607,8 +688,37 @@ export function TiptapEditor({ content, onChange, onSave, pageId, userId, userNa
         />
       )}
 
-      {/* Editor Content */}
-      <div className="px-4 py-4 sm:px-16 sm:py-8 min-h-[calc(100vh-200px)] max-w-[900px] mx-auto">
+      {/* Editor Content with Drag & Drop */}
+      <div
+        className={`relative px-4 py-4 sm:px-16 sm:py-8 min-h-[calc(100vh-200px)] max-w-[900px] mx-auto transition-colors ${
+          isDragOver ? 'bg-blue-50' : ''
+        }`}
+        onDragEnter={handleDragEnter}
+        onDragLeave={handleDragLeave}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
+      >
+        {/* Drag overlay */}
+        {isDragOver && (
+          <div className="absolute inset-0 z-20 flex items-center justify-center bg-blue-50/80 border-2 border-dashed border-blue-400 rounded-xl pointer-events-none">
+            <div className="flex flex-col items-center gap-2 text-blue-600">
+              <Upload size={48} />
+              <span className="text-lg font-semibold">파일을 여기에 놓으세요</span>
+              <span className="text-sm text-blue-400">이미지, PDF, 문서 등</span>
+            </div>
+          </div>
+        )}
+
+        {/* Upload progress */}
+        {uploadProgress && (
+          <div className="sticky top-12 z-20 mb-3">
+            <div className="bg-blue-600 text-white text-sm px-4 py-2 rounded-lg shadow-lg inline-flex items-center gap-2">
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              {uploadProgress}
+            </div>
+          </div>
+        )}
+
         <EditorContent editor={editor} className="notion-editor" />
         {/* Table bottom add-row handle */}
         {editor.isActive('table') && (
@@ -624,18 +734,20 @@ export function TiptapEditor({ content, onChange, onSave, pageId, userId, userNa
         )}
       </div>
 
-      {/* Hidden file inputs */}
+      {/* Hidden file inputs (multiple enabled) */}
       <input
         ref={imageInputRef}
         type="file"
         accept="image/*"
+        multiple
         className="hidden"
         onChange={onImageFileSelected}
       />
       <input
         ref={fileInputRef}
         type="file"
-        accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,application/pdf"
+        accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar,.7z,application/pdf"
+        multiple
         className="hidden"
         onChange={onPdfFileSelected}
       />
