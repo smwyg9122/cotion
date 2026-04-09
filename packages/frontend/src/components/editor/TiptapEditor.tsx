@@ -76,7 +76,7 @@ export function TiptapEditor({ content, onChange, onSave, pageId, userId, userNa
   const [isDragOver, setIsDragOver] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<string | null>(null);
   const dragCounterRef = React.useRef(0);
-  const uploadFilesRef = React.useRef<(files: File[]) => Promise<void>>();
+  const uploadFilesRef = React.useRef<(files: File[]) => Promise<void>>(async () => {});
 
   useEffect(() => {
     const newDoc = new Y.Doc();
@@ -241,32 +241,6 @@ export function TiptapEditor({ content, onChange, onSave, pageId, userId, userNa
       attributes: {
         class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-xl focus:outline-none max-w-none',
       },
-      handlePaste: (_view: any, event: any) => {
-        const items = event.clipboardData?.items;
-        if (!items) return false;
-        const files: File[] = [];
-        for (let i = 0; i < items.length; i++) {
-          if (items[i].kind === 'file') {
-            const file = items[i].getAsFile();
-            if (file) files.push(file);
-          }
-        }
-        if (files.length > 0) {
-          event.preventDefault();
-          uploadFilesRef.current?.(files);
-          return true;
-        }
-        return false;
-      },
-      handleDrop: (_view: any, event: any) => {
-        const files = Array.from(event.dataTransfer?.files || []);
-        if (files.length > 0) {
-          event.preventDefault();
-          uploadFilesRef.current?.(files);
-          return true;
-        }
-        return false;
-      },
       handleClick: (view, pos) => {
         const { state } = view;
         const $pos = state.doc.resolve(pos);
@@ -355,6 +329,8 @@ export function TiptapEditor({ content, onChange, onSave, pageId, userId, userNa
 
   // Shared upload helper for a single file
   const uploadSingleFile = useCallback(async (file: File) => {
+    if (!editor) return;
+
     const isImage = file.type.startsWith('image/');
     const maxSize = isImage ? 5 * 1024 * 1024 : 10 * 1024 * 1024;
 
@@ -365,9 +341,7 @@ export function TiptapEditor({ content, onChange, onSave, pageId, userId, userNa
 
     const formData = new FormData();
     formData.append('file', file);
-    const res = await api.post('/files/upload', formData, {
-      headers: { 'Content-Type': undefined },
-    });
+    const res = await api.post('/files/upload', formData);
     const { url, originalName } = res.data.data;
 
     if (isImage) {
@@ -424,6 +398,24 @@ export function TiptapEditor({ content, onChange, onSave, pageId, userId, userNa
     e.preventDefault();
     e.stopPropagation();
   }, []);
+
+  const handlePaste = useCallback((e: React.ClipboardEvent) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    const files: File[] = [];
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].kind === 'file') {
+        const file = items[i].getAsFile();
+        if (file) files.push(file);
+      }
+    }
+    if (files.length > 0) {
+      e.preventDefault();
+      e.stopPropagation();
+      uploadFiles(files);
+    }
+    // If no files, let the default paste handle text/HTML
+  }, [uploadFiles]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -697,6 +689,7 @@ export function TiptapEditor({ content, onChange, onSave, pageId, userId, userNa
         onDragLeave={handleDragLeave}
         onDragOver={handleDragOver}
         onDrop={handleDrop}
+        onPaste={handlePaste}
       >
         {/* Drag overlay */}
         {isDragOver && (

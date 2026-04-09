@@ -3,6 +3,28 @@ import { AppError } from '../middleware/error.middleware';
 import { API_ERRORS } from '@cotion/shared';
 import { CalendarEvent, CalendarEventCreateInput, CalendarEventUpdateInput } from '@cotion/shared';
 
+// Helper function to transform snake_case DB columns to camelCase for API response
+function mapEventToResponse(event: any): CalendarEvent {
+  return {
+    id: event.id,
+    title: event.title,
+    description: event.description,
+    startDate: event.start_date,
+    endDate: event.end_date,
+    allDay: event.all_day,
+    color: event.color,
+    workspace: event.workspace,
+    pageId: event.page_id,
+    createdBy: event.created_by,
+    createdAt: event.created_at,
+    updatedAt: event.updated_at,
+  };
+}
+
+function mapEventsToResponse(events: any[]): CalendarEvent[] {
+  return events.map(mapEventToResponse);
+}
+
 export class CalendarService {
   static async getEvents(
     workspace: string,
@@ -15,7 +37,7 @@ export class CalendarService {
       .orderBy('start_date', 'asc')
       .select('*');
 
-    return events;
+    return mapEventsToResponse(events);
   }
 
   static async getEventById(id: string): Promise<CalendarEvent | null> {
@@ -23,7 +45,7 @@ export class CalendarService {
       .where({ id })
       .first();
 
-    return event || null;
+    return event ? mapEventToResponse(event) : null;
   }
 
   static async createEvent(input: CalendarEventCreateInput, userId: string): Promise<CalendarEvent> {
@@ -43,7 +65,7 @@ export class CalendarService {
       })
       .returning('*');
 
-    return event;
+    return mapEventToResponse(event);
   }
 
   static async updateEvent(
@@ -73,7 +95,7 @@ export class CalendarService {
       .update(updateFields)
       .returning('*');
 
-    return updatedEvent;
+    return mapEventToResponse(updatedEvent);
   }
 
   static async deleteEvent(id: string, userId: string): Promise<void> {
@@ -91,21 +113,12 @@ export class CalendarService {
   }
 
   static async getPageDeadlines(workspace: string): Promise<any[]> {
-    // Get all pages with deadlines (pages that have calendar events)
-    const deadlines = await db('calendar_events')
-      .where({ workspace })
-      .whereNotNull('page_id')
-      .select(
-        'calendar_events.id',
-        'calendar_events.title',
-        'calendar_events.start_date',
-        'calendar_events.end_date',
-        'calendar_events.all_day',
-        'calendar_events.color',
-        'calendar_events.page_id'
-      )
-      .orderBy('calendar_events.start_date', 'asc');
+    const pages = await db('pages')
+      .where({ workspace, is_deleted: false })
+      .whereNotNull('deadline')
+      .select('id', 'title', 'icon', 'deadline', 'workspace', 'category')
+      .orderBy('deadline', 'asc');
 
-    return deadlines;
+    return pages;
   }
 }

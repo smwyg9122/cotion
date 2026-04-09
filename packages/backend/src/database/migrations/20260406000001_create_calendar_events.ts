@@ -22,13 +22,6 @@ export async function up(knex: Knex): Promise<void> {
     table.index(['created_by'], 'idx_calendar_events_created_by');
   });
 
-  // Create trigger for updating updated_at
-  await knex.raw(`
-    CREATE TRIGGER update_calendar_events_updated_at
-    BEFORE UPDATE ON calendar_events
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
-  `);
 
   // Add deadline column to pages table
   await knex.schema.alterTable('pages', (table) => {
@@ -40,6 +33,5 @@ export async function down(knex: Knex): Promise<void> {
   await knex.schema.alterTable('pages', (table) => {
     table.dropColumn('deadline');
   });
-  await knex.raw('DROP TRIGGER IF EXISTS update_calendar_events_updated_at ON calendar_events;');
   await knex.schema.dropTableIfExists('calendar_events');
 }

@@ -105,49 +105,50 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
     return d.toISOString().split('T')[0];
   }, [currentDate, viewMode]);
 
-  // Fetch events and deadlines
-  useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
-      try {
-        const startDate = getViewStartDate();
-        const endDate = getViewEndDate();
-        const [eventsRes, pagesRes] = await Promise.all([
-          api.get('/calendar', { params: { workspace, startDate, endDate } }),
-          api.get('/pages', { params: { workspace } }),
-        ]);
+  // Extract fetch logic into reusable function (Bug #2)
+  const fetchEventsAndDeadlines = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const startDate = getViewStartDate();
+      const endDate = getViewEndDate();
+      const [eventsRes, pagesRes] = await Promise.all([
+        api.get('/calendar', { params: { workspace, startDate, endDate } }),
+        api.get('/pages', { params: { workspace } }),
+      ]);
 
-        const allEvents: EventWithPageDeadline[] = eventsRes.data?.data || [];
+      const allEvents: EventWithPageDeadline[] = eventsRes.data?.data || [];
 
-        // Add page deadlines as calendar events
-        const pagesData = pagesRes.data?.data;
-        if (pagesData && Array.isArray(pagesData)) {
-          const deadlines = pagesData
-            .filter((page: any) => page.deadline)
-            .map((page: any) => ({
-              id: `deadline-${page.id}`,
-              title: `${page.title}의 마감일`,
-              startDate: page.deadline,
-              endDate: page.deadline,
-              allDay: true,
-              color: '#9ca3af',
-              workspace,
-              isDeadline: true,
-              pageId: page.id,
-            }));
-          allEvents.push(...deadlines);
-        }
-
-        setEvents(allEvents);
-      } catch (error) {
-        console.error('Failed to fetch calendar data:', error);
-      } finally {
-        setIsLoading(false);
+      // Add page deadlines as calendar events
+      const pagesData = pagesRes.data?.data;
+      if (pagesData && Array.isArray(pagesData)) {
+        const deadlines = pagesData
+          .filter((page: any) => page.deadline)
+          .map((page: any) => ({
+            id: `deadline-${page.id}`,
+            title: `${page.title}의 마감일`,
+            startDate: page.deadline,
+            endDate: page.deadline,
+            allDay: true,
+            color: '#9ca3af',
+            workspace,
+            isDeadline: true,
+            pageId: page.id,
+          }));
+        allEvents.push(...deadlines);
       }
-    };
 
-    fetchData();
-  }, [workspace, currentDate, viewMode, getViewStartDate, getViewEndDate]);
+      setEvents(allEvents);
+    } catch (error) {
+      console.error('Failed to fetch calendar data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [workspace, getViewStartDate, getViewEndDate]);
+
+  // Fetch events and deadlines (Bug #3: removed getViewStartDate/getViewEndDate from deps)
+  useEffect(() => {
+    fetchEventsAndDeadlines();
+  }, [workspace, currentDate, viewMode, fetchEventsAndDeadlines]);
 
   // Date calculations
   const monthStart = useMemo(() => {
@@ -253,15 +254,15 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
       title: '',
       description: '',
       startDate: dateStr,
-      startTime: hour ? `${hour.toString().padStart(2, '0')}:00` : '09:00',
+      startTime: hour !== undefined ? `${hour.toString().padStart(2, '0')}:00` : '09:00',
       endDate: dateStr,
-      endTime: hour ? `${(hour + 1).toString().padStart(2, '0')}:00` : '10:00',
-      allDay: viewMode === 'month' || viewMode === 'week',
+      endTime: hour !== undefined ? `${(hour + 1).toString().padStart(2, '0')}:00` : '10:00',
+      allDay: hour !== undefined ? false : true,
       color: COLORS[4].value,
       workspace,
     });
     setIsModalOpen(true);
-  }, [viewMode, workspace]);
+  }, [workspace]);
 
   const handleEventClick = useCallback((event: EventWithPageDeadline, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -299,7 +300,7 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
           : `${modalData.endDate}T${modalData.endTime}:00`,
         allDay: modalData.allDay,
         color: modalData.color,
-        workspace: modalData.workspace,
+        ...(selectedEvent ? {} : { workspace: modalData.workspace }),
       };
 
       if (selectedEvent) {
@@ -308,14 +309,11 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
         await api.post('/calendar', eventData);
       }
 
-      // Refresh events
-      const startDate = getViewStartDate();
-      const endDate = getViewEndDate();
-      const eventsRes = await api.get('/calendar', { params: { workspace, startDate, endDate } });
-      setEvents(eventsRes.data?.data || []);
+      await fetchEventsAndDeadlines();
       setIsModalOpen(false);
     } catch (error) {
       console.error('Failed to save event:', error);
+      alert('이벤트 저장에 실패했습니다. 다시 시도해주세요.');
     }
   };
 
@@ -328,6 +326,7 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
       setIsModalOpen(false);
     } catch (error) {
       console.error('Failed to delete event:', error);
+      alert('이벤트 삭제에 실패했습니다. 다시 시도해주세요.');
     }
   };
 
