@@ -5,17 +5,18 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 export const api = axios.create({
   baseURL: API_URL,
   withCredentials: true,
-  headers: {
-    'Content-Type': 'application/json',
-  },
 });
 
-// Request interceptor to add auth token
+// Request interceptor to add auth token and Content-Type
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('accessToken');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+    // FormData일 때는 Content-Type을 설정하지 않음 (axios가 boundary 포함해서 자동 설정)
+    if (!(config.data instanceof FormData)) {
+      config.headers['Content-Type'] = 'application/json';
     }
     return config;
   },

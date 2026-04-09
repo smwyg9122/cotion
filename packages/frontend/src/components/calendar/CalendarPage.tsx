@@ -293,10 +293,10 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
         title: modalData.title,
         description: modalData.description,
         startDate: modalData.allDay
-          ? modalData.startDate
+          ? `${modalData.startDate}T00:00:00`
           : `${modalData.startDate}T${modalData.startTime}:00`,
         endDate: modalData.allDay
-          ? modalData.endDate
+          ? `${modalData.endDate}T23:59:59`
           : `${modalData.endDate}T${modalData.endTime}:00`,
         allDay: modalData.allDay,
         color: modalData.color,
@@ -311,9 +311,10 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
 
       await fetchEventsAndDeadlines();
       setIsModalOpen(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to save event:', error);
-      alert('이벤트 저장에 실패했습니다. 다시 시도해주세요.');
+      const serverMsg = error?.response?.data?.error?.message || error?.response?.data?.error?.details?.[0]?.message || '';
+      alert(`이벤트 저장에 실패했습니다. ${serverMsg ? `(${serverMsg})` : '다시 시도해주세요.'}`);
     }
   };
 

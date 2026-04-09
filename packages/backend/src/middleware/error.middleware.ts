@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
+import multer from 'multer';
 import { API_ERRORS } from '@cotion/shared';
 
 export class AppError extends Error {
@@ -44,11 +45,27 @@ export function errorHandler(
     });
   }
 
+  if (error instanceof multer.MulterError) {
+    const messages: Record<string, string> = {
+      LIMIT_FILE_SIZE: '파일 크기가 너무 큽니다 (최대 10MB)',
+      LIMIT_UNEXPECTED_FILE: '허용되지 않는 파일 필드입니다',
+    };
+    return res.status(400).json({
+      success: false,
+      error: {
+        code: API_ERRORS.VALIDATION_ERROR,
+        message: messages[error.code] || `파일 업로드 오류: ${error.code}`,
+      },
+    });
+  }
+
   return res.status(500).json({
     success: false,
     error: {
       code: API_ERRORS.INTERNAL_ERROR,
-      message: '서버 오류가 발생했습니다',
+      message: process.env.NODE_ENV === 'production'
+        ? '서버 오류가 발생했습니다'
+        : `서버 오류: ${error.message}`,
     },
   });
 }

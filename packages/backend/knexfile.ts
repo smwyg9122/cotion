@@ -4,6 +4,8 @@ import path from 'path';
 
 dotenv.config();
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 const config: { [key: string]: Knex.Config } = {
   development: {
     client: 'postgresql',
@@ -38,8 +40,8 @@ const config: { [key: string]: Knex.Config } = {
       max: 10,
     },
     migrations: {
-      directory: path.join(__dirname, 'src/database/migrations'),
-      extension: 'ts',
+      directory: path.join(__dirname, isProduction ? 'dist/database/migrations' : 'src/database/migrations'),
+      extension: isProduction ? 'js' : 'ts',
     },
   },
 };

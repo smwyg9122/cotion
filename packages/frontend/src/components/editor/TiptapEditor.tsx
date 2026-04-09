@@ -364,8 +364,9 @@ export function TiptapEditor({ content, onChange, onSave, pageId, userId, userNa
         await uploadSingleFile(file);
         completed++;
         setUploadProgress(`파일 업로드 중... (${completed}/${files.length})`);
-      } catch {
-        alert(`${file.name} 업로드에 실패했습니다`);
+      } catch (err: any) {
+        const serverMsg = err?.response?.data?.error?.message || '';
+        alert(`${file.name} 업로드에 실패했습니다${serverMsg ? ` (${serverMsg})` : ''}`);
         completed++;
       }
     }
