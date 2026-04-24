@@ -127,14 +127,16 @@ export function V2TestPage({ workspace }: { workspace: string }) {
       });
       return true;
     } catch (err: any) {
+      const errData = err?.response?.data;
       const message =
-        err?.response?.data?.error ||
-        err?.response?.data?.message ||
+        errData?.error?.message ||
+        errData?.error ||
+        errData?.message ||
         err?.message ||
         '알 수 없는 오류';
       updateTest(groupIdx, testIdx, {
         status: 'fail',
-        message: `${err?.response?.status || ''} ${message}`.trim(),
+        message: `${err?.response?.status || ''} ${typeof message === 'string' ? message : JSON.stringify(message)}`.trim(),
         duration: Date.now() - start,
       });
       return false;
