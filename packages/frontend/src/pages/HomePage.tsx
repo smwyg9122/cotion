@@ -392,22 +392,24 @@ export function HomePage() {
                 <FolderOpen size={16} />
                 문서 라이브러리
               </button>
-              <button
-                onClick={() => {
-                  setCurrentView('v2test');
-                  setSelectedPageId(null);
-                  setSelectedPage(null);
-                  if (isMobile) setIsSidebarOpen(false);
-                }}
-                className={`w-full px-3 py-2.5 text-sm rounded-md text-left transition-colors flex items-center gap-2 ${
-                  currentView === 'v2test'
-                    ? 'bg-amber-50 text-amber-700 font-medium'
-                    : 'text-amber-600 hover:bg-amber-50/70'
-                }`}
-              >
-                <Zap size={16} />
-                V2 기능 테스트
-              </button>
+              {user?.email === 'shoutlim@gmail.com' && (
+                <button
+                  onClick={() => {
+                    setCurrentView('v2test');
+                    setSelectedPageId(null);
+                    setSelectedPage(null);
+                    if (isMobile) setIsSidebarOpen(false);
+                  }}
+                  className={`w-full px-3 py-2.5 text-sm rounded-md text-left transition-colors flex items-center gap-2 ${
+                    currentView === 'v2test'
+                      ? 'bg-amber-50 text-amber-700 font-medium'
+                      : 'text-amber-600 hover:bg-amber-50/70'
+                  }`}
+                >
+                  <Zap size={16} />
+                  V2 기능 테스트
+                </button>
+              )}
               <div className="border-t border-gray-200 my-1"></div>
             </>
           )}
