@@ -12,13 +12,14 @@ import { SearchBar } from '../components/pages/SearchBar';
 import { NotificationBell } from '../components/notifications/NotificationBell';
 import { TiptapEditor } from '../components/editor/TiptapEditor';
 import { CommentSection } from '../components/comments/CommentSection';
-import { Menu, X, Trash2, Plus, ChevronDown, Check, Calendar, Users, Package, Kanban, Coffee, FolderOpen } from 'lucide-react';
+import { Menu, X, Trash2, Plus, ChevronDown, Check, Calendar, Users, Package, Kanban, Coffee, FolderOpen, Zap } from 'lucide-react';
 import { CalendarPage } from '../components/calendar/CalendarPage';
 import { ClientsPage } from '../components/clients/ClientsPage';
 import { InventoryPage } from '../components/inventory/InventoryPage';
 import { KanbanBoard } from '../components/projects/KanbanBoard';
 import { CuppingLogPage } from '../components/cupping/CuppingLogPage';
 import { DocumentLibrary } from '../components/documents/DocumentLibrary';
+import { V2TestPage } from '../components/test/V2TestPage';
 import { CategorySelect } from '../components/common';
 import type { Page } from '@cotion/shared';
 
@@ -78,7 +79,7 @@ export function HomePage() {
   const [editedCategory, setEditedCategory] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [showNicknameModal, setShowNicknameModal] = useState(false);
-  const [currentView, setCurrentView] = useState<'pages' | 'calendar' | 'clients' | 'inventory' | 'kanban' | 'cupping' | 'documents'>('pages');
+  const [currentView, setCurrentView] = useState<'pages' | 'calendar' | 'clients' | 'inventory' | 'kanban' | 'cupping' | 'documents' | 'v2test'>('pages');
 
   // Filter pages by selected workspace
   const filteredPages = useMemo(() => {
@@ -385,6 +386,22 @@ export function HomePage() {
             <FolderOpen size={16} />
             문서 라이브러리
           </button>
+          <button
+            onClick={() => {
+              setCurrentView('v2test');
+              setSelectedPageId(null);
+              setSelectedPage(null);
+              if (isMobile) setIsSidebarOpen(false);
+            }}
+            className={`w-full px-3 py-2.5 text-sm rounded-md text-left transition-colors flex items-center gap-2 ${
+              currentView === 'v2test'
+                ? 'bg-amber-50 text-amber-700 font-medium'
+                : 'text-amber-600 hover:bg-amber-50/70'
+            }`}
+          >
+            <Zap size={16} />
+            V2 기능 테스트
+          </button>
           {/* 구분선 */}
           <div className="border-t border-gray-200 my-1"></div>
           <button
@@ -459,6 +476,8 @@ export function HomePage() {
             <CuppingLogPage workspace={selectedWorkspace.name} />
           ) : currentView === 'documents' ? (
             <DocumentLibrary workspace={selectedWorkspace.name} />
+          ) : currentView === 'v2test' ? (
+            <V2TestPage workspace={selectedWorkspace.name} />
           ) : selectedPage ? (
             <div className="max-w-[900px] mx-auto px-4 py-4 sm:px-16 sm:py-8">
               {/* Menu Button for Desktop when sidebar collapsed */}

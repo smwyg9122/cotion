@@ -87,6 +87,18 @@ DB에 필드를 추가했으면 반드시 Zod 스키마에도 추가. 안 하면
 ### [R006] 프로덕션 DB에 백업 없이 쿼리 금지
 `DELETE`, `ALTER`, `DROP` 등 파괴적 쿼리 전 반드시 `pg_dump`로 백업.
 
+### [R007] FormData 전송 시 Content-Type 금지
+`api.post(url, formData)` 시 Content-Type 헤더를 수동으로 설정하지 말 것. axios가 `multipart/form-data; boundary=...`를 자동 설정함. 수동 설정하면 multer가 파싱 불가.
+
+### [R008] PostgreSQL timestamp 컬럼에 date-only 문자열 금지
+timestamp/timestamptz 컬럼에 `'2026-04-24'` 같은 날짜만 보내면 안됨. 반드시 `'2026-04-24T00:00:00'` 형태로 시간까지 포함.
+
+### [R009] 마이그레이션 idempotent 필수
+`createTable` 전 `hasTable` 확인, `addColumn` 전 `hasColumn` 확인. 중복 실행 시 에러 방지.
+
+### [R010] knexfile production extension 동적 설정
+프로덕션에서 마이그레이션 extension은 `'js'` (TypeScript 컴파일 결과). `extension: isProduction ? 'js' : 'ts'` 패턴 사용.
+
 ---
 
 ## 작업 전 체크리스트
@@ -112,7 +124,7 @@ DB에 필드를 추가했으면 반드시 Zod 스키마에도 추가. 안 하면
 
 | 항목 | 값 |
 |------|-----|
-| 규칙 수 | 10 |
-| 실패 로그 | 8건 |
-| 최근 평가 | 5.0/5.0 (하네스 초기화) |
-| 마지막 업데이트 | 2026-04-06 |
+| 규칙 수 | 14 |
+| 실패 로그 | 12건 |
+| 최근 평가 | 5.0/5.0 (V2 개편 완료) |
+| 마지막 업데이트 | 2026-04-24 |
