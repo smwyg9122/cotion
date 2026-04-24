@@ -1,6 +1,7 @@
 import { db } from '../database/connection';
 import { AppError } from '../middleware/error.middleware';
 import { API_ERRORS } from '@cotion/shared';
+import { KakaoService } from './kakao.service';
 import {
   Project,
   ProjectCreateInput,
@@ -212,6 +213,14 @@ export class ProjectsService {
         user_id: userId,
       }));
       await db('task_assignees').insert(assigneeRows);
+
+      // Send Kakao notification to assignees
+      KakaoService.notifyUsers(
+        assignees,
+        '새 업무 배정',
+        `"${input.title}" 업무가 배정되었습니다.`,
+        'https://cotion.vercel.app'
+      );
     }
 
     return mapTaskToResponse(row, assignees);
@@ -241,6 +250,10 @@ export class ProjectsService {
 
     // Update assignees if provided
     if (input.assignees !== undefined) {
+      // Get old assignees for comparison
+      const oldAssigneeRows = await db('task_assignees').where({ task_id: id }).select('user_id');
+      const oldAssigneeIds = oldAssigneeRows.map((r: any) => r.user_id);
+
       await db('task_assignees')
         .where({ task_id: id })
         .delete();
@@ -251,6 +264,18 @@ export class ProjectsService {
           user_id: userId,
         }));
         await db('task_assignees').insert(assigneeRows);
+
+        // Notify newly added assignees only
+        const newAssignees = input.assignees.filter((uid: string) => !oldAssigneeIds.includes(uid));
+        if (newAssignees.length > 0) {
+          const taskTitle = input.title || existing.title;
+          KakaoService.notifyUsers(
+            newAssignees,
+            '업무 담당 배정',
+            `"${taskTitle}" 업무가 배정되었습니다.`,
+            'https://cotion.vercel.app'
+          );
+        }
       }
     }
 

@@ -2,6 +2,7 @@ import { db } from '../database/connection';
 import { AppError } from '../middleware/error.middleware';
 import { API_ERRORS } from '@cotion/shared';
 import { Client, ClientCreateInput, ClientUpdateInput } from '@cotion/shared';
+import { KakaoService } from './kakao.service';
 
 // Helper function to transform snake_case DB columns to camelCase for API response
 function mapClientToResponse(row: any): Client {
@@ -99,6 +100,17 @@ export class ClientsService {
 
     // Re-fetch with join to get assignedToName
     const client = await this.getById(row.id);
+
+    // Send Kakao notification to assigned user
+    if (input.assignedTo) {
+      KakaoService.notifyUsers(
+        [input.assignedTo],
+        '새 거래처 담당 배정',
+        `거래처 "${input.name}"의 담당자로 배정되었습니다.`,
+        'https://cotion.vercel.app'
+      );
+    }
+
     return client!;
   }
 
@@ -126,6 +138,17 @@ export class ClientsService {
     await db('clients')
       .where({ id })
       .update(updateFields);
+
+    // Send Kakao notification if assignee changed
+    if (input.assignedTo && input.assignedTo !== existing.assigned_to) {
+      const clientName = input.name || existing.name;
+      KakaoService.notifyUsers(
+        [input.assignedTo],
+        '거래처 담당 변경',
+        `거래처 "${clientName}"의 담당자로 배정되었습니다.`,
+        'https://cotion.vercel.app'
+      );
+    }
 
     // Re-fetch with join to get assignedToName
     const client = await this.getById(id);

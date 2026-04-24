@@ -5,6 +5,7 @@ import { ToastProvider } from './components/common';
 import { LoginForm } from './components/auth/LoginForm';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { HomePage } from './pages/HomePage';
+import { KakaoCallbackPage } from './pages/KakaoCallbackPage';
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
           <Routes>
             <Route path="/login" element={<LoginForm />} />
             <Route path="/signup" element={<Navigate to="/login" replace />} />
+            <Route path="/auth/kakao/callback" element={<KakaoCallbackPage />} />
             <Route
               path="/"
               element={

@@ -17,6 +17,7 @@ import inventoryRoutes from './routes/inventory.routes';
 import projectsRoutes from './routes/projects.routes';
 import cuppingRoutes from './routes/cupping.routes';
 import documentsRoutes from './routes/documents.routes';
+import kakaoRoutes from './routes/kakao.routes';
 import { initializeWebSocketServer } from './websocket/collaboration.handler';
 import { SchedulerService } from './services/scheduler.service';
 
@@ -53,6 +54,7 @@ app.use('/api/inventory', inventoryRoutes);
 app.use('/api/projects', projectsRoutes);
 app.use('/api/cupping-logs', cuppingRoutes);
 app.use('/api/documents', documentsRoutes);
+app.use('/api/kakao', kakaoRoutes);
 
 // Error handling middleware (must be last)
 app.use(errorHandler);

@@ -12,7 +12,8 @@ import { SearchBar } from '../components/pages/SearchBar';
 import { NotificationBell } from '../components/notifications/NotificationBell';
 import { TiptapEditor } from '../components/editor/TiptapEditor';
 import { CommentSection } from '../components/comments/CommentSection';
-import { Menu, X, Trash2, Plus, ChevronDown, Check, Calendar, Users, Package, Kanban, Coffee, FolderOpen, Zap } from 'lucide-react';
+import { Menu, X, Trash2, Plus, ChevronDown, Check, Calendar, Users, Package, Kanban, Coffee, FolderOpen, Zap, MessageCircle } from 'lucide-react';
+import { KakaoLinkButton } from '../components/settings/KakaoLinkButton';
 import { CalendarPage } from '../components/calendar/CalendarPage';
 import { ClientsPage } from '../components/clients/ClientsPage';
 import { InventoryPage } from '../components/inventory/InventoryPage';
@@ -436,6 +437,9 @@ export function HomePage() {
             <Trash2 size={16} />
             휴지통
           </button>
+          <div className="px-3 py-2">
+            <KakaoLinkButton />
+          </div>
           <button
             onClick={() => setIsPasswordChangeModalOpen(true)}
             className="w-full px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-200/70 rounded-md text-left transition-colors"
