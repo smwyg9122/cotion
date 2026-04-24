@@ -392,7 +392,7 @@ export function HomePage() {
                 <FolderOpen size={16} />
                 문서 라이브러리
               </button>
-              {user?.email === 'shoutlim@gmail.com' && (
+              {user?.username === 'admin1' && (
                 <button
                   onClick={() => {
                     setCurrentView('v2test');

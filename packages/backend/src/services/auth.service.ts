@@ -158,7 +158,7 @@ export class AuthService {
 
   static async getAllUsers() {
     const users = await db('users')
-      .select('id', 'username', 'email', 'name', 'avatar_url', 'role', 'allowed_workspaces')
+      .select('id', 'username', 'email', 'name', 'title', 'avatar_url', 'role', 'allowed_workspaces')
       .orderBy('name');
     return users;
   }

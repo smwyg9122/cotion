@@ -61,8 +61,16 @@ const INITIAL_FORM: ClientFormData = {
 
 type FilterType = 'all' | 'visited' | 'cupping' | 'purchased';
 
+interface TeamUser {
+  id: string;
+  name: string;
+  title: string | null;
+  username: string;
+}
+
 export function ClientsPage({ workspace }: ClientsPageProps) {
   const [clients, setClients] = useState<Client[]>([]);
+  const [teamUsers, setTeamUsers] = useState<TeamUser[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<FilterType>('all');
@@ -70,6 +78,33 @@ export function ClientsPage({ workspace }: ClientsPageProps) {
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [formData, setFormData] = useState<ClientFormData>(INITIAL_FORM);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+
+  // Fetch team users for assignee dropdown
+  const fetchUsers = useCallback(async () => {
+    try {
+      const response = await api.get('/auth/users');
+      const userList = response.data.data || response.data || [];
+      setTeamUsers(userList.map((u: any) => ({
+        id: u.id,
+        name: u.name,
+        title: u.title || null,
+        username: u.username,
+      })));
+    } catch (err: any) {
+      console.error('Failed to fetch users:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
+
+  // Helper to display user name with title
+  const getUserDisplayName = (userId: string) => {
+    const user = teamUsers.find((u) => u.id === userId);
+    if (!user) return userId;
+    return user.title ? `${user.name} ${user.title}` : user.name;
+  };
 
   const fetchClients = useCallback(async () => {
     setIsLoading(true);
@@ -291,7 +326,7 @@ export function ClientsPage({ workspace }: ClientsPageProps) {
                           {client.purchased && <Check size={14} />}
                         </button>
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-700">{client.assignedTo}</td>
+                      <td className="px-4 py-3 text-sm text-gray-700">{client.assignedTo ? getUserDisplayName(client.assignedTo) : '-'}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-center gap-2">
                           <button
@@ -398,13 +433,18 @@ export function ClientsPage({ workspace }: ClientsPageProps) {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">담당자 배정</label>
-            <input
-              type="text"
+            <select
               value={formData.assignedTo}
               onChange={(e) => setFormData({ ...formData, assignedTo: e.target.value })}
-              placeholder="담당자 ID"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
-            />
+            >
+              <option value="">담당자 선택</option>
+              {teamUsers.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.title ? `${u.name} ${u.title}` : u.name}
+                </option>
+              ))}
+            </select>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">메모</label>

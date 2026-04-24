@@ -133,9 +133,25 @@ export function KanbanBoard({ workspace }: KanbanBoardProps) {
     }
   }, [selectedProjectId]);
 
+  // Fetch users for assignee selection
+  const fetchUsers = useCallback(async () => {
+    try {
+      const response = await api.get('/auth/users');
+      const userList = response.data.data || response.data || [];
+      setUsers(userList.map((u: any) => ({
+        id: u.id,
+        nickname: u.title ? `${u.name} ${u.title}` : u.name,
+        email: u.email,
+      })));
+    } catch (err: any) {
+      console.error('Failed to fetch users:', err);
+    }
+  }, []);
+
   useEffect(() => {
     fetchProjects();
-  }, [fetchProjects]);
+    fetchUsers();
+  }, [fetchProjects, fetchUsers]);
 
   useEffect(() => {
     fetchTasks();
