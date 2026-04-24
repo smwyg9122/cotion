@@ -12,13 +12,7 @@ import filesRoutes from './routes/files.routes';
 import notificationsRoutes from './routes/notifications.routes';
 import commentsRoutes from './routes/comments.routes';
 import calendarRoutes from './routes/calendar.routes';
-import clientsRoutes from './routes/clients.routes';
-import inventoryRoutes from './routes/inventory.routes';
-import projectsRoutes from './routes/projects.routes';
-import cuppingRoutes from './routes/cupping.routes';
-import documentsRoutes from './routes/documents.routes';
 import { initializeWebSocketServer } from './websocket/collaboration.handler';
-import { SchedulerService } from './services/scheduler.service';
 
 const app = express();
 
@@ -48,11 +42,6 @@ app.use('/api/files', filesRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/comments', commentsRoutes);
 app.use('/api/calendar', calendarRoutes);
-app.use('/api/clients', clientsRoutes);
-app.use('/api/inventory', inventoryRoutes);
-app.use('/api/projects', projectsRoutes);
-app.use('/api/cupping-logs', cuppingRoutes);
-app.use('/api/documents', documentsRoutes);
 
 // Error handling middleware (must be last)
 app.use(errorHandler);
@@ -78,9 +67,6 @@ async function startServer() {
     } catch (migrationError) {
       console.error('⚠️ Migration failed (server will continue):', migrationError);
     }
-
-    // Initialize scheduled jobs (meeting templates, followup notifications)
-    SchedulerService.init();
 
     // Create HTTP server
     const server = http.createServer(app);

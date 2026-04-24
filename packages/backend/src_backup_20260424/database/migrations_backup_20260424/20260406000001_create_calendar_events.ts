@@ -1,0 +1,45 @@
+import { Knex } from 'knex';
+
+export async function up(knex: Knex): Promise<void> {
+  // Create calendar_events table (safe: skip if already exists)
+  const hasCalendarTable = await knex.schema.hasTable('calendar_events');
+  if (!hasCalendarTable) {
+    await knex.schema.createTable('calendar_events', (table) => {
+      table.uuid('id').primary().defaultTo(knex.raw('gen_random_uuid()'));
+      table.string('title', 200).notNullable();
+      table.text('description').nullable();
+      table.timestamp('start_date').notNullable();
+      table.timestamp('end_date').nullable();
+      table.boolean('all_day').notNullable().defaultTo(true);
+      table.string('color', 20).nullable();
+      table.string('workspace', 100).notNullable();
+      table.uuid('page_id').nullable().references('id').inTable('pages').onDelete('SET NULL');
+      table.uuid('created_by').notNullable().references('id').inTable('users').onDelete('CASCADE');
+      table.timestamp('created_at').notNullable().defaultTo(knex.fn.now());
+      table.timestamp('updated_at').notNullable().defaultTo(knex.fn.now());
+
+      table.index(['workspace'], 'idx_calendar_events_workspace');
+      table.index(['start_date', 'end_date'], 'idx_calendar_events_dates');
+      table.index(['page_id'], 'idx_calendar_events_page_id');
+      table.index(['created_by'], 'idx_calendar_events_created_by');
+    });
+  }
+
+  // Add deadline column to pages table (safe: skip if already exists)
+  const hasDeadline = await knex.schema.hasColumn('pages', 'deadline');
+  if (!hasDeadline) {
+    await knex.schema.alterTable('pages', (table) => {
+      table.timestamp('deadline').nullable();
+    });
+  }
+}
+
+export async function down(knex: Knex): Promise<void> {
+  const hasDeadline = await knex.schema.hasColumn('pages', 'deadline');
+  if (hasDeadline) {
+    await knex.schema.alterTable('pages', (table) => {
+      table.dropColumn('deadline');
+    });
+  }
+  await knex.schema.dropTableIfExists('calendar_events');
+}
