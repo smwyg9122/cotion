@@ -20,7 +20,7 @@ interface KanbanBoardProps {
 
 interface Project {
   id: string;
-  name: string;
+  title: string;
   workspace: string;
 }
 
@@ -35,7 +35,7 @@ interface Task {
   title: string;
   description?: string;
   status: 'todo' | 'in_progress' | 'done';
-  priority: 'low' | 'medium' | 'high' | 'urgent';
+  priority: 'low' | 'medium' | 'high';
   assignees?: TaskUser[];
   dueDate?: string;
   projectId: string;
@@ -47,8 +47,8 @@ interface TaskFormData {
   title: string;
   description: string;
   status: 'todo' | 'in_progress' | 'done';
-  priority: 'low' | 'medium' | 'high' | 'urgent';
-  assigneeIds: string[];
+  priority: 'low' | 'medium' | 'high';
+  assignees: string[];
   dueDate: string;
 }
 
@@ -57,7 +57,7 @@ const INITIAL_TASK_FORM: TaskFormData = {
   description: '',
   status: 'todo',
   priority: 'medium',
-  assigneeIds: [],
+  assignees: [],
   dueDate: '',
 };
 
@@ -71,7 +71,6 @@ const PRIORITY_CONFIG: Record<Task['priority'], { label: string; color: string }
   low: { label: '낮음', color: 'bg-gray-200 text-gray-700' },
   medium: { label: '보통', color: 'bg-blue-200 text-blue-700' },
   high: { label: '높음', color: 'bg-orange-200 text-orange-700' },
-  urgent: { label: '긴급', color: 'bg-red-200 text-red-700' },
 };
 
 const AVATAR_COLORS = [
@@ -146,7 +145,7 @@ export function KanbanBoard({ workspace }: KanbanBoardProps) {
   const handleCreateProject = async () => {
     if (!newProjectName.trim()) return;
     try {
-      const response = await api.post('/projects', { name: newProjectName, workspace });
+      const response = await api.post('/projects', { title: newProjectName, workspace });
       const newProject = response.data.data;
       setProjects((prev) => [...prev, newProject]);
       setSelectedProjectId(newProject.id);
@@ -172,7 +171,7 @@ export function KanbanBoard({ workspace }: KanbanBoardProps) {
       description: task.description || '',
       status: task.status,
       priority: task.priority,
-      assigneeIds: task.assignees?.map((a) => a.id) || [],
+      assignees: task.assignees?.map((a) => a.id) || [],
       dueDate: task.dueDate ? task.dueDate.split('T')[0] : '',
     });
     setIsTaskModalOpen(true);
@@ -186,7 +185,7 @@ export function KanbanBoard({ workspace }: KanbanBoardProps) {
         description: taskForm.description,
         status: taskForm.status,
         priority: taskForm.priority,
-        assigneeIds: taskForm.assigneeIds,
+        assignees: taskForm.assignees,
         dueDate: taskForm.dueDate || null,
       };
 
@@ -284,9 +283,9 @@ export function KanbanBoard({ workspace }: KanbanBoardProps) {
   const toggleAssignee = (userId: string) => {
     setTaskForm((prev) => ({
       ...prev,
-      assigneeIds: prev.assigneeIds.includes(userId)
-        ? prev.assigneeIds.filter((id) => id !== userId)
-        : [...prev.assigneeIds, userId],
+      assignees: prev.assignees.includes(userId)
+        ? prev.assignees.filter((id) => id !== userId)
+        : [...prev.assignees, userId],
     }));
   };
 
@@ -311,7 +310,7 @@ export function KanbanBoard({ workspace }: KanbanBoardProps) {
                 onClick={() => setIsProjectDropdownOpen(!isProjectDropdownOpen)}
                 className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors font-medium text-gray-700 min-w-[200px]"
               >
-                <span>{selectedProject?.name || '프로젝트 선택'}</span>
+                <span>{selectedProject?.title || '프로젝트 선택'}</span>
                 <ChevronDown size={16} className="ml-auto" />
               </button>
               {isProjectDropdownOpen && (
@@ -334,7 +333,7 @@ export function KanbanBoard({ workspace }: KanbanBoardProps) {
                             : 'text-gray-700'
                         }`}
                       >
-                        {p.name}
+                        {p.title}
                       </button>
                     ))
                   )}
@@ -556,7 +555,6 @@ export function KanbanBoard({ workspace }: KanbanBoardProps) {
                 <option value="low">낮음</option>
                 <option value="medium">보통</option>
                 <option value="high">높음</option>
-                <option value="urgent">긴급</option>
               </select>
             </div>
             <div>
@@ -588,7 +586,7 @@ export function KanbanBoard({ workspace }: KanbanBoardProps) {
               <label className="block text-sm font-medium text-gray-700 mb-2">담당자</label>
               <div className="flex flex-wrap gap-2 p-3 border border-gray-300 rounded-lg max-h-32 overflow-y-auto">
                 {users.map((user) => {
-                  const isSelected = taskForm.assigneeIds.includes(user.id);
+                  const isSelected = taskForm.assignees.includes(user.id);
                   return (
                     <button
                       key={user.id}

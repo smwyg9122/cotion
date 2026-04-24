@@ -26,8 +26,8 @@ interface CuppingLog {
   offeredBeans?: string;
   reaction?: string;
   purchaseIntent: 'high' | 'medium' | 'low' | 'none';
-  followUpDate?: string;
-  memo?: string;
+  followupDate?: string;
+  notes?: string;
   workspace: string;
   createdAt?: string;
   updatedAt?: string;
@@ -40,8 +40,8 @@ interface CuppingFormData {
   offeredBeans: string;
   reaction: string;
   purchaseIntent: 'high' | 'medium' | 'low' | 'none';
-  followUpDate: string;
-  memo: string;
+  followupDate: string;
+  notes: string;
 }
 
 const INITIAL_FORM: CuppingFormData = {
@@ -51,8 +51,8 @@ const INITIAL_FORM: CuppingFormData = {
   offeredBeans: '',
   reaction: '',
   purchaseIntent: 'medium',
-  followUpDate: '',
-  memo: '',
+  followupDate: '',
+  notes: '',
 };
 
 type FilterType = 'all' | 'high_intent' | 'follow_up';
@@ -117,7 +117,7 @@ export function CuppingLogPage({ workspace }: CuppingLogPageProps) {
       case 'high_intent':
         return log.purchaseIntent === 'high';
       case 'follow_up':
-        return log.followUpDate && (isOverdue(log.followUpDate) || isUpcoming(log.followUpDate));
+        return log.followupDate && (isOverdue(log.followupDate) || isUpcoming(log.followupDate));
       default:
         return true;
     }
@@ -138,8 +138,8 @@ export function CuppingLogPage({ workspace }: CuppingLogPageProps) {
       offeredBeans: log.offeredBeans || '',
       reaction: log.reaction || '',
       purchaseIntent: log.purchaseIntent,
-      followUpDate: log.followUpDate ? log.followUpDate.split('T')[0] : '',
-      memo: log.memo || '',
+      followupDate: log.followupDate ? log.followupDate.split('T')[0] : '',
+      notes: log.notes || '',
     });
     setIsModalOpen(true);
   };
@@ -149,7 +149,7 @@ export function CuppingLogPage({ workspace }: CuppingLogPageProps) {
     try {
       const payload = {
         ...formData,
-        followUpDate: formData.followUpDate || null,
+        followupDate: formData.followupDate || null,
       };
       if (selectedLog) {
         await api.put(`/cupping-logs/${selectedLog.id}`, payload);
@@ -278,31 +278,31 @@ export function CuppingLogPage({ workspace }: CuppingLogPageProps) {
                 </div>
 
                 {/* Follow-up date */}
-                {log.followUpDate && (
+                {log.followupDate && (
                   <div
                     className={`flex items-center gap-2 mb-3 text-sm font-medium ${
-                      isOverdue(log.followUpDate)
+                      isOverdue(log.followupDate)
                         ? 'text-red-600'
-                        : isUpcoming(log.followUpDate)
+                        : isUpcoming(log.followupDate)
                         ? 'text-amber-600'
                         : 'text-gray-500'
                     }`}
                   >
-                    {isOverdue(log.followUpDate) ? (
+                    {isOverdue(log.followupDate) ? (
                       <AlertCircle size={14} />
                     ) : (
                       <Clock size={14} />
                     )}
                     <span>
-                      팔로업: {new Date(log.followUpDate).toLocaleDateString('ko-KR')}
-                      {isOverdue(log.followUpDate) && ' (기한 초과)'}
+                      팔로업: {new Date(log.followupDate).toLocaleDateString('ko-KR')}
+                      {isOverdue(log.followupDate) && ' (기한 초과)'}
                     </span>
                   </div>
                 )}
 
                 {/* Memo preview */}
-                {log.memo && (
-                  <p className="text-sm text-gray-500 line-clamp-2 mb-4">{log.memo}</p>
+                {log.notes && (
+                  <p className="text-sm text-gray-500 line-clamp-2 mb-4">{log.notes}</p>
                 )}
 
                 {/* Actions */}
@@ -428,8 +428,8 @@ export function CuppingLogPage({ workspace }: CuppingLogPageProps) {
               <label className="block text-sm font-medium text-gray-700 mb-2">팔로업 날짜</label>
               <input
                 type="date"
-                value={formData.followUpDate}
-                onChange={(e) => setFormData({ ...formData, followUpDate: e.target.value })}
+                value={formData.followupDate}
+                onChange={(e) => setFormData({ ...formData, followupDate: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500"
               />
             </div>
@@ -437,8 +437,8 @@ export function CuppingLogPage({ workspace }: CuppingLogPageProps) {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">메모</label>
             <textarea
-              value={formData.memo}
-              onChange={(e) => setFormData({ ...formData, memo: e.target.value })}
+              value={formData.notes}
+              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
               placeholder="추가 메모"
               rows={3}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500 resize-none"

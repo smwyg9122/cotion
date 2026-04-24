@@ -260,6 +260,10 @@ export function HomePage() {
                         setIsWorkspaceSwitcherOpen(false);
                         setSelectedPageId(null);
                         setSelectedPage(null);
+                        // 제이로텍으로 전환 시 아유타 전용 뷰이면 pages로 리셋
+                        if (ws.name !== '아유타' && ['clients', 'inventory', 'kanban', 'cupping', 'documents', 'v2test'].includes(currentView)) {
+                          setCurrentView('pages');
+                        }
                       }}
                       className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-gray-100 transition-colors"
                     >
@@ -304,106 +308,109 @@ export function HomePage() {
           )}
         </div>
         <div className="p-3 border-t border-gray-200 space-y-1">
-          {/* 업무 관리 섹션 */}
-          <div className="px-3 py-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wider">업무 관리</div>
-          <button
-            onClick={() => {
-              setCurrentView('clients');
-              setSelectedPageId(null);
-              setSelectedPage(null);
-              if (isMobile) setIsSidebarOpen(false);
-            }}
-            className={`w-full px-3 py-2.5 text-sm rounded-md text-left transition-colors flex items-center gap-2 ${
-              currentView === 'clients'
-                ? 'bg-blue-50 text-blue-700 font-medium'
-                : 'text-gray-700 hover:bg-gray-200/70'
-            }`}
-          >
-            <Users size={16} />
-            거래처 DB
-          </button>
-          <button
-            onClick={() => {
-              setCurrentView('inventory');
-              setSelectedPageId(null);
-              setSelectedPage(null);
-              if (isMobile) setIsSidebarOpen(false);
-            }}
-            className={`w-full px-3 py-2.5 text-sm rounded-md text-left transition-colors flex items-center gap-2 ${
-              currentView === 'inventory'
-                ? 'bg-blue-50 text-blue-700 font-medium'
-                : 'text-gray-700 hover:bg-gray-200/70'
-            }`}
-          >
-            <Package size={16} />
-            재고 관리
-          </button>
-          <button
-            onClick={() => {
-              setCurrentView('kanban');
-              setSelectedPageId(null);
-              setSelectedPage(null);
-              if (isMobile) setIsSidebarOpen(false);
-            }}
-            className={`w-full px-3 py-2.5 text-sm rounded-md text-left transition-colors flex items-center gap-2 ${
-              currentView === 'kanban'
-                ? 'bg-blue-50 text-blue-700 font-medium'
-                : 'text-gray-700 hover:bg-gray-200/70'
-            }`}
-          >
-            <Kanban size={16} />
-            프로젝트 보드
-          </button>
-          <button
-            onClick={() => {
-              setCurrentView('cupping');
-              setSelectedPageId(null);
-              setSelectedPage(null);
-              if (isMobile) setIsSidebarOpen(false);
-            }}
-            className={`w-full px-3 py-2.5 text-sm rounded-md text-left transition-colors flex items-center gap-2 ${
-              currentView === 'cupping'
-                ? 'bg-blue-50 text-blue-700 font-medium'
-                : 'text-gray-700 hover:bg-gray-200/70'
-            }`}
-          >
-            <Coffee size={16} />
-            커핑 로그
-          </button>
-          <button
-            onClick={() => {
-              setCurrentView('documents');
-              setSelectedPageId(null);
-              setSelectedPage(null);
-              if (isMobile) setIsSidebarOpen(false);
-            }}
-            className={`w-full px-3 py-2.5 text-sm rounded-md text-left transition-colors flex items-center gap-2 ${
-              currentView === 'documents'
-                ? 'bg-blue-50 text-blue-700 font-medium'
-                : 'text-gray-700 hover:bg-gray-200/70'
-            }`}
-          >
-            <FolderOpen size={16} />
-            문서 라이브러리
-          </button>
-          <button
-            onClick={() => {
-              setCurrentView('v2test');
-              setSelectedPageId(null);
-              setSelectedPage(null);
-              if (isMobile) setIsSidebarOpen(false);
-            }}
-            className={`w-full px-3 py-2.5 text-sm rounded-md text-left transition-colors flex items-center gap-2 ${
-              currentView === 'v2test'
-                ? 'bg-amber-50 text-amber-700 font-medium'
-                : 'text-amber-600 hover:bg-amber-50/70'
-            }`}
-          >
-            <Zap size={16} />
-            V2 기능 테스트
-          </button>
-          {/* 구분선 */}
-          <div className="border-t border-gray-200 my-1"></div>
+          {/* 업무 관리 섹션 — 아유타 워크스페이스에서만 표시 */}
+          {selectedWorkspace.name === '아유타' && (
+            <>
+              <div className="px-3 py-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wider">업무 관리</div>
+              <button
+                onClick={() => {
+                  setCurrentView('clients');
+                  setSelectedPageId(null);
+                  setSelectedPage(null);
+                  if (isMobile) setIsSidebarOpen(false);
+                }}
+                className={`w-full px-3 py-2.5 text-sm rounded-md text-left transition-colors flex items-center gap-2 ${
+                  currentView === 'clients'
+                    ? 'bg-blue-50 text-blue-700 font-medium'
+                    : 'text-gray-700 hover:bg-gray-200/70'
+                }`}
+              >
+                <Users size={16} />
+                거래처 DB
+              </button>
+              <button
+                onClick={() => {
+                  setCurrentView('inventory');
+                  setSelectedPageId(null);
+                  setSelectedPage(null);
+                  if (isMobile) setIsSidebarOpen(false);
+                }}
+                className={`w-full px-3 py-2.5 text-sm rounded-md text-left transition-colors flex items-center gap-2 ${
+                  currentView === 'inventory'
+                    ? 'bg-blue-50 text-blue-700 font-medium'
+                    : 'text-gray-700 hover:bg-gray-200/70'
+                }`}
+              >
+                <Package size={16} />
+                재고 관리
+              </button>
+              <button
+                onClick={() => {
+                  setCurrentView('kanban');
+                  setSelectedPageId(null);
+                  setSelectedPage(null);
+                  if (isMobile) setIsSidebarOpen(false);
+                }}
+                className={`w-full px-3 py-2.5 text-sm rounded-md text-left transition-colors flex items-center gap-2 ${
+                  currentView === 'kanban'
+                    ? 'bg-blue-50 text-blue-700 font-medium'
+                    : 'text-gray-700 hover:bg-gray-200/70'
+                }`}
+              >
+                <Kanban size={16} />
+                프로젝트 보드
+              </button>
+              <button
+                onClick={() => {
+                  setCurrentView('cupping');
+                  setSelectedPageId(null);
+                  setSelectedPage(null);
+                  if (isMobile) setIsSidebarOpen(false);
+                }}
+                className={`w-full px-3 py-2.5 text-sm rounded-md text-left transition-colors flex items-center gap-2 ${
+                  currentView === 'cupping'
+                    ? 'bg-blue-50 text-blue-700 font-medium'
+                    : 'text-gray-700 hover:bg-gray-200/70'
+                }`}
+              >
+                <Coffee size={16} />
+                커핑 로그
+              </button>
+              <button
+                onClick={() => {
+                  setCurrentView('documents');
+                  setSelectedPageId(null);
+                  setSelectedPage(null);
+                  if (isMobile) setIsSidebarOpen(false);
+                }}
+                className={`w-full px-3 py-2.5 text-sm rounded-md text-left transition-colors flex items-center gap-2 ${
+                  currentView === 'documents'
+                    ? 'bg-blue-50 text-blue-700 font-medium'
+                    : 'text-gray-700 hover:bg-gray-200/70'
+                }`}
+              >
+                <FolderOpen size={16} />
+                문서 라이브러리
+              </button>
+              <button
+                onClick={() => {
+                  setCurrentView('v2test');
+                  setSelectedPageId(null);
+                  setSelectedPage(null);
+                  if (isMobile) setIsSidebarOpen(false);
+                }}
+                className={`w-full px-3 py-2.5 text-sm rounded-md text-left transition-colors flex items-center gap-2 ${
+                  currentView === 'v2test'
+                    ? 'bg-amber-50 text-amber-700 font-medium'
+                    : 'text-amber-600 hover:bg-amber-50/70'
+                }`}
+              >
+                <Zap size={16} />
+                V2 기능 테스트
+              </button>
+              <div className="border-t border-gray-200 my-1"></div>
+            </>
+          )}
           <button
             onClick={() => {
               setCurrentView('calendar');

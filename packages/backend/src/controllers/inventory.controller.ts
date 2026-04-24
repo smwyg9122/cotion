@@ -8,6 +8,7 @@ export const inventoryController = {
   getAll: asyncHandler(async (req: AuthRequest, res: Response) => {
     const workspace = req.query.workspace as string;
     const type = req.query.type as string;
+    const origin = req.query.origin as string;
 
     if (!workspace) {
       return res.status(400).json({
@@ -19,7 +20,7 @@ export const inventoryController = {
       });
     }
 
-    const items = await InventoryService.getAll(workspace, { type });
+    const items = await InventoryService.getAll(workspace, { type, origin });
 
     res.json({
       success: true,

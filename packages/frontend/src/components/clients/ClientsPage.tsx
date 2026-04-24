@@ -21,10 +21,13 @@ interface Client {
   name: string;
   contactPerson: string;
   phone: string;
+  email: string;
+  address: string;
   visited: boolean;
   cuppingDone: boolean;
   purchased: boolean;
-  assigneeSlot: string;
+  assignedTo: string;
+  notes: string;
   workspace: string;
   createdAt?: string;
   updatedAt?: string;
@@ -34,20 +37,26 @@ interface ClientFormData {
   name: string;
   contactPerson: string;
   phone: string;
+  email: string;
+  address: string;
   visited: boolean;
   cuppingDone: boolean;
   purchased: boolean;
-  assigneeSlot: string;
+  assignedTo: string;
+  notes: string;
 }
 
 const INITIAL_FORM: ClientFormData = {
   name: '',
   contactPerson: '',
   phone: '',
+  email: '',
+  address: '',
   visited: false,
   cuppingDone: false,
   purchased: false,
-  assigneeSlot: '',
+  assignedTo: '',
+  notes: '',
 };
 
 type FilterType = 'all' | 'visited' | 'cupping' | 'purchased';
@@ -105,10 +114,13 @@ export function ClientsPage({ workspace }: ClientsPageProps) {
       name: client.name,
       contactPerson: client.contactPerson,
       phone: client.phone,
+      email: client.email,
+      address: client.address,
       visited: client.visited,
       cuppingDone: client.cuppingDone,
       purchased: client.purchased,
-      assigneeSlot: client.assigneeSlot,
+      assignedTo: client.assignedTo,
+      notes: client.notes,
     });
     setIsModalOpen(true);
   };
@@ -230,7 +242,7 @@ export function ClientsPage({ workspace }: ClientsPageProps) {
                     <th className="text-center px-4 py-3 text-sm font-semibold text-gray-700">방문여부</th>
                     <th className="text-center px-4 py-3 text-sm font-semibold text-gray-700">커핑진행</th>
                     <th className="text-center px-4 py-3 text-sm font-semibold text-gray-700">구매여부</th>
-                    <th className="text-left px-4 py-3 text-sm font-semibold text-gray-700">담당자슬롯</th>
+                    <th className="text-left px-4 py-3 text-sm font-semibold text-gray-700">담당자배정</th>
                     <th className="text-center px-4 py-3 text-sm font-semibold text-gray-700">작업</th>
                   </tr>
                 </thead>
@@ -279,7 +291,7 @@ export function ClientsPage({ workspace }: ClientsPageProps) {
                           {client.purchased && <Check size={14} />}
                         </button>
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-700">{client.assigneeSlot}</td>
+                      <td className="px-4 py-3 text-sm text-gray-700">{client.assignedTo}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-center gap-2">
                           <button
@@ -365,13 +377,43 @@ export function ClientsPage({ workspace }: ClientsPageProps) {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">담당자 슬롯</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">이메일</label>
+            <input
+              type="email"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              placeholder="example@email.com"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">주소</label>
             <input
               type="text"
-              value={formData.assigneeSlot}
-              onChange={(e) => setFormData({ ...formData, assigneeSlot: e.target.value })}
-              placeholder="담당자 슬롯"
+              value={formData.address}
+              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+              placeholder="주소"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">담당자 배정</label>
+            <input
+              type="text"
+              value={formData.assignedTo}
+              onChange={(e) => setFormData({ ...formData, assignedTo: e.target.value })}
+              placeholder="담당자 ID"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">메모</label>
+            <textarea
+              value={formData.notes}
+              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              placeholder="메모"
+              rows={3}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-vertical"
             />
           </div>
           <div className="flex flex-wrap gap-6">

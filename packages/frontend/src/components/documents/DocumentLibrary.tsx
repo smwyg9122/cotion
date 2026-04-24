@@ -28,10 +28,10 @@ interface Document {
   title: string;
   category: 'plan' | 'pricelist' | 'form' | 'whitepaper' | 'other';
   description?: string;
-  fileUrl?: string;
-  fileName?: string;
-  linkedPageId?: string;
+  fileId?: string | null;
+  pageId?: string | null;
   workspace: string;
+  createdBy?: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -40,7 +40,7 @@ interface DocumentFormData {
   title: string;
   category: Document['category'];
   description: string;
-  linkedPageId: string;
+  pageId: string;
   file: File | null;
 }
 
@@ -48,7 +48,7 @@ const INITIAL_FORM: DocumentFormData = {
   title: '',
   category: 'other',
   description: '',
-  linkedPageId: '',
+  pageId: '',
   file: null,
 };
 
@@ -117,7 +117,7 @@ export function DocumentLibrary({ workspace }: DocumentLibraryProps) {
       title: doc.title,
       category: doc.category,
       description: doc.description || '',
-      linkedPageId: doc.linkedPageId || '',
+      pageId: doc.pageId || '',
       file: null,
     });
     setIsModalOpen(true);
@@ -126,18 +126,28 @@ export function DocumentLibrary({ workspace }: DocumentLibraryProps) {
   const handleSave = async () => {
     if (!formData.title.trim()) return;
     try {
-      const data = new FormData();
-      data.append('title', formData.title);
-      data.append('category', formData.category);
-      data.append('description', formData.description);
-      if (formData.linkedPageId) data.append('linkedPageId', formData.linkedPageId);
-      if (formData.file) data.append('file', formData.file);
-      if (!selectedDocument) data.append('workspace', workspace);
+      // Upload file first if one is selected, to obtain a fileId
+      let fileId: string | undefined;
+      if (formData.file) {
+        const uploadData = new FormData();
+        uploadData.append('file', formData.file);
+        const uploadRes = await api.post('/files/upload', uploadData);
+        fileId = uploadRes.data.data?.id || uploadRes.data.id;
+      }
+
+      const payload: Record<string, any> = {
+        title: formData.title,
+        category: formData.category,
+        description: formData.description || undefined,
+        pageId: formData.pageId || undefined,
+      };
+      if (fileId) payload.fileId = fileId;
+      if (!selectedDocument) payload.workspace = workspace;
 
       if (selectedDocument) {
-        await api.put(`/documents/${selectedDocument.id}`, data);
+        await api.put(`/documents/${selectedDocument.id}`, payload);
       } else {
-        await api.post('/documents', data);
+        await api.post('/documents', payload);
       }
       await fetchDocuments();
       setIsModalOpen(false);
@@ -280,15 +290,15 @@ export function DocumentLibrary({ workspace }: DocumentLibraryProps) {
                     )}
 
                     {/* File indicator */}
-                    {doc.fileName && (
+                    {doc.fileId && (
                       <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-2">
                         <Upload size={12} />
-                        <span className="truncate">{doc.fileName}</span>
+                        <span className="truncate">첨부 파일</span>
                       </div>
                     )}
 
                     {/* Linked page indicator */}
-                    {doc.linkedPageId && (
+                    {doc.pageId && (
                       <div className="flex items-center gap-1.5 text-xs text-indigo-400 mb-2">
                         <Link size={12} />
                         <span>연결된 페이지</span>
@@ -395,9 +405,9 @@ export function DocumentLibrary({ workspace }: DocumentLibraryProps) {
               <Upload size={24} className="mx-auto mb-2 text-gray-400" />
               {formData.file ? (
                 <p className="text-sm text-indigo-600 font-medium">{formData.file.name}</p>
-              ) : selectedDocument?.fileName ? (
+              ) : selectedDocument?.fileId ? (
                 <p className="text-sm text-gray-500">
-                  현재: {selectedDocument.fileName} (클릭하여 변경)
+                  현재 파일 있음 (클릭하여 변경)
                 </p>
               ) : (
                 <p className="text-sm text-gray-400">클릭하여 파일 선택</p>
@@ -414,8 +424,8 @@ export function DocumentLibrary({ workspace }: DocumentLibraryProps) {
             <label className="block text-sm font-medium text-gray-700 mb-2">연결 페이지 ID (선택)</label>
             <input
               type="text"
-              value={formData.linkedPageId}
-              onChange={(e) => setFormData({ ...formData, linkedPageId: e.target.value })}
+              value={formData.pageId}
+              onChange={(e) => setFormData({ ...formData, pageId: e.target.value })}
               placeholder="연결할 페이지 ID"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
