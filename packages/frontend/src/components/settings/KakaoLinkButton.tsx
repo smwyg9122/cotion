@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { api } from '../../services/api';
 import { MessageCircle, Check, X, Send } from 'lucide-react';
 
@@ -22,15 +22,37 @@ export function KakaoLinkButton() {
     checkStatus();
   }, [checkStatus]);
 
-  // Listen for OAuth callback message from popup
+  // Listen for OAuth callback via BroadcastChannel (primary) and postMessage (fallback)
   useEffect(() => {
+    // BroadcastChannel - works even when window.opener is null (cross-origin popup)
+    let channel: BroadcastChannel | null = null;
+    try {
+      channel = new BroadcastChannel('kakao-auth');
+      channel.onmessage = (event) => {
+        if (event.data?.type === 'kakao-linked' && event.data?.success) {
+          setIsLinked(true);
+          setTestResult('카카오톡 연동 완료!');
+          setTimeout(() => setTestResult(null), 3000);
+        }
+      };
+    } catch (e) {
+      // BroadcastChannel not supported
+    }
+
+    // postMessage fallback for older browsers
     const handler = (event: MessageEvent) => {
-      if (event.data?.type === 'kakao-callback' && event.data?.code) {
-        handleCallback(event.data.code);
+      if (event.data?.type === 'kakao-callback' && event.data?.success) {
+        setIsLinked(true);
+        setTestResult('카카오톡 연동 완료!');
+        setTimeout(() => setTestResult(null), 3000);
       }
     };
     window.addEventListener('message', handler);
-    return () => window.removeEventListener('message', handler);
+
+    return () => {
+      channel?.close();
+      window.removeEventListener('message', handler);
+    };
   }, []);
 
   const handleLink = async () => {
@@ -47,19 +69,6 @@ export function KakaoLinkButton() {
       }
     } catch (err) {
       console.error('Failed to get Kakao auth URL:', err);
-    }
-  };
-
-  const handleCallback = async (code: string) => {
-    try {
-      await api.post('/kakao/callback', { code });
-      setIsLinked(true);
-      setTestResult('카카오톡 연동 완료!');
-      setTimeout(() => setTestResult(null), 3000);
-    } catch (err) {
-      console.error('Kakao callback failed:', err);
-      setTestResult('연동 실패. 다시 시도해주세요.');
-      setTimeout(() => setTestResult(null), 3000);
     }
   };
 
