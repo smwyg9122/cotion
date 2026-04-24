@@ -219,7 +219,7 @@ export class ProjectsService {
         assignees,
         '새 업무 배정',
         `"${input.title}" 업무가 배정되었습니다.`,
-        'https://cotion.vercel.app'
+        'https://cotion-ten.vercel.app'
       );
     }
 
@@ -273,7 +273,7 @@ export class ProjectsService {
             newAssignees,
             '업무 담당 배정',
             `"${taskTitle}" 업무가 배정되었습니다.`,
-            'https://cotion.vercel.app'
+            'https://cotion-ten.vercel.app'
           );
         }
       }

@@ -107,7 +107,7 @@ export class ClientsService {
         [input.assignedTo],
         '새 거래처 담당 배정',
         `거래처 "${input.name}"의 담당자로 배정되었습니다.`,
-        'https://cotion.vercel.app'
+        'https://cotion-ten.vercel.app'
       );
     }
 
@@ -146,7 +146,7 @@ export class ClientsService {
         [input.assignedTo],
         '거래처 담당 변경',
         `거래처 "${clientName}"의 담당자로 배정되었습니다.`,
-        'https://cotion.vercel.app'
+        'https://cotion-ten.vercel.app'
       );
     }
 

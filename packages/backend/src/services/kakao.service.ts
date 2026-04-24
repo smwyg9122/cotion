@@ -1,7 +1,7 @@
 import { db } from '../database/connection';
 
 const KAKAO_REST_API_KEY = process.env.KAKAO_REST_API_KEY || '6908ec2b32acc25f79212e05f7bf375b';
-const KAKAO_REDIRECT_URI = process.env.KAKAO_REDIRECT_URI || 'https://cotion.vercel.app/auth/kakao/callback';
+const KAKAO_REDIRECT_URI = process.env.KAKAO_REDIRECT_URI || 'https://cotion-ten.vercel.app/auth/kakao/callback';
 
 export class KakaoService {
   // Get OAuth URL for user to link their Kakao account
@@ -130,8 +130,8 @@ export class KakaoService {
       object_type: 'text',
       text: `[Cotion] ${title}\n${description}`,
       link: {
-        web_url: linkUrl || 'https://cotion.vercel.app',
-        mobile_web_url: linkUrl || 'https://cotion.vercel.app',
+        web_url: linkUrl || 'https://cotion-ten.vercel.app',
+        mobile_web_url: linkUrl || 'https://cotion-ten.vercel.app',
       },
       button_title: '코션에서 확인',
     };
