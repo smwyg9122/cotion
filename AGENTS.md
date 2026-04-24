@@ -99,6 +99,9 @@ timestamp/timestamptz 컬럼에 `'2026-04-24'` 같은 날짜만 보내면 안됨
 ### [R010] knexfile production extension 동적 설정
 프로덕션에서 마이그레이션 extension은 `'js'` (TypeScript 컴파일 결과). `extension: isProduction ? 'js' : 'ts'` 패턴 사용.
 
+### [R011] knex loadExtensions 필수 설정
+`tsconfig.json`에 `"declaration": true`가 있으면 `.d.ts` 파일이 마이그레이션 폴더에 생성됨. Knex가 `.d.ts`를 `.ts`로 인식해 로드 시도 → `Unexpected token 'export'` 에러. 반드시 `loadExtensions: isProduction ? ['.js'] : ['.ts']` 설정.
+
 ---
 
 ## 작업 전 체크리스트
@@ -124,7 +127,7 @@ timestamp/timestamptz 컬럼에 `'2026-04-24'` 같은 날짜만 보내면 안됨
 
 | 항목 | 값 |
 |------|-----|
-| 규칙 수 | 14 |
-| 실패 로그 | 12건 |
+| 규칙 수 | 15 |
+| 실패 로그 | 13건 |
 | 최근 평가 | 5.0/5.0 (V2 개편 완료) |
 | 마지막 업데이트 | 2026-04-24 |

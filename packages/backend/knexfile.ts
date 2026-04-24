@@ -23,6 +23,7 @@ const config: { [key: string]: Knex.Config } = {
     migrations: {
       directory: path.join(__dirname, 'src/database/migrations'),
       extension: 'ts',
+      loadExtensions: ['.ts'],
     },
     seeds: {
       directory: path.join(__dirname, 'src/database/seeds'),
@@ -42,6 +43,7 @@ const config: { [key: string]: Knex.Config } = {
     migrations: {
       directory: path.join(__dirname, isProduction ? 'dist/database/migrations' : 'src/database/migrations'),
       extension: isProduction ? 'js' : 'ts',
+      loadExtensions: isProduction ? ['.js'] : ['.ts'],
     },
   },
 };
