@@ -20,8 +20,9 @@ code {
 .notion-editor .ProseMirror {
   outline: none;
   font-size: 16px;
-  line-height: 1.6;
+  line-height: 1.75;
   color: #37352f;
+  min-height: 300px;
 }
 
 .notion-editor .ProseMirror h1 {

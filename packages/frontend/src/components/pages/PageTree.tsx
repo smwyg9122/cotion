@@ -151,15 +151,15 @@ function CategorySection({ name, pages, onPageSelect, onCreatePage, onDeletePage
   const [isExpanded, setIsExpanded] = useState(true);
 
   return (
-    <div className="mb-1">
+    <div className="mb-2">
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="flex items-center gap-1.5 px-2 py-1 text-xs font-semibold text-gray-500 hover:text-gray-700 hover:bg-gray-200/50 rounded-md w-full transition-colors uppercase tracking-wide"
+        className="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-gray-500 hover:text-gray-700 hover:bg-gray-200/60 rounded-lg w-full transition-colors uppercase tracking-wider"
       >
-        {isExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-        <Folder size={12} />
+        {isExpanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+        <Folder size={13} className="text-gray-400" />
         <span className="flex-1 text-left">{name}</span>
-        <span className="text-gray-400 font-normal normal-case tracking-normal">{pages.length}</span>
+        <span className="bg-gray-200/80 text-gray-500 text-[10px] font-medium px-1.5 py-0.5 rounded-full normal-case tracking-normal">{pages.length}</span>
       </button>
       {isExpanded && (
         pages.map((page) => (
@@ -222,12 +222,12 @@ function PageNode({ page, onPageSelect, onCreatePage, onDeletePage, selectedPage
       <div
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        className={`group flex items-center gap-1 px-2 py-1.5 text-sm rounded-md cursor-pointer transition-colors ${
+        className={`group flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg cursor-pointer transition-all ${
           isSelected
-            ? 'bg-gray-200/80 text-gray-900 font-medium'
-            : 'text-gray-700 hover:bg-gray-200/50'
+            ? 'bg-blue-50 text-blue-700 font-medium border border-blue-200/60'
+            : 'text-gray-700 hover:bg-gray-100 border border-transparent'
         }`}
-        style={{ paddingLeft: `${level * 20 + 8}px` }}
+        style={{ paddingLeft: `${level * 20 + 12}px` }}
       >
         <div
           {...dragHandleProps}

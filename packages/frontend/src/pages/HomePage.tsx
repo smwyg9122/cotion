@@ -201,7 +201,7 @@ export function HomePage() {
   }, [selectedPageId, editedTitle, editedContent, editedCategory]);
 
   return (
-    <div className="flex h-screen bg-white">
+    <div className="flex h-screen bg-gray-50">
       {/* Mobile overlay backdrop */}
       {isMobile && isSidebarOpen && (
         <div
@@ -288,7 +288,7 @@ export function HomePage() {
           </button>
         </div>
         <SearchBar onSearch={searchPages} onPageSelect={handlePageSelect} />
-        <div className="flex-1 overflow-y-auto px-2 py-3">
+        <div className="flex-1 overflow-y-auto px-3 py-3">
           {isLoading ? (
             <div className="text-center py-8 text-gray-400 text-sm">로딩 중...</div>
           ) : (
@@ -456,7 +456,7 @@ export function HomePage() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden bg-white min-w-0">
+      <div className="flex-1 flex flex-col overflow-hidden bg-gray-50 min-w-0">
         {/* Mobile top bar */}
         {isMobile && (
           <div className="sticky top-0 z-20 bg-white border-b border-gray-100 px-3 py-2 flex items-center gap-2 flex-shrink-0">
@@ -492,7 +492,7 @@ export function HomePage() {
           ) : currentView === 'v2test' ? (
             <V2TestPage workspace={selectedWorkspace.name} />
           ) : selectedPage ? (
-            <div className="max-w-[900px] mx-auto px-4 py-4 sm:px-16 sm:py-8">
+            <div className="max-w-5xl mx-auto px-6 py-6 sm:px-12 sm:py-10">
               {/* Menu Button for Desktop when sidebar collapsed */}
               {!isMobile && !isSidebarOpen && (
                 <button
@@ -503,85 +503,82 @@ export function HomePage() {
                 </button>
               )}
 
-              {/* Page Title */}
-              <input
-                type="text"
-                value={editedTitle}
-                onChange={(e) => setEditedTitle(e.target.value)}
-                onBlur={handleSave}
-                className="text-2xl sm:text-[2.75rem] font-bold border-none outline-none focus:ring-0 w-full mb-2 text-gray-900 placeholder-gray-300"
-                placeholder="제목 없음"
-              />
+              {/* Page Header Card */}
+              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 sm:p-8 mb-6">
+                {/* Page Title */}
+                <input
+                  type="text"
+                  value={editedTitle}
+                  onChange={(e) => setEditedTitle(e.target.value)}
+                  onBlur={handleSave}
+                  className="text-2xl sm:text-3xl font-bold border-none outline-none focus:ring-0 w-full mb-4 text-gray-900 placeholder-gray-300"
+                  placeholder="제목 없음"
+                />
 
-              {/* Category + Save bar */}
-              <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6 text-sm text-gray-400 flex-wrap">
-                {/* Category select */}
-                <div className="w-44 sm:w-52">
-                  <CategorySelect
-                    value={editedCategory}
-                    onChange={(val) => {
-                      setEditedCategory(val);
-                    }}
-                    options={existingCategories}
-                    placeholder="카테고리 없음"
-                  />
+                {/* Category + Save bar */}
+                <div className="flex items-center gap-3 text-sm text-gray-400 flex-wrap border-t border-gray-100 pt-4">
+                  <div className="w-48 sm:w-56">
+                    <CategorySelect
+                      value={editedCategory}
+                      onChange={(val) => {
+                        setEditedCategory(val);
+                      }}
+                      options={existingCategories}
+                      placeholder="카테고리 없음"
+                    />
+                  </div>
+
+                  <span className="hidden sm:inline text-gray-300">|</span>
+
+                  <span className="hidden sm:inline select-none text-xs">
+                    {navigator.platform.includes('Mac') ? '⌘S' : 'Ctrl+S'} 또는 버튼으로 저장
+                  </span>
+                  <button
+                    onClick={handleSave}
+                    disabled={isSaving}
+                    className="ml-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium transition-colors"
+                  >
+                    {isSaving ? '저장 중...' : '저장'}
+                  </button>
                 </div>
-
-                <span className="hidden sm:inline text-gray-300">|</span>
-
-                <span className="hidden sm:inline select-none">
-                  {navigator.platform.includes('Mac') ? '⌘S' : 'Ctrl+S'} 또는 버튼으로 저장
-                </span>
-                <button
-                  onClick={handleSave}
-                  disabled={isSaving}
-                  className="px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-medium transition-colors"
-                >
-                  {isSaving ? '저장 중...' : '저장'}
-                </button>
               </div>
 
-              {/* Editor */}
-              <TiptapEditor
-                key={selectedPageId}
-                content={editedContent}
-                onChange={setEditedContent}
-                onSave={handleSave}
-                pageId={selectedPageId!}
-                userId={user?.id || ''}
-                userName={user?.name || 'Anonymous'}
-              />
-
-              {/* Comments */}
-              <CommentSection
-                pageId={selectedPageId!}
-                userId={user?.id || ''}
-                userName={user?.name || 'Anonymous'}
-              />
-            </div>
-          ) : (
-            <div className="flex items-center justify-center h-full relative px-4">
-              {/* Background Logo */}
-              <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none">
-                <img
-                  src="/logo.png"
-                  alt="Cotion Logo"
-                  className="h-64 sm:h-96 w-auto object-contain"
+              {/* Editor Card */}
+              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 sm:p-8">
+                <TiptapEditor
+                  key={selectedPageId}
+                  content={editedContent}
+                  onChange={setEditedContent}
+                  onSave={handleSave}
+                  pageId={selectedPageId!}
+                  userId={user?.id || ''}
+                  userName={user?.name || 'Anonymous'}
                 />
               </div>
 
+              {/* Comments Card */}
+              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 sm:p-8 mt-6">
+                <CommentSection
+                  pageId={selectedPageId!}
+                  userId={user?.id || ''}
+                  userName={user?.name || 'Anonymous'}
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center h-full relative px-4">
               {/* Content */}
-              <div className="text-center relative z-10">
-                <div className="mb-4 sm:mb-6">
+              <div className="text-center relative z-10 bg-white rounded-2xl border border-gray-200 shadow-sm px-10 py-12 sm:px-16 sm:py-16 max-w-lg">
+                <div className="mb-6">
                   <img
                     src="/logo.png"
                     alt="Cotion Logo"
-                    className="h-20 sm:h-32 w-auto object-contain mx-auto mb-3 sm:mb-4"
+                    className="h-16 sm:h-24 w-auto object-contain mx-auto mb-4"
                   />
                 </div>
-                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 sm:mb-3">Cotion</h2>
-                <p className="text-base sm:text-xl font-semibold text-gray-700 mb-3 sm:mb-6">우리만의 워크스페이스</p>
-                <p className="text-sm sm:text-lg text-gray-500">페이지를 선택하거나 새로 만들어보세요</p>
+                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Cotion</h2>
+                <p className="text-base sm:text-lg font-semibold text-gray-700 mb-4">우리만의 워크스페이스</p>
+                <p className="text-sm text-gray-400">페이지를 선택하거나 새로 만들어보세요</p>
               </div>
             </div>
           )}
