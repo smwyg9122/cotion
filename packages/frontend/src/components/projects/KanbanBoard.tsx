@@ -190,7 +190,7 @@ export function KanbanBoard({ workspace }: KanbanBoardProps) {
       };
 
       if (selectedTask) {
-        await api.put(`/tasks/${selectedTask.id}`, payload);
+        await api.put(`/projects/tasks/${selectedTask.id}`, payload);
       } else {
         await api.post(`/projects/${selectedProjectId}/tasks`, payload);
       }
@@ -204,7 +204,7 @@ export function KanbanBoard({ workspace }: KanbanBoardProps) {
 
   const handleDeleteTask = async (taskId: string) => {
     try {
-      await api.delete(`/tasks/${taskId}`);
+      await api.delete(`/projects/tasks/${taskId}`);
       setTasks((prev) => prev.filter((t) => t.id !== taskId));
       setDeleteConfirmTaskId(null);
       if (isTaskModalOpen && selectedTask?.id === taskId) {
@@ -252,7 +252,7 @@ export function KanbanBoard({ workspace }: KanbanBoardProps) {
     setDraggedTaskId(null);
 
     try {
-      await api.put(`/tasks/${taskId}/move`, { status: targetStatus });
+      await api.put(`/projects/tasks/${taskId}/move`, { status: targetStatus });
     } catch (err: any) {
       console.error('Failed to move task:', err);
       // Revert on failure

@@ -65,8 +65,8 @@ export function V2TestPage({ workspace }: { workspace: string }) {
           { name: 'GET /api/projects — 프로젝트 목록', status: 'pending' },
           { name: 'POST /api/projects/:id/tasks — 태스크 생성', status: 'pending' },
           { name: 'GET /api/projects/:id/tasks — 태스크 목록', status: 'pending' },
-          { name: 'PUT /api/tasks/:id — 태스크 수정', status: 'pending' },
-          { name: 'DELETE /api/tasks/:id — 태스크 삭제', status: 'pending' },
+          { name: 'PUT /api/projects/tasks/:id — 태스크 수정', status: 'pending' },
+          { name: 'DELETE /api/projects/tasks/:id — 태스크 삭제', status: 'pending' },
           { name: 'DELETE /api/projects/:id — 프로젝트 삭제', status: 'pending' },
         ],
       },
@@ -390,7 +390,7 @@ export function V2TestPage({ workspace }: { workspace: string }) {
     if (taskId) {
       if (
         await runTest(g2, 4, async () => {
-          await api.put(`/tasks/${taskId}`, {
+          await api.put(`/projects/tasks/${taskId}`, {
             title: '__TEST_태스크_수정__',
             status: 'in_progress',
           });
@@ -409,7 +409,7 @@ export function V2TestPage({ workspace }: { workspace: string }) {
     if (taskId) {
       if (
         await runTest(g2, 5, async () => {
-          await api.delete(`/tasks/${taskId}`);
+          await api.delete(`/projects/tasks/${taskId}`);
           return '태스크 삭제 성공';
         })
       )
@@ -525,7 +525,7 @@ export function V2TestPage({ workspace }: { workspace: string }) {
       await runTest(g4, 1, async () => {
         const res = await api.post('/documents', {
           title: '__TEST_문서__',
-          category: '기획안',
+          category: 'plan',
           description: 'V2 테스트 자동 생성 문서',
           workspace,
         });
@@ -542,7 +542,7 @@ export function V2TestPage({ workspace }: { workspace: string }) {
         await runTest(g4, 2, async () => {
           await api.put(`/documents/${docId}`, {
             title: '__TEST_문서_수정__',
-            category: '가격표',
+            category: 'pricelist',
           });
           return '수정 성공';
         })
