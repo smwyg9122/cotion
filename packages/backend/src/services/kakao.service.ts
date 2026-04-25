@@ -1,4 +1,6 @@
 import { db } from '../database/connection';
+import { AppError } from '../middleware/error.middleware';
+import { API_ERRORS } from '@cotion/shared';
 
 const KAKAO_REST_API_KEY = process.env.KAKAO_REST_API_KEY || '6908ec2b32acc25f79212e05f7bf375b';
 const KAKAO_REDIRECT_URI = process.env.KAKAO_REDIRECT_URI || 'https://cotion-ten.vercel.app/auth/kakao/callback';
@@ -23,9 +25,40 @@ export class KakaoService {
     });
 
     if (!response.ok) {
-      const error = await response.text();
-      console.error('Kakao token exchange failed:', error);
-      throw new Error('카카오 인증에 실패했습니다');
+      const errorText = await response.text();
+      console.error('Kakao token exchange failed:', response.status, errorText);
+
+      // 카카오 에러 응답 파싱
+      let kakaoError = '';
+      try {
+        const parsed = JSON.parse(errorText);
+        kakaoError = parsed.error_description || parsed.error || '';
+      } catch (_) {
+        kakaoError = errorText;
+      }
+
+      const errorMessages: Record<string, string> = {
+        'KOE320': '인증 코드가 만료되었습니다. 다시 시도해주세요.',
+        'KOE303': 'Redirect URI가 일치하지 않습니다.',
+        'KOE101': 'REST API 키가 유효하지 않습니다.',
+        'KOE010': '이미 사용된 인증 코드입니다. 다시 시도해주세요.',
+      };
+
+      // 에러 코드 매칭
+      let message = '카카오 인증에 실패했습니다.';
+      for (const [code, msg] of Object.entries(errorMessages)) {
+        if (errorText.includes(code)) {
+          message = msg;
+          break;
+        }
+      }
+
+      // 구체적인 에러 정보도 포함
+      if (kakaoError && !message.includes(kakaoError)) {
+        message += ` (${kakaoError})`;
+      }
+
+      throw new AppError(400, API_ERRORS.VALIDATION_ERROR, message);
     }
 
     const data: any = await response.json();

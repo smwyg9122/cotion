@@ -76,13 +76,13 @@ export function KakaoCallbackPage() {
       let message = '연동에 실패했습니다.';
       if (err.response) {
         const status = err.response.status;
-        const serverError = err.response.data?.error || err.response.data?.message;
+        const data = err.response.data;
+        // 백엔드 에러 메시지 추출 (AppError 형식: { error: { message: "..." } })
+        const serverMessage = data?.error?.message || data?.error || data?.message;
         if (status === 401) {
           message = '로그인 세션이 만료되었습니다. 메인 창에서 다시 로그인 후 시도해주세요.';
-        } else if (status === 400) {
-          message = serverError || '인증 코드가 유효하지 않습니다. 다시 시도해주세요.';
-        } else if (serverError) {
-          message = serverError;
+        } else if (serverMessage) {
+          message = typeof serverMessage === 'string' ? serverMessage : JSON.stringify(serverMessage);
         } else {
           message = `서버 오류가 발생했습니다. (${status})`;
         }

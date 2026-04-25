@@ -1,5 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { KakaoService } from '../services/kakao.service';
+import { AppError } from '../middleware/error.middleware';
+import { API_ERRORS } from '@cotion/shared';
 
 export const kakaoController = {
   // GET /api/kakao/auth-url - Get Kakao OAuth URL
@@ -20,17 +22,33 @@ export const kakaoController = {
       const { code } = req.body;
 
       if (!code) {
-        return res.status(400).json({ success: false, error: '인증 코드가 필요합니다' });
+        return res.status(400).json({ success: false, error: { message: '인증 코드가 필요합니다' } });
       }
 
-      const tokenData = await KakaoService.exchangeCode(code);
-      await KakaoService.storeTokens(
-        userId,
-        tokenData.access_token,
-        tokenData.refresh_token,
-        tokenData.expires_in,
-        tokenData.kakao_user_id
-      );
+      // Step 1: 카카오 토큰 교환
+      let tokenData;
+      try {
+        tokenData = await KakaoService.exchangeCode(code);
+      } catch (error: any) {
+        // AppError면 그대로 전달, 아니면 래핑
+        if (error instanceof AppError) throw error;
+        console.error('Kakao exchangeCode error:', error);
+        throw new AppError(400, API_ERRORS.VALIDATION_ERROR, `카카오 토큰 교환 실패: ${error.message}`);
+      }
+
+      // Step 2: 토큰 저장
+      try {
+        await KakaoService.storeTokens(
+          userId,
+          tokenData.access_token,
+          tokenData.refresh_token,
+          tokenData.expires_in,
+          tokenData.kakao_user_id
+        );
+      } catch (error: any) {
+        console.error('Kakao storeTokens error:', error);
+        throw new AppError(500, API_ERRORS.INTERNAL_ERROR, `토큰 저장 실패: ${error.message}`);
+      }
 
       res.json({ success: true, data: { linked: true } });
     } catch (error) {
