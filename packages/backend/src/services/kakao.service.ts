@@ -3,6 +3,7 @@ import { AppError } from '../middleware/error.middleware';
 import { API_ERRORS } from '@cotion/shared';
 
 const KAKAO_REST_API_KEY = process.env.KAKAO_REST_API_KEY || '6908ec2b32acc25f79212e05f7bf375b';
+const KAKAO_CLIENT_SECRET = process.env.KAKAO_CLIENT_SECRET || 'laKRQaYDYlxzvSalz8xA29sW34yjoY52';
 const KAKAO_REDIRECT_URI = process.env.KAKAO_REDIRECT_URI || 'https://cotion-ten.vercel.app/auth/kakao/callback';
 
 export class KakaoService {
@@ -19,6 +20,7 @@ export class KakaoService {
       body: new URLSearchParams({
         grant_type: 'authorization_code',
         client_id: KAKAO_REST_API_KEY,
+        client_secret: KAKAO_CLIENT_SECRET,
         redirect_uri: KAKAO_REDIRECT_URI,
         code,
       }),
@@ -119,6 +121,7 @@ export class KakaoService {
         body: new URLSearchParams({
           grant_type: 'refresh_token',
           client_id: KAKAO_REST_API_KEY,
+          client_secret: KAKAO_CLIENT_SECRET,
           refresh_token: token.refresh_token,
         }),
       });
