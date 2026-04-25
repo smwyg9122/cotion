@@ -6,9 +6,10 @@ import { api } from '../../services/api';
 interface TrashViewProps {
   onClose: () => void;
   onRestore: () => void;
+  isSuperAdmin?: boolean;
 }
 
-export function TrashView({ onClose, onRestore }: TrashViewProps) {
+export function TrashView({ onClose, onRestore, isSuperAdmin }: TrashViewProps) {
   const [deletedPages, setDeletedPages] = useState<Page[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -60,7 +61,7 @@ export function TrashView({ onClose, onRestore }: TrashViewProps) {
         <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Trash2 size={20} className="text-gray-600" />
-            <h2 className="text-lg font-semibold text-gray-900">휴지통</h2>
+            <h2 className="text-lg font-semibold text-gray-900">{isSuperAdmin ? '전체 휴지통 (관리자)' : '휴지통'}</h2>
           </div>
           <button
             onClick={onClose}
@@ -93,7 +94,12 @@ export function TrashView({ onClose, onRestore }: TrashViewProps) {
                       <FileText size={16} className="flex-shrink-0 text-gray-400" />
                     )}
                     <span className="truncate text-sm text-gray-700">{page.title}</span>
-                    <span className="text-xs text-gray-400">
+                    {isSuperAdmin && (page as any).deleted_by_name && (
+                      <span className="text-[10px] px-1.5 py-0.5 bg-purple-50 text-purple-600 rounded flex-shrink-0">
+                        {(page as any).deleted_by_name}
+                      </span>
+                    )}
+                    <span className="text-xs text-gray-400 flex-shrink-0">
                       {page.deletedAt && new Date(page.deletedAt).toLocaleDateString('ko-KR')}
                     </span>
                   </div>

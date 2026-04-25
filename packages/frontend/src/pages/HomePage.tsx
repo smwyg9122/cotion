@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { usePages } from '../hooks/usePages';
 import { useNavigate } from 'react-router-dom';
@@ -12,7 +12,8 @@ import { SearchBar } from '../components/pages/SearchBar';
 import { NotificationBell } from '../components/notifications/NotificationBell';
 import { TiptapEditor } from '../components/editor/TiptapEditor';
 import { CommentSection } from '../components/comments/CommentSection';
-import { Menu, X, Trash2, Plus, ChevronDown, Check, Calendar, Users, Package, Kanban, Coffee, FolderOpen, Zap, MessageCircle, FileText, Settings } from 'lucide-react';
+import { Menu, X, Trash2, Plus, ChevronDown, ChevronRight, Check, Calendar, Users, Package, Kanban, Coffee, FolderOpen, Zap, MessageCircle, FileText, Settings } from 'lucide-react';
+import { api } from '../services/api';
 import { KakaoLinkButton } from '../components/settings/KakaoLinkButton';
 import { CalendarPage } from '../components/calendar/CalendarPage';
 import { ClientsPage } from '../components/clients/ClientsPage';
@@ -82,6 +83,35 @@ export function HomePage() {
   const [showNicknameModal, setShowNicknameModal] = useState(false);
   const [currentView, setCurrentView] = useState<'pages' | 'calendar' | 'clients' | 'inventory' | 'kanban' | 'cupping' | 'documents' | 'v2test'>('pages');
   const [sidebarTab, setSidebarTab] = useState<'pages' | 'business'>('pages');
+  const [sidebarProjects, setSidebarProjects] = useState<{ id: string; title: string }[]>([]);
+  const [isProjectListOpen, setIsProjectListOpen] = useState(true);
+
+  // Fetch projects for sidebar
+  const fetchSidebarProjects = useCallback(async () => {
+    if (selectedWorkspace.name !== '아유타') return;
+    try {
+      const res = await api.get('/projects', { params: { workspace: selectedWorkspace.name } });
+      setSidebarProjects(res.data.data || []);
+    } catch (err) {
+      console.error('Failed to fetch sidebar projects:', err);
+    }
+  }, [selectedWorkspace.name]);
+
+  useEffect(() => {
+    fetchSidebarProjects();
+  }, [fetchSidebarProjects]);
+
+  async function handleDeleteProject(projectId: string) {
+    if (!confirm('이 프로젝트와 관련 태스크를 모두 삭제하시겠습니까?')) return;
+    try {
+      await api.delete(`/projects/${projectId}`);
+      setSidebarProjects((prev) => prev.filter((p) => p.id !== projectId));
+      showToast('프로젝트가 삭제되었습니다', 'success');
+    } catch (err) {
+      showToast('프로젝트 삭제에 실패했습니다', 'error');
+      console.error('Failed to delete project:', err);
+    }
+  }
 
   // Filter pages by selected workspace
   const filteredPages = useMemo(() => {
@@ -401,6 +431,42 @@ export function HomePage() {
               <Kanban size={16} />
               프로젝트 보드
             </button>
+
+            {/* 프로젝트 리스트 펼침 */}
+            {sidebarProjects.length > 0 && (
+              <div className="ml-2">
+                <button
+                  onClick={() => setIsProjectListOpen(!isProjectListOpen)}
+                  className="flex items-center gap-1 px-2 py-1 text-[11px] text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  {isProjectListOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                  프로젝트 {sidebarProjects.length}개
+                </button>
+                {isProjectListOpen && (
+                  <div className="space-y-0.5 mt-0.5">
+                    {sidebarProjects.map((project) => (
+                      <div
+                        key={project.id}
+                        className="flex items-center gap-1.5 pl-4 pr-1 py-1.5 rounded-md hover:bg-gray-200/50 group transition-colors"
+                      >
+                        <div className="w-1.5 h-1.5 rounded-full bg-blue-400 flex-shrink-0" />
+                        <span className="text-xs text-gray-600 truncate flex-1">{project.title}</span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteProject(project.id);
+                          }}
+                          className="p-0.5 opacity-0 group-hover:opacity-100 hover:bg-red-50 hover:text-red-500 rounded transition-all"
+                          title="프로젝트 삭제"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
             <button
               onClick={() => {
                 setCurrentView('cupping');
@@ -486,7 +552,7 @@ export function HomePage() {
             휴지통
           </button>
           <div className="px-3 py-2">
-            <KakaoLinkButton />
+            <KakaoLinkButton username={user?.username} />
           </div>
           <button
             onClick={() => setIsPasswordChangeModalOpen(true)}
@@ -663,6 +729,7 @@ export function HomePage() {
         <TrashView
           onClose={() => setIsTrashViewOpen(false)}
           onRestore={handleTrashRestore}
+          isSuperAdmin={(user as any)?.role === 'superadmin'}
         />
       )}
     </div>

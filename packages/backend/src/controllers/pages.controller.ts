@@ -80,7 +80,8 @@ export const pagesController = {
   }),
 
   getDeleted: asyncHandler(async (req: AuthRequest, res: Response) => {
-    const pages = await PagesService.getDeletedPages(req.user!.userId);
+    const isSuperAdmin = req.user!.role === 'superadmin';
+    const pages = await PagesService.getDeletedPages(req.user!.userId, isSuperAdmin);
 
     res.json({
       success: true,

@@ -121,12 +121,14 @@ export class PagesService {
       });
   }
 
-  static async getDeletedPages(userId: string): Promise<Page[]> {
-    const pages = await db('pages')
-      .where({ is_deleted: true })
-      .orderBy('deleted_at', 'desc')
-      .select('*');
+  static async getDeletedPages(userId: string, isSuperAdmin = false): Promise<any[]> {
+    const query = db('pages')
+      .leftJoin('users', 'pages.updated_by', 'users.id')
+      .where({ 'pages.is_deleted': true })
+      .orderBy('pages.deleted_at', 'desc')
+      .select('pages.*', 'users.name as deleted_by_name');
 
+    const pages = await query;
     return pages;
   }
 

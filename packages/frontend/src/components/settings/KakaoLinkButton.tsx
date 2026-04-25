@@ -2,7 +2,11 @@ import { useState, useEffect, useCallback } from 'react';
 import { api } from '../../services/api';
 import { MessageCircle, Check, X, Send, RefreshCw } from 'lucide-react';
 
-export function KakaoLinkButton() {
+interface KakaoLinkButtonProps {
+  username?: string;
+}
+
+export function KakaoLinkButton({ username }: KakaoLinkButtonProps) {
   const [isLinked, setIsLinked] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [testResult, setTestResult] = useState<string | null>(null);
@@ -156,13 +160,15 @@ export function KakaoLinkButton() {
           </div>
           {/* 액션 버튼 */}
           <div className="flex items-center gap-1.5">
-            <button
-              onClick={handleTest}
-              className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs text-blue-600 hover:bg-blue-50 rounded-md transition-colors font-medium"
-            >
-              <Send size={12} />
-              테스트 발송
-            </button>
+            {username === 'admin1' && (
+              <button
+                onClick={handleTest}
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs text-blue-600 hover:bg-blue-50 rounded-md transition-colors font-medium"
+              >
+                <Send size={12} />
+                테스트 발송
+              </button>
+            )}
             <button
               onClick={handleUnlink}
               className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors"
