@@ -1,5 +1,6 @@
 import { db } from '../database/connection';
 import { AppError } from '../middleware/error.middleware';
+import { KakaoService } from './kakao.service';
 
 export class NotificationsService {
   static async getNotifications(userId: string) {
@@ -47,6 +48,15 @@ export class NotificationsService {
         triggered_by: triggeredByUserId,
       })
       .returning('*');
+
+    // 카카오톡 알림 발송 (비동기, 실패해도 DB 알림에는 영향 없음)
+    const linkUrl = `https://cotion-ten.vercel.app`;
+    KakaoService.notifyUsers(
+      [mentionedUserId],
+      '페이지 멘션',
+      message,
+      linkUrl
+    );
 
     return notification;
   }
