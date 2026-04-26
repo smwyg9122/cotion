@@ -25,6 +25,7 @@ interface UserInfo {
   username: string;
   name: string;
   title?: string;
+  allowed_workspaces?: string | string[];
 }
 
 interface EventWithPageDeadline {
@@ -95,18 +96,18 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
     attendees: [],
   });
 
-  // Fetch users for attendee selection
+  // Fetch users for attendee selection (filtered by workspace on server)
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const res = await api.get('/auth/users');
+        const res = await api.get('/auth/users', { params: { workspace } });
         setUsers(res.data?.data || []);
       } catch (err) {
         console.error('Failed to fetch users:', err);
       }
     };
     fetchUsers();
-  }, []);
+  }, [workspace]);
 
   // Helper: get date range for current view
   const getViewStartDate = useCallback(() => {

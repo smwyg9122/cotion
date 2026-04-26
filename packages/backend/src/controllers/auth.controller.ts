@@ -98,7 +98,8 @@ export const authController = {
   }),
 
   getUsers: asyncHandler(async (req: AuthRequest, res: Response) => {
-    const users = await AuthService.getAllUsers();
+    const workspace = req.query.workspace as string | undefined;
+    const users = await AuthService.getAllUsers(workspace);
     res.json({ success: true, data: users });
   }),
 

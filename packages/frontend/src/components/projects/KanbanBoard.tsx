@@ -134,10 +134,10 @@ export function KanbanBoard({ workspace, initialProjectId }: KanbanBoardProps) {
     }
   }, [selectedProjectId]);
 
-  // Fetch users for assignee selection
+  // Fetch users for assignee selection (filtered by workspace)
   const fetchUsers = useCallback(async () => {
     try {
-      const response = await api.get('/auth/users');
+      const response = await api.get('/auth/users', { params: { workspace } });
       const userList = response.data.data || response.data || [];
       setUsers(userList.map((u: any) => ({
         id: u.id,
@@ -147,7 +147,7 @@ export function KanbanBoard({ workspace, initialProjectId }: KanbanBoardProps) {
     } catch (err: any) {
       console.error('Failed to fetch users:', err);
     }
-  }, []);
+  }, [workspace]);
 
   // 외부에서 initialProjectId가 변경되면 반영
   useEffect(() => {

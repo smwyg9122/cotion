@@ -79,10 +79,10 @@ export function ClientsPage({ workspace }: ClientsPageProps) {
   const [formData, setFormData] = useState<ClientFormData>(INITIAL_FORM);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
-  // Fetch team users for assignee dropdown
+  // Fetch team users for assignee dropdown (filtered by workspace)
   const fetchUsers = useCallback(async () => {
     try {
-      const response = await api.get('/auth/users');
+      const response = await api.get('/auth/users', { params: { workspace } });
       const userList = response.data.data || response.data || [];
       setTeamUsers(userList.map((u: any) => ({
         id: u.id,
@@ -93,7 +93,7 @@ export function ClientsPage({ workspace }: ClientsPageProps) {
     } catch (err: any) {
       console.error('Failed to fetch users:', err);
     }
-  }, []);
+  }, [workspace]);
 
   useEffect(() => {
     fetchUsers();

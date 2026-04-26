@@ -156,11 +156,26 @@ export class AuthService {
     return userWithoutPassword;
   }
 
-  static async getAllUsers() {
+  static async getAllUsers(workspace?: string) {
     const users = await db('users')
       .select('id', 'username', 'email', 'name', 'title', 'avatar_url', 'role', 'allowed_workspaces')
+      .where('role', '!=', 'superadmin')
       .orderBy('name');
-    return users;
+
+    if (!workspace) return users;
+
+    // Filter by allowed_workspaces containing the requested workspace
+    return users.filter((u: any) => {
+      if (!u.allowed_workspaces) return true;
+      try {
+        const workspaces = typeof u.allowed_workspaces === 'string'
+          ? JSON.parse(u.allowed_workspaces)
+          : u.allowed_workspaces;
+        return Array.isArray(workspaces) ? workspaces.includes(workspace) : true;
+      } catch {
+        return true;
+      }
+    });
   }
 
   private static async storeRefreshToken(userId: string, refreshToken: string): Promise<void> {
