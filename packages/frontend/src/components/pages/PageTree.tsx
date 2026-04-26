@@ -23,9 +23,11 @@ interface PageTreeProps {
   onDeletePage?: (pageId: string) => void;
   onMovePage?: (pageId: string, newParentId?: string, position?: number, category?: string) => void;
   selectedPageId?: string;
+  expandedIds?: Set<string>;
+  onToggleExpand?: (id: string) => void;
 }
 
-export function PageTree({ pages, onPageSelect, onCreatePage, onDeletePage, onMovePage, selectedPageId }: PageTreeProps) {
+export function PageTree({ pages, onPageSelect, onCreatePage, onDeletePage, onMovePage, selectedPageId, expandedIds, onToggleExpand }: PageTreeProps) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
   );
@@ -100,6 +102,8 @@ export function PageTree({ pages, onPageSelect, onCreatePage, onDeletePage, onMo
               onCreatePage={onCreatePage}
               onDeletePage={onDeletePage}
               selectedPageId={selectedPageId}
+              expandedIds={expandedIds}
+              onToggleExpand={onToggleExpand}
             />
           ))}
 
@@ -112,6 +116,8 @@ export function PageTree({ pages, onPageSelect, onCreatePage, onDeletePage, onMo
               onDeletePage={onDeletePage}
               selectedPageId={selectedPageId}
               level={0}
+              expandedIds={expandedIds}
+              onToggleExpand={onToggleExpand}
             />
           ))}
 
@@ -145,15 +151,19 @@ interface CategorySectionProps {
   onCreatePage?: (parentId?: string, category?: string) => void;
   onDeletePage?: (pageId: string) => void;
   selectedPageId?: string;
+  expandedIds?: Set<string>;
+  onToggleExpand?: (id: string) => void;
 }
 
-function CategorySection({ name, pages, onPageSelect, onCreatePage, onDeletePage, selectedPageId }: CategorySectionProps) {
-  const [isExpanded, setIsExpanded] = useState(true);
+function CategorySection({ name, pages, onPageSelect, onCreatePage, onDeletePage, selectedPageId, expandedIds, onToggleExpand }: CategorySectionProps) {
+  const categoryKey = `cat:${name}`;
+  const isExpanded = expandedIds ? expandedIds.has(categoryKey) : true;
+  const toggleExpand = () => onToggleExpand ? onToggleExpand(categoryKey) : undefined;
 
   return (
     <div className="mb-2">
       <button
-        onClick={() => setIsExpanded(!isExpanded)}
+        onClick={toggleExpand}
         className="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-gray-500 hover:text-gray-700 hover:bg-gray-200/60 rounded-lg w-full transition-colors uppercase tracking-wider"
       >
         {isExpanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
@@ -171,6 +181,8 @@ function CategorySection({ name, pages, onPageSelect, onCreatePage, onDeletePage
             onDeletePage={onDeletePage}
             selectedPageId={selectedPageId}
             level={0}
+            expandedIds={expandedIds}
+            onToggleExpand={onToggleExpand}
           />
         ))
       )}
@@ -186,6 +198,8 @@ interface PageNodeProps {
   selectedPageId?: string;
   level: number;
   dragHandleProps?: Record<string, any>;
+  expandedIds?: Set<string>;
+  onToggleExpand?: (id: string) => void;
 }
 
 function SortablePageNode(props: Omit<PageNodeProps, 'dragHandleProps'>) {
@@ -211,8 +225,8 @@ function SortablePageNode(props: Omit<PageNodeProps, 'dragHandleProps'>) {
   );
 }
 
-function PageNode({ page, onPageSelect, onCreatePage, onDeletePage, selectedPageId, level, dragHandleProps }: PageNodeProps) {
-  const [isExpanded, setIsExpanded] = useState(true);
+function PageNode({ page, onPageSelect, onCreatePage, onDeletePage, selectedPageId, level, dragHandleProps, expandedIds, onToggleExpand }: PageNodeProps) {
+  const isExpanded = expandedIds ? expandedIds.has(page.id) : true;
   const [isHovered, setIsHovered] = useState(false);
   const hasChildren = page.children && page.children.length > 0;
   const isSelected = selectedPageId === page.id;
@@ -241,7 +255,7 @@ function PageNode({ page, onPageSelect, onCreatePage, onDeletePage, selectedPage
 
         {hasChildren ? (
           <button
-            onClick={() => setIsExpanded(!isExpanded)}
+            onClick={() => onToggleExpand?.(page.id)}
             className="p-0.5 hover:bg-gray-300/50 rounded transition-colors"
           >
             {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
@@ -296,6 +310,8 @@ function PageNode({ page, onPageSelect, onCreatePage, onDeletePage, selectedPage
               onDeletePage={onDeletePage}
               selectedPageId={selectedPageId}
               level={level + 1}
+              expandedIds={expandedIds}
+              onToggleExpand={onToggleExpand}
             />
           ))}
         </SortableContext>

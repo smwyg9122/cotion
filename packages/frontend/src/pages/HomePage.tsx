@@ -83,6 +83,18 @@ export function HomePage() {
   const [showNicknameModal, setShowNicknameModal] = useState(false);
   const [currentView, setCurrentView] = useState<'pages' | 'calendar' | 'clients' | 'inventory' | 'kanban' | 'cupping' | 'documents' | 'v2test'>('pages');
   const [sidebarTab, setSidebarTab] = useState<'pages' | 'business'>('pages');
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  const handleToggleExpand = useCallback((id: string) => {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }, []);
   const [sidebarProjects, setSidebarProjects] = useState<{ id: string; title: string }[]>([]);
   const [isProjectListOpen, setIsProjectListOpen] = useState(true);
 
@@ -374,6 +386,8 @@ export function HomePage() {
                     }
                   }}
                   selectedPageId={selectedPageId || undefined}
+                  expandedIds={expandedIds}
+                  onToggleExpand={handleToggleExpand}
                 />
               )}
             </div>
