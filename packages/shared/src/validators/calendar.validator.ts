@@ -9,6 +9,7 @@ export const calendarEventCreateSchema = z.object({
   color: z.string().max(20).optional(),
   workspace: z.string().max(100),
   pageId: z.string().uuid().optional(),
+  attendees: z.array(z.string().uuid()).optional(),
 });
 
 export const calendarEventUpdateSchema = z.object({
@@ -19,4 +20,5 @@ export const calendarEventUpdateSchema = z.object({
   allDay: z.boolean().optional(),
   color: z.string().max(20).optional(),
   pageId: z.string().uuid().optional().nullable(),
+  attendees: z.array(z.string().uuid()).optional(),
 });

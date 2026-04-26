@@ -32,11 +32,15 @@ export const filesController = {
     const { id } = req.params;
     const file = await FilesService.getFile(id);
 
+    // 이미지만 inline, 나머지는 다운로드 강제
+    const isImage = file.mime_type.startsWith('image/');
+    const disposition = isImage ? 'inline' : 'attachment';
+
     res.set({
       'Content-Type': file.mime_type,
       'Content-Length': file.size.toString(),
-      'Content-Disposition': `inline; filename="${encodeURIComponent(file.original_name)}"`,
-      'Cache-Control': 'public, max-age=31536000, immutable',
+      'Content-Disposition': `${disposition}; filename="${encodeURIComponent(file.original_name)}"`,
+      'Cache-Control': 'private, max-age=3600',
     });
 
     res.send(file.data);

@@ -9,6 +9,8 @@ import {
   X,
   Trash2,
   Edit,
+  Users,
+  Check,
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { Modal } from '../common/Modal';
@@ -16,6 +18,13 @@ import { Modal } from '../common/Modal';
 interface CalendarPageProps {
   workspace: string;
   onNavigateToPage?: (pageId: string) => void;
+}
+
+interface UserInfo {
+  id: string;
+  username: string;
+  name: string;
+  title?: string;
 }
 
 interface EventWithPageDeadline {
@@ -28,6 +37,7 @@ interface EventWithPageDeadline {
   color?: string;
   workspace: string;
   pageId?: string;
+  attendees?: string[];
   isDeadline?: boolean;
   createdBy?: string;
   createdAt?: Date;
@@ -44,6 +54,7 @@ interface EventModalData {
   allDay: boolean;
   color: string;
   workspace: string;
+  attendees: string[];
 }
 
 const COLORS = [
@@ -67,6 +78,7 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
   const [viewMode, setViewMode] = useState<'month' | 'week' | 'day'>('month');
   const [currentDate, setCurrentDate] = useState(new Date());
   const [events, setEvents] = useState<EventWithPageDeadline[]>([]);
+  const [users, setUsers] = useState<UserInfo[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<EventWithPageDeadline | null>(null);
@@ -80,7 +92,21 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
     allDay: false,
     color: COLORS[4].value,
     workspace,
+    attendees: [],
   });
+
+  // Fetch users for attendee selection
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const res = await api.get('/auth/users');
+        setUsers(res.data?.data || []);
+      } catch (err) {
+        console.error('Failed to fetch users:', err);
+      }
+    };
+    fetchUsers();
+  }, []);
 
   // Helper: get date range for current view
   const getViewStartDate = useCallback(() => {
@@ -260,6 +286,7 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
       allDay: hour !== undefined ? false : true,
       color: COLORS[4].value,
       workspace,
+      attendees: [],
     });
     setIsModalOpen(true);
   }, [workspace]);
@@ -281,6 +308,7 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
       allDay: event.allDay || false,
       color: event.color || COLORS[4].value,
       workspace: event.workspace,
+      attendees: event.attendees || [],
     });
     setIsModalOpen(true);
   }, [onNavigateToPage]);
@@ -300,6 +328,7 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
           : `${modalData.endDate}T${modalData.endTime}:00`,
         allDay: modalData.allDay,
         color: modalData.color,
+        attendees: modalData.attendees,
         ...(selectedEvent ? {} : { workspace: modalData.workspace }),
       };
 
@@ -594,6 +623,7 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
                   allDay: false,
                   color: COLORS[4].value,
                   workspace,
+                  attendees: [],
                 });
                 setIsModalOpen(true);
               }}
@@ -804,6 +834,59 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
                 />
               ))}
             </div>
+          </div>
+
+          {/* Attendees picker */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <div className="flex items-center gap-2">
+                <Users size={16} />
+                <span>참석자</span>
+              </div>
+            </label>
+            <div className="border border-gray-300 rounded-lg p-3 max-h-40 overflow-y-auto space-y-1">
+              {users.length === 0 ? (
+                <div className="text-sm text-gray-400">사용자 목록을 불러오는 중...</div>
+              ) : (
+                users.map((u) => {
+                  const isSelected = modalData.attendees.includes(u.id);
+                  return (
+                    <button
+                      key={u.id}
+                      type="button"
+                      onClick={() => {
+                        setModalData((prev) => ({
+                          ...prev,
+                          attendees: isSelected
+                            ? prev.attendees.filter((id) => id !== u.id)
+                            : [...prev.attendees, u.id],
+                        }));
+                      }}
+                      className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+                        isSelected
+                          ? 'bg-blue-50 text-blue-700 font-medium'
+                          : 'hover:bg-gray-50 text-gray-700'
+                      }`}
+                    >
+                      <div
+                        className={`w-5 h-5 rounded border flex items-center justify-center flex-shrink-0 ${
+                          isSelected ? 'bg-blue-600 border-blue-600' : 'border-gray-300'
+                        }`}
+                      >
+                        {isSelected && <Check size={14} className="text-white" />}
+                      </div>
+                      <span>{u.name}</span>
+                      {u.title && <span className="text-xs text-gray-400">({u.title})</span>}
+                    </button>
+                  );
+                })
+              )}
+            </div>
+            {modalData.attendees.length > 0 && (
+              <div className="mt-2 text-xs text-blue-600">
+                {modalData.attendees.length}명 선택됨
+              </div>
+            )}
           </div>
 
           {/* Workspace display */}

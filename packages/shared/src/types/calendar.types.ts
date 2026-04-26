@@ -8,6 +8,7 @@ export interface CalendarEvent {
   color?: string; // hex color for display
   workspace: string;
   pageId?: string; // linked page (for deadlines)
+  attendees?: string[]; // user IDs
   createdBy: string;
   createdAt: Date;
   updatedAt: Date;
@@ -22,6 +23,7 @@ export interface CalendarEventCreateInput {
   color?: string;
   workspace: string;
   pageId?: string;
+  attendees?: string[];
 }
 
 export interface CalendarEventUpdateInput {
@@ -32,4 +34,5 @@ export interface CalendarEventUpdateInput {
   allDay?: boolean;
   color?: string;
   pageId?: string | null;
+  attendees?: string[];
 }

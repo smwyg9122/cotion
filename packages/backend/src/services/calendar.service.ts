@@ -2,9 +2,10 @@ import { db } from '../database/connection';
 import { AppError } from '../middleware/error.middleware';
 import { API_ERRORS } from '@cotion/shared';
 import { CalendarEvent, CalendarEventCreateInput, CalendarEventUpdateInput } from '@cotion/shared';
+import { KakaoService } from './kakao.service';
 
 // Helper function to transform snake_case DB columns to camelCase for API response
-function mapEventToResponse(event: any): CalendarEvent {
+function mapEventToResponse(event: any, attendees?: string[]): CalendarEvent {
   return {
     id: event.id,
     title: event.title,
@@ -15,14 +16,27 @@ function mapEventToResponse(event: any): CalendarEvent {
     color: event.color,
     workspace: event.workspace,
     pageId: event.page_id,
+    attendees: attendees || [],
     createdBy: event.created_by,
     createdAt: event.created_at,
     updatedAt: event.updated_at,
   };
 }
 
-function mapEventsToResponse(events: any[]): CalendarEvent[] {
-  return events.map(mapEventToResponse);
+// Helper to fetch attendees for a list of events
+async function fetchEventAttendees(eventIds: string[]): Promise<Record<string, string[]>> {
+  if (eventIds.length === 0) return {};
+
+  const rows = await db('calendar_event_attendees')
+    .whereIn('event_id', eventIds)
+    .select('event_id', 'user_id');
+
+  const map: Record<string, string[]> = {};
+  for (const row of rows) {
+    if (!map[row.event_id]) map[row.event_id] = [];
+    map[row.event_id].push(row.user_id);
+  }
+  return map;
 }
 
 export class CalendarService {
@@ -37,7 +51,10 @@ export class CalendarService {
       .orderBy('start_date', 'asc')
       .select('*');
 
-    return mapEventsToResponse(events);
+    const eventIds = events.map((e: any) => e.id);
+    const attendeesMap = await fetchEventAttendees(eventIds);
+
+    return events.map((e: any) => mapEventToResponse(e, attendeesMap[e.id] || []));
   }
 
   static async getEventById(id: string): Promise<CalendarEvent | null> {
@@ -45,7 +62,10 @@ export class CalendarService {
       .where({ id })
       .first();
 
-    return event ? mapEventToResponse(event) : null;
+    if (!event) return null;
+
+    const attendeesMap = await fetchEventAttendees([id]);
+    return mapEventToResponse(event, attendeesMap[id] || []);
   }
 
   static async createEvent(input: CalendarEventCreateInput, userId: string): Promise<CalendarEvent> {
@@ -65,7 +85,25 @@ export class CalendarService {
       })
       .returning('*');
 
-    return mapEventToResponse(event);
+    // Insert attendees
+    const attendees = input.attendees || [];
+    if (attendees.length > 0) {
+      const attendeeRows = attendees.map((uid: string) => ({
+        event_id: event.id,
+        user_id: uid,
+      }));
+      await db('calendar_event_attendees').insert(attendeeRows);
+
+      // Send Kakao notification to attendees
+      KakaoService.notifyUsers(
+        attendees,
+        '캘린더 일정 초대',
+        `"${input.title}" 일정에 참석자로 추가되었습니다.`,
+        undefined
+      );
+    }
+
+    return mapEventToResponse(event, attendees);
   }
 
   static async updateEvent(
@@ -95,7 +133,41 @@ export class CalendarService {
       .update(updateFields)
       .returning('*');
 
-    return mapEventToResponse(updatedEvent);
+    // Update attendees if provided
+    let finalAttendees: string[] = [];
+    if (input.attendees !== undefined) {
+      // Get old attendees for comparison
+      const oldRows = await db('calendar_event_attendees').where({ event_id: id }).select('user_id');
+      const oldAttendeeIds = oldRows.map((r: any) => r.user_id);
+
+      await db('calendar_event_attendees').where({ event_id: id }).delete();
+
+      if (input.attendees.length > 0) {
+        const attendeeRows = input.attendees.map((uid: string) => ({
+          event_id: id,
+          user_id: uid,
+        }));
+        await db('calendar_event_attendees').insert(attendeeRows);
+
+        // Notify newly added attendees only
+        const newAttendees = input.attendees.filter((uid: string) => !oldAttendeeIds.includes(uid));
+        if (newAttendees.length > 0) {
+          const eventTitle = input.title || event.title;
+          KakaoService.notifyUsers(
+            newAttendees,
+            '캘린더 일정 초대',
+            `"${eventTitle}" 일정에 참석자로 추가되었습니다.`,
+            undefined
+          );
+        }
+      }
+      finalAttendees = input.attendees;
+    } else {
+      const rows = await db('calendar_event_attendees').where({ event_id: id }).select('user_id');
+      finalAttendees = rows.map((r: any) => r.user_id);
+    }
+
+    return mapEventToResponse(updatedEvent, finalAttendees);
   }
 
   static async deleteEvent(id: string, userId: string): Promise<void> {
@@ -107,6 +179,7 @@ export class CalendarService {
       throw new AppError(404, API_ERRORS.NOT_FOUND, '이벤트를 찾을 수 없습니다');
     }
 
+    // Attendees are deleted via CASCADE
     await db('calendar_events')
       .where({ id })
       .delete();
