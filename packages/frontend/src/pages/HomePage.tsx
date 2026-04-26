@@ -82,6 +82,7 @@ export function HomePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [showNicknameModal, setShowNicknameModal] = useState(false);
   const [currentView, setCurrentView] = useState<'pages' | 'calendar' | 'clients' | 'inventory' | 'kanban' | 'cupping' | 'documents' | 'v2test'>('pages');
+  const [selectedKanbanProjectId, setSelectedKanbanProjectId] = useState<string | null>(null);
   const [sidebarTab, setSidebarTab] = useState<'pages' | 'business'>('pages');
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const handleToggleExpand = useCallback((id: string) => {
@@ -461,7 +462,14 @@ export function HomePage() {
                     {sidebarProjects.map((project) => (
                       <div
                         key={project.id}
-                        className="flex items-center gap-1.5 pl-4 pr-1 py-1.5 rounded-md hover:bg-gray-200/50 group transition-colors"
+                        onClick={() => {
+                          setSelectedKanbanProjectId(project.id);
+                          setCurrentView('kanban');
+                          setSelectedPageId(null);
+                          setSelectedPage(null);
+                          if (isMobile) setIsSidebarOpen(false);
+                        }}
+                        className="flex items-center gap-1.5 pl-4 pr-1 py-1.5 rounded-md hover:bg-gray-200/50 group transition-colors cursor-pointer"
                       >
                         <div className="w-1.5 h-1.5 rounded-full bg-blue-400 flex-shrink-0" />
                         <span className="text-xs text-gray-600 truncate flex-1">{project.title}</span>
@@ -612,7 +620,7 @@ export function HomePage() {
           ) : currentView === 'inventory' ? (
             <InventoryPage workspace={selectedWorkspace.name} />
           ) : currentView === 'kanban' ? (
-            <KanbanBoard workspace={selectedWorkspace.name} />
+            <KanbanBoard workspace={selectedWorkspace.name} initialProjectId={selectedKanbanProjectId} />
           ) : currentView === 'cupping' ? (
             <CuppingLogPage workspace={selectedWorkspace.name} />
           ) : currentView === 'documents' ? (

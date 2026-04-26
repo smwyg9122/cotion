@@ -16,6 +16,7 @@ import { Modal } from '../common/Modal';
 
 interface KanbanBoardProps {
   workspace: string;
+  initialProjectId?: string | null;
 }
 
 interface Project {
@@ -78,9 +79,9 @@ const AVATAR_COLORS = [
   'bg-pink-500', 'bg-cyan-500', 'bg-red-500', 'bg-indigo-500',
 ];
 
-export function KanbanBoard({ workspace }: KanbanBoardProps) {
+export function KanbanBoard({ workspace, initialProjectId }: KanbanBoardProps) {
   const [projects, setProjects] = useState<Project[]>([]);
-  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(initialProjectId || null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [users, setUsers] = useState<TaskUser[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -147,6 +148,13 @@ export function KanbanBoard({ workspace }: KanbanBoardProps) {
       console.error('Failed to fetch users:', err);
     }
   }, []);
+
+  // 외부에서 initialProjectId가 변경되면 반영
+  useEffect(() => {
+    if (initialProjectId) {
+      setSelectedProjectId(initialProjectId);
+    }
+  }, [initialProjectId]);
 
   useEffect(() => {
     fetchProjects();
