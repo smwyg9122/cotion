@@ -4,6 +4,7 @@ import { asyncHandler } from '../middleware/error.middleware';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { userCreateSchema, userLoginSchema, passwordChangeSchema } from '@cotion/shared';
 import { db } from '../database/connection';
+import { ActivityLogService } from '../services/activity-log.service';
 
 export const authController = {
   signup: asyncHandler(async (req: AuthRequest, res: Response) => {
@@ -25,6 +26,8 @@ export const authController = {
 
     // Login user
     const result = await AuthService.login(input);
+
+    ActivityLogService.log(result.user.id, 'user_login', 'user', result.user.id);
 
     res.json({
       success: true,

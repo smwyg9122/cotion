@@ -2,6 +2,7 @@ import { db } from '../database/connection';
 import { AppError } from '../middleware/error.middleware';
 import { API_ERRORS } from '@cotion/shared';
 import { KakaoService } from './kakao.service';
+import { ActivityLogService } from './activity-log.service';
 import {
   Project,
   ProjectCreateInput,
@@ -98,7 +99,11 @@ export class ProjectsService {
       })
       .returning('*');
 
-    return mapProjectToResponse(row);
+    const project = mapProjectToResponse(row);
+
+    ActivityLogService.log(userId, 'project_create', 'project', project.id, { title: project.title });
+
+    return project;
   }
 
   static async update(id: string, input: ProjectUpdateInput): Promise<Project> {
@@ -150,6 +155,8 @@ export class ProjectsService {
     await db('projects')
       .where({ id })
       .delete();
+
+    // Note: delete method doesn't have userId parameter, skipping activity log
   }
 
   // ── Tasks ──
@@ -222,6 +229,8 @@ export class ProjectsService {
         'https://cotion-ten.vercel.app'
       );
     }
+
+    ActivityLogService.log(userId, 'task_create', 'task', row.id, { title: input.title });
 
     return mapTaskToResponse(row, assignees);
   }

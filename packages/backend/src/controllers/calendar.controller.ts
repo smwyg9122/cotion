@@ -3,6 +3,7 @@ import { CalendarService } from '../services/calendar.service';
 import { asyncHandler } from '../middleware/error.middleware';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { calendarEventCreateSchema, calendarEventUpdateSchema } from '@cotion/shared';
+import { ActivityLogService } from '../services/activity-log.service';
 
 export const calendarController = {
   getEvents: asyncHandler(async (req: AuthRequest, res: Response) => {
@@ -52,6 +53,8 @@ export const calendarController = {
     const input = calendarEventCreateSchema.parse(req.body);
     const event = await CalendarService.createEvent(input, req.user!.userId);
 
+    ActivityLogService.log(req.user!.userId, 'event_create', 'event', event.id, { title: event.title });
+
     res.status(201).json({
       success: true,
       data: event,
@@ -63,6 +66,8 @@ export const calendarController = {
     const input = calendarEventUpdateSchema.parse(req.body);
     const event = await CalendarService.updateEvent(id, input, req.user!.userId);
 
+    ActivityLogService.log(req.user!.userId, 'event_update', 'event', id, { title: event.title });
+
     res.json({
       success: true,
       data: event,
@@ -72,6 +77,8 @@ export const calendarController = {
   deleteEvent: asyncHandler(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     await CalendarService.deleteEvent(id, req.user!.userId);
+
+    ActivityLogService.log(req.user!.userId, 'event_delete', 'event', id);
 
     res.json({
       success: true,

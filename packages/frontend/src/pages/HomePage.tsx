@@ -12,7 +12,7 @@ import { SearchBar } from '../components/pages/SearchBar';
 import { NotificationBell } from '../components/notifications/NotificationBell';
 import { TiptapEditor } from '../components/editor/TiptapEditor';
 import { CommentSection } from '../components/comments/CommentSection';
-import { Menu, X, Trash2, Plus, ChevronDown, ChevronRight, Check, Calendar, Users, Package, Kanban, Coffee, FolderOpen, Zap, MessageCircle, FileText, Settings } from 'lucide-react';
+import { Menu, X, Trash2, Plus, ChevronDown, ChevronRight, Check, Calendar, Users, Package, Kanban, Coffee, FolderOpen, Zap, MessageCircle, FileText, Settings, Shield } from 'lucide-react';
 import { api } from '../services/api';
 import { KakaoLinkButton } from '../components/settings/KakaoLinkButton';
 import { CalendarPage } from '../components/calendar/CalendarPage';
@@ -22,6 +22,7 @@ import { KanbanBoard } from '../components/projects/KanbanBoard';
 import { CuppingLogPage } from '../components/cupping/CuppingLogPage';
 import { DocumentLibrary } from '../components/documents/DocumentLibrary';
 import { V2TestPage } from '../components/test/V2TestPage';
+import { AdminPage } from '../components/admin/AdminPage';
 import { CategorySelect } from '../components/common';
 import type { Page } from '@cotion/shared';
 
@@ -81,9 +82,9 @@ export function HomePage() {
   const [editedCategory, setEditedCategory] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [showNicknameModal, setShowNicknameModal] = useState(false);
-  const [currentView, setCurrentView] = useState<'pages' | 'calendar' | 'clients' | 'inventory' | 'kanban' | 'cupping' | 'documents' | 'v2test'>('pages');
+  const [currentView, setCurrentView] = useState<'pages' | 'calendar' | 'clients' | 'inventory' | 'kanban' | 'cupping' | 'documents' | 'v2test' | 'admin'>('pages');
   const [selectedKanbanProjectId, setSelectedKanbanProjectId] = useState<string | null>(null);
-  const [sidebarTab, setSidebarTab] = useState<'pages' | 'business'>('pages');
+  const [sidebarTab, setSidebarTab] = useState<'pages' | 'business' | 'admin'>('pages');
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const handleToggleExpand = useCallback((id: string) => {
     setExpandedIds((prev) => {
@@ -306,9 +307,9 @@ export function HomePage() {
                         setIsWorkspaceSwitcherOpen(false);
                         setSelectedPageId(null);
                         setSelectedPage(null);
-                        // 제이로텍으로 전환 시 아유타 전용 뷰이면 pages로 리셋
+                        // 제이로텍으로 전환 시 아유타 전용 뷰이면 pages로 리셋 (admin은 유지)
                         if (ws.name !== '아유타') {
-                          setSidebarTab('pages');
+                          if (sidebarTab !== 'admin') setSidebarTab('pages');
                           if (['clients', 'inventory', 'kanban', 'cupping', 'documents', 'v2test'].includes(currentView)) {
                             setCurrentView('pages');
                           }
@@ -354,11 +355,57 @@ export function HomePage() {
               <Settings size={14} />
               업무 관리
             </button>
+            {(user as any)?.role === 'superadmin' && (
+              <button
+                onClick={() => { setSidebarTab('admin'); setCurrentView('admin'); }}
+                className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-semibold transition-colors ${
+                  sidebarTab === 'admin'
+                    ? 'text-purple-700 border-b-2 border-purple-600 bg-purple-50'
+                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200/40'
+                }`}
+              >
+                <Shield size={14} />
+                관리자
+              </button>
+            )}
+          </div>
+        ) : (user as any)?.role === 'superadmin' ? (
+          <div className="flex border-b border-gray-200 bg-[#f0efec]">
+            <button
+              onClick={() => setSidebarTab('pages')}
+              className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-semibold transition-colors ${
+                sidebarTab === 'pages'
+                  ? 'text-blue-700 border-b-2 border-blue-600 bg-[#f7f6f3]'
+                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200/40'
+              }`}
+            >
+              <FileText size={14} />
+              페이지
+            </button>
+            <button
+              onClick={() => { setSidebarTab('admin'); setCurrentView('admin'); }}
+              className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-semibold transition-colors ${
+                sidebarTab === 'admin'
+                  ? 'text-purple-700 border-b-2 border-purple-600 bg-purple-50'
+                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200/40'
+              }`}
+            >
+              <Shield size={14} />
+              관리자
+            </button>
           </div>
         ) : null}
 
         {/* Tab Content */}
-        {sidebarTab === 'pages' || selectedWorkspace.name !== '아유타' ? (
+        {sidebarTab === 'admin' ? (
+          <div className="flex-1 flex items-center justify-center px-4 py-8">
+            <div className="text-center text-gray-500 text-sm">
+              <Shield size={24} className="mx-auto mb-2 text-purple-400" />
+              <p className="font-medium text-gray-700">관리자 패널</p>
+              <p className="text-xs text-gray-400 mt-1">오른쪽 메인 영역에서 관리자 기능을 사용하세요.</p>
+            </div>
+          </div>
+        ) : sidebarTab === 'pages' || selectedWorkspace.name !== '아유타' ? (
           <>
             <div className="px-3 pt-3 pb-1">
               <button
@@ -627,6 +674,8 @@ export function HomePage() {
             <DocumentLibrary workspace={selectedWorkspace.name} />
           ) : currentView === 'v2test' ? (
             <V2TestPage workspace={selectedWorkspace.name} />
+          ) : currentView === 'admin' ? (
+            <AdminPage />
           ) : selectedPage ? (
             <div className="max-w-5xl mx-auto px-6 py-6 sm:px-12 sm:py-10">
               {/* Menu Button for Desktop when sidebar collapsed */}

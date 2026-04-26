@@ -172,6 +172,8 @@ export class KakaoService {
       button_title: '코션에서 확인',
     };
 
+    let result = false;
+
     try {
       const response = await fetch('https://kapi.kakao.com/v2/api/talk/memo/default/send', {
         method: 'POST',
@@ -187,15 +189,29 @@ export class KakaoService {
       if (!response.ok) {
         const error = await response.text();
         console.error(`Kakao message send failed for user ${userId}:`, error);
-        return false;
+        result = false;
+      } else {
+        console.log(`✅ Kakao message sent to user ${userId}`);
+        result = true;
       }
-
-      console.log(`✅ Kakao message sent to user ${userId}`);
-      return true;
     } catch (e) {
       console.error(`Kakao message error for user ${userId}:`, e);
-      return false;
+      result = false;
     }
+
+    // Log the notification attempt
+    try {
+      await db('kakao_notification_logs').insert({
+        user_id: userId,
+        type: title,
+        message: description,
+        status: result ? 'sent' : 'failed',
+      });
+    } catch (logErr) {
+      console.error('Failed to log kakao notification:', logErr);
+    }
+
+    return result;
   }
 
   // Send notification to multiple users (non-blocking)

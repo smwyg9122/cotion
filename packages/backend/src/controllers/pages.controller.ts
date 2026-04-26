@@ -3,6 +3,7 @@ import { PagesService } from '../services/pages.service';
 import { asyncHandler } from '../middleware/error.middleware';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { pageCreateSchema, pageUpdateSchema, pageMoveSchema } from '@cotion/shared';
+import { ActivityLogService } from '../services/activity-log.service';
 
 export const pagesController = {
   getAll: asyncHandler(async (req: AuthRequest, res: Response) => {
@@ -52,6 +53,8 @@ export const pagesController = {
     const input = pageCreateSchema.parse(req.body);
     const page = await PagesService.createPage(input, req.user!.userId);
 
+    ActivityLogService.log(req.user!.userId, 'page_create', 'page', page.id, { title: page.title });
+
     res.status(201).json({
       success: true,
       data: page,
@@ -63,6 +66,8 @@ export const pagesController = {
     const input = pageUpdateSchema.parse(req.body);
     const page = await PagesService.updatePage(id, input, req.user!.userId);
 
+    ActivityLogService.log(req.user!.userId, 'page_update', 'page', id, { title: req.body.title });
+
     res.json({
       success: true,
       data: page,
@@ -72,6 +77,8 @@ export const pagesController = {
   delete: asyncHandler(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     await PagesService.deletePage(id, req.user!.userId);
+
+    ActivityLogService.log(req.user!.userId, 'page_delete', 'page', id);
 
     res.json({
       success: true,
