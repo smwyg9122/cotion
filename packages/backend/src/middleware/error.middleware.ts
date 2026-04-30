@@ -59,6 +59,17 @@ export function errorHandler(
     });
   }
 
+  // multer fileFilter에서 던진 일반 Error (허용되지 않는 파일 형식)
+  if (error.message && error.message.includes('허용되지 않는 파일 형식')) {
+    return res.status(400).json({
+      success: false,
+      error: {
+        code: API_ERRORS.VALIDATION_ERROR,
+        message: error.message,
+      },
+    });
+  }
+
   return res.status(500).json({
     success: false,
     error: {

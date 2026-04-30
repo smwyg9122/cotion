@@ -153,7 +153,8 @@ export function DocumentLibrary({ workspace }: DocumentLibraryProps) {
       setIsModalOpen(false);
     } catch (err: any) {
       console.error('Failed to save document:', err);
-      alert('문서 저장에 실패했습니다. 다시 시도해주세요.');
+      const serverMsg = err?.response?.data?.error?.message || '';
+      alert(serverMsg || '문서 저장에 실패했습니다. 다시 시도해주세요.');
     }
   };
 
