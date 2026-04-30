@@ -5,39 +5,10 @@ import { authMiddleware } from '../middleware/auth.middleware';
 
 const router = Router();
 
-// 허용 파일 타입
-const ALLOWED_MIME_TYPES = [
-  // 이미지
-  'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml', 'image/bmp', 'image/tiff',
-  // 문서
-  'application/pdf',
-  'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-  // 한글 문서 (HWP/HWPX)
-  'application/x-hwp', 'application/haansofthwp', 'application/vnd.hancom.hwp',
-  'application/vnd.hancom.hwpx', 'application/hwp',
-  // 텍스트
-  'text/plain', 'text/csv', 'text/html', 'text/xml',
-  // 압축
-  'application/zip', 'application/x-rar-compressed', 'application/x-7z-compressed',
-  // 기타 일반 문서
-  'application/json', 'application/xml',
-  'application/rtf',
-  'application/octet-stream', // 알 수 없는 바이너리 파일 (hwp 등이 이걸로 올 수 있음)
-];
-
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB max
-  },
-  fileFilter: (_req, file, cb) => {
-    if (ALLOWED_MIME_TYPES.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new Error(`허용되지 않는 파일 형식입니다: ${file.mimetype}`));
-    }
+    fileSize: 50 * 1024 * 1024, // 50MB max
   },
 });
 

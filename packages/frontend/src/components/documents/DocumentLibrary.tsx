@@ -81,7 +81,10 @@ export function DocumentLibrary({ workspace }: DocumentLibraryProps) {
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
   const [formData, setFormData] = useState<DocumentFormData>(INITIAL_FORM);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const dragCounterRef = useRef(0);
 
   const fetchDocuments = useCallback(async () => {
     setIsLoading(true);
@@ -182,8 +185,101 @@ export function DocumentLibrary({ workspace }: DocumentLibraryProps) {
     }
   };
 
+  // 드래그앤드랍으로 파일 빠른 업로드
+  const handleQuickUpload = async (files: FileList) => {
+    if (files.length === 0) return;
+    setIsUploading(true);
+    try {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        // 1. 파일 업로드
+        const uploadData = new FormData();
+        uploadData.append('file', file);
+        const uploadRes = await api.post('/files/upload', uploadData);
+        const fileId = uploadRes.data.data?.id || uploadRes.data.id;
+
+        // 2. 문서 레코드 생성 (파일 이름 → 제목, 확장자 → 카테고리 추정)
+        const ext = file.name.split('.').pop()?.toLowerCase() || '';
+        let category = 'other';
+        if (['pdf', 'doc', 'docx', 'hwp', 'hwpx', 'rtf', 'txt'].includes(ext)) category = 'whitepaper';
+        if (['xls', 'xlsx', 'csv'].includes(ext)) category = 'pricelist';
+        if (['ppt', 'pptx'].includes(ext)) category = 'plan';
+
+        await api.post('/documents', {
+          title: file.name,
+          category,
+          fileId,
+          workspace,
+        });
+      }
+      await fetchDocuments();
+    } catch (err: any) {
+      console.error('Failed to upload files:', err);
+      const serverMsg = err?.response?.data?.error?.message || '';
+      alert(serverMsg || '파일 업로드에 실패했습니다.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current++;
+    if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
+      setIsDragging(true);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current--;
+    if (dragCounterRef.current === 0) {
+      setIsDragging(false);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    dragCounterRef.current = 0;
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      handleQuickUpload(e.dataTransfer.files);
+    }
+  };
+
   return (
-    <div className="h-full flex flex-col bg-gray-50">
+    <div
+      className="h-full flex flex-col bg-gray-50 relative"
+      onDragEnter={handleDragEnter}
+      onDragLeave={handleDragLeave}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+    >
+      {/* 드래그앤드랍 오버레이 */}
+      {isDragging && (
+        <div className="absolute inset-0 z-50 bg-indigo-50/90 border-4 border-dashed border-indigo-400 rounded-xl flex flex-col items-center justify-center pointer-events-none">
+          <Upload size={64} className="text-indigo-500 mb-4" />
+          <p className="text-2xl font-bold text-indigo-700">파일을 여기에 놓으세요</p>
+          <p className="text-sm text-indigo-500 mt-2">파일이 자동으로 문서 라이브러리에 추가됩니다</p>
+        </div>
+      )}
+
+      {/* 업로드 진행 표시 */}
+      {isUploading && (
+        <div className="absolute inset-0 z-50 bg-white/80 flex flex-col items-center justify-center">
+          <div className="animate-spin w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full mb-4"></div>
+          <p className="text-lg font-semibold text-indigo-700">파일 업로드 중...</p>
+        </div>
+      )}
+
       {/* Header */}
       <div className="bg-white border-b border-gray-200 shadow-sm">
         <div className="p-6">
