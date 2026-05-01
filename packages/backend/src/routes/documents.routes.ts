@@ -13,4 +13,12 @@ router.get('/:id', documentsController.getById);
 router.put('/:id', documentsController.update);
 router.delete('/:id', documentsController.delete);
 
+// Tag management
+router.post('/:id/tags', documentsController.addTags);
+router.delete('/:id/tags', documentsController.removeTags);
+router.get('/:id/tags', documentsController.getTags);
+
+// Status update (for kanban drag-and-drop)
+router.patch('/:id/status', documentsController.updateStatus);
+
 export default router;
