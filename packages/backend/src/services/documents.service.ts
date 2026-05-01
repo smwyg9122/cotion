@@ -56,7 +56,7 @@ export class DocumentsService {
     const [row] = await db('documents')
       .insert({
         title: input.title,
-        category: input.category || null,
+        category: input.category || 'other',
         file_id: input.fileId || null,
         page_id: input.pageId || null,
         description: input.description || null,
