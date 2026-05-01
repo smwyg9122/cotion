@@ -14,7 +14,13 @@ import {
   DollarSign,
   ClipboardList,
   ScrollText,
-  MoreHorizontal,
+  Download,
+  Eye,
+  ArrowLeft,
+  Paperclip,
+  Calendar,
+  User,
+  Tag,
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { Modal } from '../common/Modal';
@@ -26,19 +32,23 @@ interface DocumentLibraryProps {
 interface Document {
   id: string;
   title: string;
-  category: 'plan' | 'pricelist' | 'form' | 'whitepaper' | 'other';
-  description?: string;
+  category: string;
+  description?: string | null;
   fileId?: string | null;
   pageId?: string | null;
   workspace: string;
   createdBy?: string;
   createdAt?: string;
   updatedAt?: string;
+  // File metadata (from backend JOIN)
+  fileName?: string;
+  fileMimeType?: string;
+  fileSize?: number;
 }
 
 interface DocumentFormData {
   title: string;
-  category: Document['category'];
+  category: string;
   description: string;
   pageId: string;
   file: File | null;
@@ -52,15 +62,21 @@ const INITIAL_FORM: DocumentFormData = {
   file: null,
 };
 
-type CategoryFilter = 'all' | Document['category'];
+type CategoryKey = 'plan' | 'pricelist' | 'form' | 'whitepaper' | 'other';
+type CategoryFilter = 'all' | CategoryKey;
 
-const CATEGORY_CONFIG: Record<Document['category'], { label: string; icon: React.ElementType; color: string }> = {
+const CATEGORY_CONFIG: Record<CategoryKey, { label: string; icon: React.ElementType; color: string }> = {
   plan: { label: '기획안', icon: BookOpen, color: 'bg-blue-100 text-blue-700' },
   pricelist: { label: '가격표', icon: DollarSign, color: 'bg-emerald-100 text-emerald-700' },
   form: { label: '양식', icon: ClipboardList, color: 'bg-purple-100 text-purple-700' },
   whitepaper: { label: '백서', icon: ScrollText, color: 'bg-amber-100 text-amber-700' },
   other: { label: '기타', icon: File, color: 'bg-gray-100 text-gray-700' },
 };
+
+// Safe category lookup — unknown categories fall back to 'other'
+function getCategoryConfig(category: string) {
+  return CATEGORY_CONFIG[category as CategoryKey] || CATEGORY_CONFIG.other;
+}
 
 const CATEGORY_FILTERS: { key: CategoryFilter; label: string }[] = [
   { key: 'all', label: '전체' },
@@ -71,15 +87,33 @@ const CATEGORY_FILTERS: { key: CategoryFilter; label: string }[] = [
   { key: 'other', label: '기타' },
 ];
 
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function getFileDownloadUrl(fileId: string): string {
+  const baseUrl = (import.meta as any).env?.VITE_API_URL || 'http://localhost:3000/api';
+  return `${baseUrl}/files/${fileId}`;
+}
+
 export function DocumentLibrary({ workspace }: DocumentLibraryProps) {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Add/Edit modal
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
   const [formData, setFormData] = useState<DocumentFormData>(INITIAL_FORM);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Detail view
+  const [detailDocument, setDetailDocument] = useState<Document | null>(null);
+
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -114,7 +148,8 @@ export function DocumentLibrary({ workspace }: DocumentLibraryProps) {
     setIsModalOpen(true);
   };
 
-  const handleOpenEdit = (doc: Document) => {
+  const handleOpenEdit = (e: React.MouseEvent, doc: Document) => {
+    e.stopPropagation();
     setSelectedDocument(doc);
     setFormData({
       title: doc.title,
@@ -128,44 +163,92 @@ export function DocumentLibrary({ workspace }: DocumentLibraryProps) {
 
   const handleSave = async () => {
     if (!formData.title.trim()) return;
+    setIsSaving(true);
     try {
-      // Upload file first if one is selected, to obtain a fileId
+      // Step 1: Upload file if one is selected
       let fileId: string | undefined;
       if (formData.file) {
+        console.log('[DocumentLibrary] Uploading file:', formData.file.name, formData.file.size, 'bytes');
         const uploadData = new FormData();
         uploadData.append('file', formData.file);
         const uploadRes = await api.post('/files/upload', uploadData);
+        console.log('[DocumentLibrary] File upload response:', uploadRes.data);
         fileId = uploadRes.data.data?.id || uploadRes.data.id;
+        if (!fileId) {
+          throw new Error('파일 업로드 응답에 ID가 없습니다');
+        }
+        console.log('[DocumentLibrary] Got fileId:', fileId);
       }
 
+      // Step 2: Build document payload — strip empty strings to avoid Zod validation errors
       const payload: Record<string, any> = {
-        title: formData.title,
-        category: formData.category,
-        description: formData.description || undefined,
-        pageId: formData.pageId || undefined,
+        title: formData.title.trim(),
+        category: formData.category || 'other',
       };
-      if (fileId) payload.fileId = fileId;
-      if (!selectedDocument) payload.workspace = workspace;
+      if (formData.description && formData.description.trim()) {
+        payload.description = formData.description.trim();
+      }
+      // Only include pageId if it's a valid non-empty string
+      if (formData.pageId && formData.pageId.trim()) {
+        payload.pageId = formData.pageId.trim();
+      }
+      if (fileId) {
+        payload.fileId = fileId;
+      }
+      if (!selectedDocument) {
+        payload.workspace = workspace;
+      }
 
+      console.log('[DocumentLibrary] Saving document:', selectedDocument ? 'UPDATE' : 'CREATE', payload);
+
+      // Step 3: Create or update the document
       if (selectedDocument) {
         await api.put(`/documents/${selectedDocument.id}`, payload);
       } else {
         await api.post('/documents', payload);
       }
-      await fetchDocuments();
+
+      console.log('[DocumentLibrary] Document saved successfully');
+      const refreshed = await fetchDocuments();
       setIsModalOpen(false);
+      // Update detail view if the edited document was being viewed
+      if (selectedDocument && detailDocument?.id === selectedDocument.id) {
+        // Re-fetch the specific document to get updated data with file metadata
+        try {
+          const detailRes = await api.get(`/documents/${selectedDocument.id}`);
+          if (detailRes.data.data) {
+            setDetailDocument(detailRes.data.data);
+          }
+        } catch {
+          // If fetch fails, just close detail view
+          setDetailDocument(null);
+        }
+      }
     } catch (err: any) {
-      console.error('Failed to save document:', err);
+      console.error('[DocumentLibrary] Failed to save document:', err);
+      console.error('[DocumentLibrary] Error response:', err?.response?.data);
       const serverMsg = err?.response?.data?.error?.message || '';
-      alert(serverMsg || '문서 저장에 실패했습니다. 다시 시도해주세요.');
+      const details = err?.response?.data?.error?.details;
+      let msg = serverMsg || err.message || '문서 저장에 실패했습니다.';
+      if (details) {
+        msg += '\n\n상세: ' + JSON.stringify(details, null, 2);
+      }
+      alert(msg);
+    } finally {
+      setIsSaving(false);
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
     try {
       await api.delete(`/documents/${id}`);
       setDocuments((prev) => prev.filter((d) => d.id !== id));
       setDeleteConfirmId(null);
+      // Close detail view if the deleted document was being viewed
+      if (detailDocument?.id === id) {
+        setDetailDocument(null);
+      }
     } catch (err: any) {
       console.error('Failed to delete document:', err);
       alert('문서 삭제에 실패했습니다. 다시 시도해주세요.');
@@ -185,20 +268,37 @@ export function DocumentLibrary({ workspace }: DocumentLibraryProps) {
     }
   };
 
-  // 드래그앤드랍으로 파일 빠른 업로드
+  const handleCardClick = (doc: Document) => {
+    setDetailDocument(doc);
+  };
+
+  const handleDownloadFile = (fileId: string) => {
+    const url = getFileDownloadUrl(fileId);
+    window.open(url, '_blank');
+  };
+
+  // Drag-and-drop quick upload
   const handleQuickUpload = async (files: FileList) => {
     if (files.length === 0) return;
     setIsUploading(true);
     try {
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        // 1. 파일 업로드
+        console.log('[DocumentLibrary] Quick upload file:', file.name, file.size, 'bytes');
+
+        // 1. Upload file
         const uploadData = new FormData();
         uploadData.append('file', file);
         const uploadRes = await api.post('/files/upload', uploadData);
+        console.log('[DocumentLibrary] Quick upload response:', uploadRes.data);
         const fileId = uploadRes.data.data?.id || uploadRes.data.id;
 
-        // 2. 문서 레코드 생성 (파일 이름 → 제목, 확장자 → 카테고리 추정)
+        if (!fileId) {
+          console.error('[DocumentLibrary] No fileId in upload response');
+          throw new Error('파일 업로드 응답에 ID가 없습니다');
+        }
+
+        // 2. Create document record (filename → title, extension → category guess)
         const ext = file.name.split('.').pop()?.toLowerCase() || '';
         let category = 'other';
         if (['pdf', 'doc', 'docx', 'hwp', 'hwpx', 'rtf', 'txt'].includes(ext)) category = 'whitepaper';
@@ -211,10 +311,12 @@ export function DocumentLibrary({ workspace }: DocumentLibraryProps) {
           fileId,
           workspace,
         });
+        console.log('[DocumentLibrary] Document created for:', file.name);
       }
       await fetchDocuments();
     } catch (err: any) {
-      console.error('Failed to upload files:', err);
+      console.error('[DocumentLibrary] Quick upload failed:', err);
+      console.error('[DocumentLibrary] Error response:', err?.response?.data);
       const serverMsg = err?.response?.data?.error?.message || '';
       alert(serverMsg || '파일 업로드에 실패했습니다.');
     } finally {
@@ -255,6 +357,170 @@ export function DocumentLibrary({ workspace }: DocumentLibraryProps) {
     }
   };
 
+  // ─── Detail View ───────────────────────────────────────────
+  if (detailDocument) {
+    const catConfig = getCategoryConfig(detailDocument.category);
+    const CatIcon = catConfig.icon;
+
+    return (
+      <div className="h-full flex flex-col bg-gray-50">
+        {/* Detail Header */}
+        <div className="bg-white border-b border-gray-200 shadow-sm">
+          <div className="p-6">
+            <button
+              onClick={() => setDetailDocument(null)}
+              className="flex items-center gap-2 text-gray-500 hover:text-gray-700 mb-4 transition-colors"
+            >
+              <ArrowLeft size={18} />
+              <span className="text-sm font-medium">목록으로 돌아가기</span>
+            </button>
+
+            <div className="flex items-start justify-between">
+              <div className="flex items-start gap-4">
+                <div className={`p-3 rounded-lg ${catConfig.color}`}>
+                  <CatIcon size={28} />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900 mb-1">
+                    {detailDocument.title}
+                  </h1>
+                  <span className={`inline-block px-3 py-1 text-xs font-medium rounded-full ${catConfig.color}`}>
+                    {catConfig.label}
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={(e) => handleOpenEdit(e, detailDocument)}
+                  className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                >
+                  <Edit size={16} />
+                  <span>수정</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Detail Content */}
+        <div className="flex-1 overflow-auto p-6">
+          <div className="max-w-3xl mx-auto space-y-6">
+            {/* Description */}
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">설명</h2>
+              <p className="text-gray-700 whitespace-pre-wrap">
+                {detailDocument.description || '설명이 없습니다.'}
+              </p>
+            </div>
+
+            {/* Attached File */}
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                첨부 파일
+              </h2>
+              {detailDocument.fileId ? (
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-indigo-100 rounded-lg">
+                      <Paperclip size={20} className="text-indigo-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">
+                        {detailDocument.fileName || '첨부 파일'}
+                      </p>
+                      <div className="flex items-center gap-3 text-xs text-gray-500 mt-0.5">
+                        {detailDocument.fileMimeType && (
+                          <span>{detailDocument.fileMimeType}</span>
+                        )}
+                        {detailDocument.fileSize && (
+                          <span>{formatFileSize(detailDocument.fileSize)}</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {detailDocument.fileMimeType?.startsWith('image/') && (
+                      <button
+                        onClick={() => handleDownloadFile(detailDocument.fileId!)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                      >
+                        <Eye size={16} />
+                        <span>보기</span>
+                      </button>
+                    )}
+                    <button
+                      onClick={() => handleDownloadFile(detailDocument.fileId!)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg transition-colors"
+                    >
+                      <Download size={16} />
+                      <span>다운로드</span>
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-gray-400 text-sm">첨부된 파일이 없습니다.</p>
+              )}
+
+              {/* Image preview */}
+              {detailDocument.fileId && detailDocument.fileMimeType?.startsWith('image/') && (
+                <div className="mt-4 border border-gray-200 rounded-lg overflow-hidden">
+                  <img
+                    src={getFileDownloadUrl(detailDocument.fileId)}
+                    alt={detailDocument.fileName || detailDocument.title}
+                    className="max-w-full max-h-96 object-contain mx-auto"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = 'none';
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Metadata */}
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">정보</h2>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 text-sm">
+                  <Calendar size={16} className="text-gray-400" />
+                  <span className="text-gray-500">생성일:</span>
+                  <span className="text-gray-900">
+                    {detailDocument.createdAt
+                      ? new Date(detailDocument.createdAt).toLocaleString('ko-KR')
+                      : '-'}
+                  </span>
+                </div>
+                <div className="flex items-center gap-3 text-sm">
+                  <Calendar size={16} className="text-gray-400" />
+                  <span className="text-gray-500">수정일:</span>
+                  <span className="text-gray-900">
+                    {detailDocument.updatedAt
+                      ? new Date(detailDocument.updatedAt).toLocaleString('ko-KR')
+                      : '-'}
+                  </span>
+                </div>
+                <div className="flex items-center gap-3 text-sm">
+                  <Tag size={16} className="text-gray-400" />
+                  <span className="text-gray-500">카테고리:</span>
+                  <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${catConfig.color}`}>
+                    {catConfig.label}
+                  </span>
+                </div>
+                {detailDocument.pageId && (
+                  <div className="flex items-center gap-3 text-sm">
+                    <Link size={16} className="text-gray-400" />
+                    <span className="text-gray-500">연결 페이지:</span>
+                    <span className="text-indigo-600">{detailDocument.pageId}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── List View ─────────────────────────────────────────────
   return (
     <div
       className="h-full flex flex-col bg-gray-50 relative"
@@ -263,7 +529,7 @@ export function DocumentLibrary({ workspace }: DocumentLibraryProps) {
       onDragOver={handleDragOver}
       onDrop={handleDrop}
     >
-      {/* 드래그앤드랍 오버레이 */}
+      {/* Drag overlay */}
       {isDragging && (
         <div className="absolute inset-0 z-50 bg-indigo-50/90 border-4 border-dashed border-indigo-400 rounded-xl flex flex-col items-center justify-center pointer-events-none">
           <Upload size={64} className="text-indigo-500 mb-4" />
@@ -272,7 +538,7 @@ export function DocumentLibrary({ workspace }: DocumentLibraryProps) {
         </div>
       )}
 
-      {/* 업로드 진행 표시 */}
+      {/* Upload spinner */}
       {isUploading && (
         <div className="absolute inset-0 z-50 bg-white/80 flex flex-col items-center justify-center">
           <div className="animate-spin w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full mb-4"></div>
@@ -345,6 +611,7 @@ export function DocumentLibrary({ workspace }: DocumentLibraryProps) {
           <div className="flex flex-col items-center justify-center h-64 text-gray-400">
             <FileText size={48} className="mb-4" />
             <p className="text-lg">등록된 문서가 없습니다.</p>
+            <p className="text-sm mt-1">파일을 드래그하여 빠르게 추가할 수도 있습니다.</p>
             <button
               onClick={handleOpenAdd}
               className="mt-4 text-indigo-600 hover:text-indigo-700 font-medium"
@@ -355,13 +622,14 @@ export function DocumentLibrary({ workspace }: DocumentLibraryProps) {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {documents.map((doc) => {
-              const catConfig = CATEGORY_CONFIG[doc.category];
+              const catConfig = getCategoryConfig(doc.category);
               const CatIcon = catConfig.icon;
 
               return (
                 <div
                   key={doc.id}
-                  className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow overflow-hidden group"
+                  onClick={() => handleCardClick(doc)}
+                  className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md hover:border-indigo-200 transition-all overflow-hidden group cursor-pointer"
                 >
                   {/* Card icon area */}
                   <div className="px-5 pt-5 pb-3">
@@ -389,8 +657,13 @@ export function DocumentLibrary({ workspace }: DocumentLibraryProps) {
                     {/* File indicator */}
                     {doc.fileId && (
                       <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-2">
-                        <Upload size={12} />
-                        <span className="truncate">첨부 파일</span>
+                        <Paperclip size={12} />
+                        <span className="truncate">
+                          {doc.fileName || '첨부 파일'}
+                        </span>
+                        {doc.fileSize && (
+                          <span className="text-gray-300">({formatFileSize(doc.fileSize)})</span>
+                        )}
                       </div>
                     )}
 
@@ -411,8 +684,20 @@ export function DocumentLibrary({ workspace }: DocumentLibraryProps) {
                         : '-'}
                     </span>
                     <div className="flex items-center gap-1">
+                      {doc.fileId && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDownloadFile(doc.fileId!);
+                          }}
+                          className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors opacity-0 group-hover:opacity-100"
+                          title="다운로드"
+                        >
+                          <Download size={14} />
+                        </button>
+                      )}
                       <button
-                        onClick={() => handleOpenEdit(doc)}
+                        onClick={(e) => handleOpenEdit(e, doc)}
                         className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors opacity-0 group-hover:opacity-100"
                         title="수정"
                       >
@@ -421,13 +706,16 @@ export function DocumentLibrary({ workspace }: DocumentLibraryProps) {
                       {deleteConfirmId === doc.id ? (
                         <div className="flex items-center gap-1">
                           <button
-                            onClick={() => handleDelete(doc.id)}
+                            onClick={(e) => handleDelete(e, doc.id)}
                             className="p-1.5 text-white bg-red-500 hover:bg-red-600 rounded transition-colors"
                           >
                             <Check size={12} />
                           </button>
                           <button
-                            onClick={() => setDeleteConfirmId(null)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDeleteConfirmId(null);
+                            }}
                             className="p-1.5 text-gray-400 hover:text-gray-600 rounded transition-colors"
                           >
                             <X size={12} />
@@ -435,7 +723,10 @@ export function DocumentLibrary({ workspace }: DocumentLibraryProps) {
                         </div>
                       ) : (
                         <button
-                          onClick={() => setDeleteConfirmId(doc.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteConfirmId(doc.id);
+                          }}
                           className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors opacity-0 group-hover:opacity-100"
                           title="삭제"
                         >
@@ -473,7 +764,7 @@ export function DocumentLibrary({ workspace }: DocumentLibraryProps) {
             <label className="block text-sm font-medium text-gray-700 mb-2">카테고리 *</label>
             <select
               value={formData.category}
-              onChange={(e) => setFormData({ ...formData, category: e.target.value as Document['category'] })}
+              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
             >
               <option value="plan">기획안</option>
@@ -501,13 +792,19 @@ export function DocumentLibrary({ workspace }: DocumentLibraryProps) {
             >
               <Upload size={24} className="mx-auto mb-2 text-gray-400" />
               {formData.file ? (
-                <p className="text-sm text-indigo-600 font-medium">{formData.file.name}</p>
+                <div>
+                  <p className="text-sm text-indigo-600 font-medium">{formData.file.name}</p>
+                  <p className="text-xs text-gray-400 mt-1">{formatFileSize(formData.file.size)}</p>
+                </div>
               ) : selectedDocument?.fileId ? (
-                <p className="text-sm text-gray-500">
-                  현재 파일 있음 (클릭하여 변경)
-                </p>
+                <div>
+                  <p className="text-sm text-gray-500">
+                    현재 파일: {selectedDocument.fileName || '첨부 파일'}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">클릭하여 새 파일로 변경</p>
+                </div>
               ) : (
-                <p className="text-sm text-gray-400">클릭하여 파일 선택</p>
+                <p className="text-sm text-gray-400">클릭하여 파일 선택 (모든 파일 형식 허용)</p>
               )}
             </div>
             <input
@@ -532,15 +829,20 @@ export function DocumentLibrary({ workspace }: DocumentLibraryProps) {
             <button
               onClick={() => setIsModalOpen(false)}
               className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors font-medium"
+              disabled={isSaving}
             >
               취소
             </button>
             <button
               onClick={handleSave}
-              disabled={!formData.title.trim()}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-300 transition-colors font-medium"
+              disabled={!formData.title.trim() || isSaving}
+              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-300 transition-colors font-medium min-w-[80px] flex items-center justify-center"
             >
-              {selectedDocument ? '수정' : '추가'}
+              {isSaving ? (
+                <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full"></div>
+              ) : (
+                selectedDocument ? '수정' : '추가'
+              )}
             </button>
           </div>
         </div>

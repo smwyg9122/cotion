@@ -47,7 +47,7 @@ export function errorHandler(
 
   if (error instanceof multer.MulterError) {
     const messages: Record<string, string> = {
-      LIMIT_FILE_SIZE: '파일 크기가 너무 큽니다 (최대 10MB)',
+      LIMIT_FILE_SIZE: '파일 크기가 너무 큽니다 (최대 50MB)',
       LIMIT_UNEXPECTED_FILE: '허용되지 않는 파일 필드입니다',
     };
     return res.status(400).json({
@@ -70,13 +70,18 @@ export function errorHandler(
     });
   }
 
+  // Always log the full error server-side for debugging
+  console.error('Unhandled error details:', {
+    name: error.name,
+    message: error.message,
+    stack: error.stack?.split('\n').slice(0, 5).join('\n'),
+  });
+
   return res.status(500).json({
     success: false,
     error: {
       code: API_ERRORS.INTERNAL_ERROR,
-      message: process.env.NODE_ENV === 'production'
-        ? '서버 오류가 발생했습니다'
-        : `서버 오류: ${error.message}`,
+      message: `서버 오류: ${error.message}`,
     },
   });
 }

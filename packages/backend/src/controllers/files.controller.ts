@@ -7,11 +7,21 @@ export const filesController = {
   upload: asyncHandler(async (req: AuthRequest, res: Response) => {
     const file = req.file;
 
+    console.log('[FileUpload] Request received, file present:', !!file, 'user:', req.user?.userId);
+
     if (!file) {
+      console.error('[FileUpload] No file in request. Headers:', JSON.stringify(req.headers['content-type']));
       throw new AppError(400, 'VALIDATION_ERROR', '파일이 제공되지 않았습니다');
     }
 
+    console.log('[FileUpload] File details:', {
+      originalname: file.originalname,
+      mimetype: file.mimetype,
+      size: file.size,
+    });
+
     const result = await FilesService.saveFile(file, req.user!.userId);
+    console.log('[FileUpload] File saved, id:', result.id);
 
     const baseUrl = `${req.protocol}://${req.get('host')}`;
     const url = `${baseUrl}/api/files/${result.id}`;

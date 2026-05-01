@@ -1,11 +1,11 @@
 import { db } from '../database/connection';
 import { AppError } from '../middleware/error.middleware';
 import { API_ERRORS } from '@cotion/shared';
-import { Document, DocumentCreateInput, DocumentUpdateInput } from '@cotion/shared';
+import { DocumentCreateInput, DocumentUpdateInput } from '@cotion/shared';
 
 // Helper function to transform snake_case DB columns to camelCase for API response
-function mapDocumentToResponse(row: any): Document {
-  return {
+function mapDocumentToResponse(row: any): any {
+  const doc: any = {
     id: row.id,
     title: row.title,
     category: row.category,
@@ -17,26 +17,39 @@ function mapDocumentToResponse(row: any): Document {
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
+  // Include file metadata if joined
+  if (row.file_name) {
+    doc.fileName = row.file_name;
+    doc.fileMimeType = row.file_mime_type;
+    doc.fileSize = row.file_size;
+  }
+  return doc;
 }
 
-function mapDocumentsToResponse(rows: any[]): Document[] {
+function mapDocumentsToResponse(rows: any[]): any[] {
   return rows.map(mapDocumentToResponse);
 }
 
 export class DocumentsService {
-  static async getAll(workspace: string, category?: string, search?: string): Promise<Document[]> {
+  static async getAll(workspace: string, category?: string, search?: string): Promise<any[]> {
     const query = db('documents')
-      .where({ workspace })
-      .orderBy('created_at', 'desc')
-      .select('*');
+      .leftJoin('files', 'documents.file_id', 'files.id')
+      .where('documents.workspace', workspace)
+      .orderBy('documents.created_at', 'desc')
+      .select(
+        'documents.*',
+        'files.original_name as file_name',
+        'files.mime_type as file_mime_type',
+        'files.size as file_size'
+      );
 
     if (category) {
-      query.where('category', category);
+      query.where('documents.category', category);
     }
     if (search) {
       query.where(function () {
-        this.where('title', 'ilike', `%${search}%`)
-          .orWhere('description', 'ilike', `%${search}%`);
+        this.where('documents.title', 'ilike', `%${search}%`)
+          .orWhere('documents.description', 'ilike', `%${search}%`);
       });
     }
 
@@ -44,15 +57,22 @@ export class DocumentsService {
     return mapDocumentsToResponse(rows);
   }
 
-  static async getById(id: string): Promise<Document | null> {
+  static async getById(id: string): Promise<any | null> {
     const row = await db('documents')
-      .where({ id })
+      .leftJoin('files', 'documents.file_id', 'files.id')
+      .where('documents.id', id)
+      .select(
+        'documents.*',
+        'files.original_name as file_name',
+        'files.mime_type as file_mime_type',
+        'files.size as file_size'
+      )
       .first();
 
     return row ? mapDocumentToResponse(row) : null;
   }
 
-  static async create(input: DocumentCreateInput, userId: string): Promise<Document> {
+  static async create(input: DocumentCreateInput, userId: string): Promise<any> {
     const [row] = await db('documents')
       .insert({
         title: input.title,
@@ -70,7 +90,7 @@ export class DocumentsService {
     return mapDocumentToResponse(row);
   }
 
-  static async update(id: string, input: DocumentUpdateInput): Promise<Document> {
+  static async update(id: string, input: DocumentUpdateInput): Promise<any> {
     const existing = await db('documents')
       .where({ id })
       .first();

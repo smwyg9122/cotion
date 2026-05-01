@@ -9,6 +9,10 @@ export interface Document {
   createdBy: string;
   createdAt: string;
   updatedAt: string;
+  // File metadata (from JOIN)
+  fileName?: string;
+  fileMimeType?: string;
+  fileSize?: number;
 }
 
 export interface DocumentCreateInput {
