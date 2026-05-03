@@ -102,7 +102,7 @@ export const projectsController = {
   updateTask: asyncHandler(async (req: AuthRequest, res: Response) => {
     const { taskId } = req.params;
     const input = taskUpdateSchema.parse(req.body);
-    const task = await ProjectsService.updateTask(taskId, input);
+    const task = await ProjectsService.updateTask(taskId, input, req.user!.userId);
 
     res.json({
       success: true,

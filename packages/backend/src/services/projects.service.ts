@@ -1,8 +1,8 @@
 import { db } from '../database/connection';
 import { AppError } from '../middleware/error.middleware';
 import { API_ERRORS } from '@cotion/shared';
-import { KakaoService } from './kakao.service';
 import { ActivityLogService } from './activity-log.service';
+import { NotificationsService } from './notifications.service';
 import {
   Project,
   ProjectCreateInput,
@@ -227,13 +227,14 @@ export class ProjectsService {
       }));
       await db('task_assignees').insert(assigneeRows);
 
-      // Send Kakao notification to assignees
-      KakaoService.notifyUsers(
+      // 인앱 알림 + 카카오톡 알림
+      NotificationsService.notifyMany(
         assignees,
-        '새 업무 배정',
+        userId,
+        'task_assign',
         `"${input.title}" 업무가 배정되었습니다.`,
-        'https://cotion-ten.vercel.app'
-      );
+        '새 업무 배정'
+      ).catch(() => {});
     }
 
     ActivityLogService.log(userId, 'task_create', 'task', row.id, { title: input.title });
@@ -243,7 +244,7 @@ export class ProjectsService {
     return mapTaskToResponse(row, assigneesMap[row.id] || []);
   }
 
-  static async updateTask(id: string, input: TaskUpdateInput): Promise<Task> {
+  static async updateTask(id: string, input: TaskUpdateInput, userId?: string): Promise<Task> {
     const existing = await db('tasks')
       .where({ id })
       .first();
@@ -284,14 +285,15 @@ export class ProjectsService {
 
         // Notify newly added assignees only
         const newAssignees = input.assignees.filter((uid: string) => !oldAssigneeIds.includes(uid));
-        if (newAssignees.length > 0) {
+        if (newAssignees.length > 0 && userId) {
           const taskTitle = input.title || existing.title;
-          KakaoService.notifyUsers(
+          NotificationsService.notifyMany(
             newAssignees,
-            '업무 담당 배정',
+            userId,
+            'task_assign',
             `"${taskTitle}" 업무가 배정되었습니다.`,
-            'https://cotion-ten.vercel.app'
-          );
+            '업무 담당 배정'
+          ).catch(() => {});
         }
       }
     }

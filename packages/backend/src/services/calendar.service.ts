@@ -2,7 +2,7 @@ import { db } from '../database/connection';
 import { AppError } from '../middleware/error.middleware';
 import { API_ERRORS } from '@cotion/shared';
 import { CalendarEvent, CalendarEventCreateInput, CalendarEventUpdateInput } from '@cotion/shared';
-import { KakaoService } from './kakao.service';
+import { NotificationsService } from './notifications.service';
 
 // Helper function to transform snake_case DB columns to camelCase for API response
 function mapEventToResponse(event: any, attendees?: string[]): CalendarEvent {
@@ -94,13 +94,14 @@ export class CalendarService {
       }));
       await db('calendar_event_attendees').insert(attendeeRows);
 
-      // Send Kakao notification to attendees
-      KakaoService.notifyUsers(
+      // 인앱 알림 + 카카오톡 알림
+      NotificationsService.notifyMany(
         attendees,
-        '캘린더 일정 초대',
+        userId,
+        'calendar_invite',
         `"${input.title}" 일정에 참석자로 추가되었습니다.`,
-        undefined
-      );
+        '캘린더 일정 초대'
+      ).catch(() => {});
     }
 
     return mapEventToResponse(event, attendees);
@@ -153,12 +154,13 @@ export class CalendarService {
         const newAttendees = input.attendees.filter((uid: string) => !oldAttendeeIds.includes(uid));
         if (newAttendees.length > 0) {
           const eventTitle = input.title || event.title;
-          KakaoService.notifyUsers(
+          NotificationsService.notifyMany(
             newAttendees,
-            '캘린더 일정 초대',
+            userId,
+            'calendar_invite',
             `"${eventTitle}" 일정에 참석자로 추가되었습니다.`,
-            undefined
-          );
+            '캘린더 일정 초대'
+          ).catch(() => {});
         }
       }
       finalAttendees = input.attendees;

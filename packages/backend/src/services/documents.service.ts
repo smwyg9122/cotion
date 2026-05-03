@@ -2,7 +2,7 @@ import { db } from '../database/connection';
 import { AppError } from '../middleware/error.middleware';
 import { API_ERRORS } from '@cotion/shared';
 import { DocumentCreateInput, DocumentUpdateInput } from '@cotion/shared';
-import { KakaoService } from './kakao.service';
+import { NotificationsService } from './notifications.service';
 
 // Helper function to transform snake_case DB columns to camelCase for API response
 function mapDocumentToResponse(row: any): any {
@@ -243,11 +243,13 @@ export class DocumentsService {
         }))
       );
 
-      // Send Kakao notifications to newly tagged users (fire-and-forget)
-      KakaoService.notifyUsers(
+      // 인앱 알림 + 카카오톡 알림 (fire-and-forget)
+      NotificationsService.notifyMany(
         newUserIds,
-        '📎 문서 태그 알림',
-        `"${existing.title}" 문서에 태그되었습니다.`
+        taggedBy,
+        'document_tag',
+        `"${existing.title}" 문서에 태그되었습니다.`,
+        '📎 문서 태그 알림'
       ).catch(() => {});
     }
 

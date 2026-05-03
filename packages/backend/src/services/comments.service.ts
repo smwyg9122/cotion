@@ -1,5 +1,6 @@
 import { db } from '../database/connection';
 import { AppError } from '../middleware/error.middleware';
+import { NotificationsService } from './notifications.service';
 
 export class CommentsService {
   static async getCommentsByPage(pageId: string) {
@@ -24,7 +25,23 @@ export class CommentsService {
       .insert({ page_id: pageId, user_id: userId, content })
       .returning('*');
 
-    const user = await db('users').where({ id: userId }).first('name', 'username');
+    const [user, page] = await Promise.all([
+      db('users').where({ id: userId }).first('name', 'username'),
+      db('pages').where({ id: pageId }).first('title', 'created_by'),
+    ]);
+
+    // 페이지 작성자에게 댓글 알림 (자기 자신 제외)
+    if (page?.created_by && page.created_by !== userId) {
+      const msg = `${user?.name || '누군가'}님이 "${page?.title || '페이지'}"에 댓글을 남겼습니다`;
+      NotificationsService.createGeneral(
+        page.created_by,
+        userId,
+        'comment',
+        msg,
+        '새 댓글 알림',
+        pageId
+      ).catch(() => {});
+    }
 
     return {
       ...comment,

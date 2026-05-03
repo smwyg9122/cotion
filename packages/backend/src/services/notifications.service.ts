@@ -61,6 +61,68 @@ export class NotificationsService {
     return notification;
   }
 
+  /**
+   * 범용 알림 생성 — 인앱 알림 DB 저장 + 카카오톡 발송
+   * 문서 태그, 캘린더 참석자, 태스크 담당자, 댓글 멘션 등 모든 곳에서 사용
+   */
+  static async createGeneral(
+    targetUserId: string,
+    triggeredByUserId: string,
+    type: string,
+    message: string,
+    kakaoTitle: string,
+    pageId?: string | null
+  ) {
+    // Don't notify yourself
+    if (targetUserId === triggeredByUserId) return null;
+
+    try {
+      const [notification] = await db('notifications')
+        .insert({
+          user_id: targetUserId,
+          type,
+          message,
+          page_id: pageId || null,
+          triggered_by: triggeredByUserId,
+        })
+        .returning('*');
+
+      // 카카오톡 알림 발송 (비동기, 실패해도 DB 알림에는 영향 없음)
+      KakaoService.notifyUsers(
+        [targetUserId],
+        kakaoTitle,
+        message,
+        'https://cotion-ten.vercel.app'
+      ).catch(() => {});
+
+      return notification;
+    } catch (err) {
+      console.error('알림 생성 실패:', err);
+      return null;
+    }
+  }
+
+  /**
+   * 여러 사용자에게 동일한 알림을 보냄
+   */
+  static async notifyMany(
+    targetUserIds: string[],
+    triggeredByUserId: string,
+    type: string,
+    message: string,
+    kakaoTitle: string,
+    pageId?: string | null
+  ) {
+    const filtered = targetUserIds.filter((id) => id !== triggeredByUserId);
+    if (filtered.length === 0) return;
+
+    await Promise.allSettled(
+      filtered.map((uid) =>
+        this.createGeneral(uid, triggeredByUserId, type, message, kakaoTitle, pageId)
+      )
+    );
+  }
+
   static async markAsRead(notificationId: string, userId: string) {
     const updated = await db('notifications')
       .where({ id: notificationId, user_id: userId })
