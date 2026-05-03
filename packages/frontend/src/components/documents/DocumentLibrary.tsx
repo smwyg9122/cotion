@@ -203,6 +203,21 @@ export function DocumentLibrary({ workspace }: DocumentLibraryProps) {
       .catch(() => {});
   }, [workspace]);
 
+  // Handle browser back button — close detail view instead of navigating away
+  useEffect(() => {
+    if (!detailDocument) return;
+
+    // Push a history entry when opening detail view
+    window.history.pushState({ docDetail: true }, '');
+
+    const handlePopState = () => {
+      setDetailDocument(null);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [detailDocument?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ─── Handlers ───────────────────────────────────────────
 
   const handleOpenAdd = () => {
@@ -469,7 +484,7 @@ export function DocumentLibrary({ workspace }: DocumentLibraryProps) {
               <UserPlus size={13} />
             </button>
             {doc.fileId && (
-              <button onClick={(e) => { e.stopPropagation(); handleDownloadFile(doc.fileId!); }} className="p-1 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors opacity-0 group-hover:opacity-100" title="���운로드">
+              <button onClick={(e) => { e.stopPropagation(); handleDownloadFile(doc.fileId!); }} className="p-1 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors opacity-0 group-hover:opacity-100" title="다운로드">
                 <Download size={13} />
               </button>
             )}
@@ -493,10 +508,12 @@ export function DocumentLibrary({ workspace }: DocumentLibraryProps) {
   };
 
   // ═══════════════════════════════════════════════════════════
-  //  DETAIL VIEW
+  //  RENDER — modals + detail or list view
   // ═══════════════════════════════════════════════════════════
 
-  if (detailDocument) {
+  // Helper: render detail view content
+  const renderDetailView = () => {
+    if (!detailDocument) return null;
     const catConfig = getCategoryConfig(detailDocument.category);
     const CatIcon = catConfig.icon;
     const statusCfg = getStatusConfig(detailDocument.status);
@@ -505,7 +522,7 @@ export function DocumentLibrary({ workspace }: DocumentLibraryProps) {
       <div className="h-full flex flex-col bg-gray-50">
         <div className="bg-white border-b border-gray-200 shadow-sm">
           <div className="p-6">
-            <button onClick={() => setDetailDocument(null)} className="flex items-center gap-2 text-gray-500 hover:text-gray-700 mb-4">
+            <button onClick={() => { window.history.back(); }} className="flex items-center gap-2 text-gray-500 hover:text-gray-700 mb-4">
               <ArrowLeft size={18} /><span className="text-sm font-medium">목록으로 돌아가기</span>
             </button>
             <div className="flex items-start justify-between">
@@ -616,13 +633,11 @@ export function DocumentLibrary({ workspace }: DocumentLibraryProps) {
         </div>
       </div>
     );
-  }
-
-  // ═══════════════════════════════════════════════════════════
-  //  LIST / KANBAN VIEW
-  // ═══════════════════════════════════════════════════════════
+  };
 
   return (
+    <>
+    {detailDocument ? renderDetailView() : (
     <div
       className="h-full flex flex-col bg-gray-50 relative"
       onDragEnter={viewMode === 'grid' ? handleDragEnter : undefined}
@@ -673,7 +688,7 @@ export function DocumentLibrary({ workspace }: DocumentLibraryProps) {
           {/* Search */}
           <div className="relative mb-4">
             <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && fetchDocuments()} placeholder="문서 ��색..." className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-50" />
+            <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && fetchDocuments()} placeholder="문서 검색..." className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-50" />
           </div>
 
           {/* Category filters (grid mode only) */}
@@ -699,7 +714,7 @@ export function DocumentLibrary({ workspace }: DocumentLibraryProps) {
           <div className="flex flex-col items-center justify-center h-64 text-gray-400">
             <FileText size={48} className="mb-4" />
             <p className="text-lg">등록된 문서가 없습니다.</p>
-            <p className="text-sm mt-1">파일을 드래그하여 빠르게 ��가할 수도 있습니다.</p>
+            <p className="text-sm mt-1">파일을 드래그하여 빠르게 추가할 수도 있습니다.</p>
             <button onClick={handleOpenAdd} className="mt-4 text-indigo-600 hover:text-indigo-700 font-medium">+ 새 문서 추가</button>
           </div>
         ) : viewMode === 'kanban' ? (
@@ -742,7 +757,10 @@ export function DocumentLibrary({ workspace }: DocumentLibraryProps) {
         )}
       </div>
 
-      {/* ── Add/Edit Modal ── */}
+    </div>
+    )}
+
+      {/* ── Add/Edit Modal (always rendered) ── */}
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={selectedDocument ? '문서 수정' : '문서 추가'} size="md">
         <div className="space-y-4">
           <div>
@@ -771,7 +789,7 @@ export function DocumentLibrary({ workspace }: DocumentLibraryProps) {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">설명</label>
-            <textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} placeholder="문서 설명 (선택사���)" rows={3} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none" />
+            <textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} placeholder="문서 설명 (선택사항)" rows={3} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none" />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">파일 업로드 (선택)</label>
@@ -797,7 +815,7 @@ export function DocumentLibrary({ workspace }: DocumentLibraryProps) {
         </div>
       </Modal>
 
-      {/* ── Tag Modal ── */}
+      {/* ── Tag Modal (always rendered) ── */}
       <Modal isOpen={!!tagModalDocId} onClose={() => setTagModalDocId(null)} title="사용자 태그 관리" size="sm">
         <div className="space-y-4">
           {/* Currently tagged */}
@@ -846,6 +864,6 @@ export function DocumentLibrary({ workspace }: DocumentLibraryProps) {
           </div>
         </div>
       </Modal>
-    </div>
+    </>
   );
 }

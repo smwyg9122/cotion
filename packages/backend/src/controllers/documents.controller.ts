@@ -80,7 +80,7 @@ export const documentsController = {
     });
   }),
 
-  // ��── Tags ──────────────────────────────────────────────────
+  // ─── Tags ──────────────────────────────────────────────────
 
   addTags: asyncHandler(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
