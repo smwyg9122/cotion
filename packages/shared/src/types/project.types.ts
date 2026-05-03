@@ -22,6 +22,12 @@ export interface ProjectUpdateInput {
   status?: string;
 }
 
+export interface TaskAssignee {
+  id: string;
+  nickname: string;
+  email: string;
+}
+
 export interface Task {
   id: string;
   projectId: string;
@@ -31,7 +37,7 @@ export interface Task {
   priority: 'low' | 'medium' | 'high';
   position: number;
   dueDate: string | null;
-  assignees: string[];
+  assignees: TaskAssignee[];
   createdBy: string;
   createdAt: string;
   updatedAt: string;

@@ -8,6 +8,7 @@ import {
   ProjectCreateInput,
   ProjectUpdateInput,
   Task,
+  TaskAssignee,
   TaskCreateInput,
   TaskUpdateInput,
   TaskMoveInput,
@@ -31,7 +32,7 @@ function mapProjectsToResponse(rows: any[]): Project[] {
   return rows.map(mapProjectToResponse);
 }
 
-function mapTaskToResponse(row: any, assignees: string[] = []): Task {
+function mapTaskToResponse(row: any, assignees: TaskAssignee[] = []): Task {
   return {
     id: row.id,
     projectId: row.project_id,
@@ -48,20 +49,25 @@ function mapTaskToResponse(row: any, assignees: string[] = []): Task {
   };
 }
 
-// Helper to fetch assignees for a list of tasks
-async function fetchTaskAssignees(taskIds: string[]): Promise<Record<string, string[]>> {
+// Helper to fetch assignees with user info for a list of tasks
+async function fetchTaskAssignees(taskIds: string[]): Promise<Record<string, TaskAssignee[]>> {
   if (taskIds.length === 0) return {};
 
   const rows = await db('task_assignees')
-    .whereIn('task_id', taskIds)
-    .select('task_id', 'user_id');
+    .join('users', 'task_assignees.user_id', 'users.id')
+    .whereIn('task_assignees.task_id', taskIds)
+    .select('task_assignees.task_id', 'task_assignees.user_id', 'users.name', 'users.username');
 
-  const map: Record<string, string[]> = {};
+  const map: Record<string, TaskAssignee[]> = {};
   for (const row of rows) {
     if (!map[row.task_id]) {
       map[row.task_id] = [];
     }
-    map[row.task_id].push(row.user_id);
+    map[row.task_id].push({
+      id: row.user_id,
+      nickname: row.name || row.username,
+      email: row.username,
+    });
   }
   return map;
 }
@@ -232,7 +238,9 @@ export class ProjectsService {
 
     ActivityLogService.log(userId, 'task_create', 'task', row.id, { title: input.title });
 
-    return mapTaskToResponse(row, assignees);
+    // Fetch assignees with user info for response
+    const assigneesMap = await fetchTaskAssignees([row.id]);
+    return mapTaskToResponse(row, assigneesMap[row.id] || []);
   }
 
   static async updateTask(id: string, input: TaskUpdateInput): Promise<Task> {

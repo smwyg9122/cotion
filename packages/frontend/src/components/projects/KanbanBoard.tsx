@@ -222,7 +222,11 @@ export function KanbanBoard({ workspace, initialProjectId }: KanbanBoardProps) {
       setIsTaskModalOpen(false);
     } catch (err: any) {
       console.error('Failed to save task:', err);
-      alert('작업 저장에 실패했습니다.');
+      const serverMsg = err?.response?.data?.error?.message || '';
+      const details = err?.response?.data?.error?.details;
+      let msg = serverMsg || err.message || '작업 저장에 실패했습니다.';
+      if (details) msg += '\n\n상세: ' + JSON.stringify(details, null, 2);
+      alert(msg);
     }
   };
 
