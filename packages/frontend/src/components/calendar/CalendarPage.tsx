@@ -15,6 +15,11 @@ import {
 import { api } from '../../services/api';
 import { Modal } from '../common/Modal';
 
+/** Returns YYYY-MM-DD in *local* timezone (avoids UTC shift from toISOString) */
+function toLocalDateStr(d: Date): string {
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
 interface CalendarPageProps {
   workspace: string;
   onNavigateToPage?: (pageId: string) => void;
@@ -86,9 +91,9 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
   const [modalData, setModalData] = useState<EventModalData>({
     title: '',
     description: '',
-    startDate: new Date().toISOString().split('T')[0],
+    startDate: toLocalDateStr(new Date()),
     startTime: '09:00',
-    endDate: new Date().toISOString().split('T')[0],
+    endDate: toLocalDateStr(new Date()),
     endTime: '10:00',
     allDay: false,
     color: COLORS[4].value,
@@ -118,7 +123,7 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
     } else if (viewMode === 'week') {
       d.setDate(d.getDate() - d.getDay());
     }
-    return d.toISOString().split('T')[0];
+    return toLocalDateStr(d);
   }, [currentDate, viewMode]);
 
   const getViewEndDate = useCallback(() => {
@@ -129,7 +134,7 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
     } else if (viewMode === 'week') {
       d.setDate(d.getDate() - d.getDay() + 6);
     }
-    return d.toISOString().split('T')[0];
+    return toLocalDateStr(d);
   }, [currentDate, viewMode]);
 
   // Extract fetch logic into reusable function (Bug #2)
@@ -212,23 +217,23 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
 
   // Get events for specific date
   const getEventsForDate = useCallback((date: Date) => {
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = toLocalDateStr(date);
     return events.filter((event) => {
-      const eventStart = new Date(event.startDate).toISOString().split('T')[0];
-      const eventEnd = event.endDate ? new Date(event.endDate).toISOString().split('T')[0] : eventStart;
+      const eventStart = toLocalDateStr(new Date(event.startDate));
+      const eventEnd = event.endDate ? toLocalDateStr(new Date(event.endDate)) : eventStart;
       return dateStr >= eventStart && dateStr <= eventEnd;
     });
   }, [events]);
 
   // Get events for specific time slot
   const getEventsForTimeSlot = useCallback((date: Date, hour: number) => {
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = toLocalDateStr(date);
     const slotStart = `${hour.toString().padStart(2, '0')}:00`;
     const slotEnd = `${(hour + 1).toString().padStart(2, '0')}:00`;
 
     return events.filter((event) => {
-      const eventStart = new Date(event.startDate).toISOString().split('T')[0];
-      const eventEnd = event.endDate ? new Date(event.endDate).toISOString().split('T')[0] : eventStart;
+      const eventStart = toLocalDateStr(new Date(event.startDate));
+      const eventEnd = event.endDate ? toLocalDateStr(new Date(event.endDate)) : eventStart;
 
       if (dateStr < eventStart || dateStr > eventEnd) return false;
       if (event.allDay) return false;
@@ -276,7 +281,7 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
   // Event handlers
   const handleCellClick = useCallback((date: Date, hour?: number) => {
     setSelectedEvent(null);
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = toLocalDateStr(date);
     setModalData({
       title: '',
       description: '',
@@ -617,9 +622,9 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
                 setModalData({
                   title: '',
                   description: '',
-                  startDate: new Date().toISOString().split('T')[0],
+                  startDate: toLocalDateStr(new Date()),
                   startTime: '09:00',
-                  endDate: new Date().toISOString().split('T')[0],
+                  endDate: toLocalDateStr(new Date()),
                   endTime: '10:00',
                   allDay: false,
                   color: COLORS[4].value,

@@ -12,7 +12,7 @@ import { SearchBar } from '../components/pages/SearchBar';
 import { NotificationBell } from '../components/notifications/NotificationBell';
 import { TiptapEditor } from '../components/editor/TiptapEditor';
 import { CommentSection } from '../components/comments/CommentSection';
-import { Menu, X, Trash2, Plus, ChevronDown, ChevronRight, Check, Calendar, Users, Package, Kanban, Coffee, FolderOpen, Zap, MessageCircle, FileText, Settings, Shield } from 'lucide-react';
+import { Menu, X, Trash2, Plus, ChevronDown, ChevronRight, Check, Calendar, Users, Package, Kanban, Coffee, FolderOpen, Palette, Zap, MessageCircle, FileText, Settings, Shield } from 'lucide-react';
 import { api } from '../services/api';
 import { KakaoLinkButton } from '../components/settings/KakaoLinkButton';
 import { CalendarPage } from '../components/calendar/CalendarPage';
@@ -21,6 +21,7 @@ import { InventoryPage } from '../components/inventory/InventoryPage';
 import { KanbanBoard } from '../components/projects/KanbanBoard';
 import { CuppingLogPage } from '../components/cupping/CuppingLogPage';
 import { DocumentLibrary } from '../components/documents/DocumentLibrary';
+import { DesignLibrary } from '../components/design/DesignLibrary';
 import { V2TestPage } from '../components/test/V2TestPage';
 import { AdminPage } from '../components/admin/AdminPage';
 import { CategorySelect } from '../components/common';
@@ -82,7 +83,7 @@ export function HomePage() {
   const [editedCategory, setEditedCategory] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [showNicknameModal, setShowNicknameModal] = useState(false);
-  const [currentView, setCurrentView] = useState<'pages' | 'calendar' | 'clients' | 'inventory' | 'kanban' | 'cupping' | 'documents' | 'v2test' | 'admin'>('pages');
+  const [currentView, setCurrentView] = useState<'pages' | 'calendar' | 'clients' | 'inventory' | 'kanban' | 'cupping' | 'documents' | 'design' | 'v2test' | 'admin'>('pages');
   const [selectedKanbanProjectId, setSelectedKanbanProjectId] = useState<string | null>(null);
   const [sidebarTab, setSidebarTab] = useState<'pages' | 'business' | 'admin'>('pages');
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
@@ -571,6 +572,23 @@ export function HomePage() {
               문서 라이브러리
             </button>
 
+            <button
+              onClick={() => {
+                setCurrentView('design');
+                setSelectedPageId(null);
+                setSelectedPage(null);
+                if (isMobile) setIsSidebarOpen(false);
+              }}
+              className={`w-full px-3 py-2.5 text-sm rounded-lg text-left transition-all flex items-center gap-2.5 ${
+                currentView === 'design'
+                  ? 'bg-violet-50 text-violet-700 font-medium border border-violet-200/60'
+                  : 'text-gray-700 hover:bg-gray-200/60 border border-transparent'
+              }`}
+            >
+              <Palette size={16} />
+              디자인 라이브러리
+            </button>
+
             {user?.username === 'admin1' && (
               <>
                 <div className="px-2 py-1.5 mt-3 text-[11px] font-semibold text-amber-500 uppercase tracking-wider">개발</div>
@@ -672,6 +690,8 @@ export function HomePage() {
             <CuppingLogPage workspace={selectedWorkspace.name} />
           ) : currentView === 'documents' ? (
             <DocumentLibrary workspace={selectedWorkspace.name} />
+          ) : currentView === 'design' ? (
+            <DesignLibrary workspace={selectedWorkspace.name} />
           ) : currentView === 'v2test' ? (
             <V2TestPage workspace={selectedWorkspace.name} />
           ) : currentView === 'admin' ? (
