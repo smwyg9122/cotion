@@ -80,7 +80,7 @@ async function startServer() {
         console.log('✅ Database migrations up to date');
       }
     } catch (migrationError) {
-      console.error('⚠️ Migration failed (server will continue):', migrationError);
+      console.error('⚠️ Migration failed (server will continue):', (migrationError as Error).message, (migrationError as Error).stack);
     }
 
     // Initialize scheduled jobs (meeting templates, followup notifications)

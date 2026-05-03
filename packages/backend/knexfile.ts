@@ -41,7 +41,7 @@ const config: { [key: string]: Knex.Config } = {
       max: 10,
     },
     migrations: {
-      directory: path.join(__dirname, isProduction ? 'dist/database/migrations' : 'src/database/migrations'),
+      directory: path.join(__dirname, 'database/migrations'),
       extension: isProduction ? 'js' : 'ts',
       loadExtensions: isProduction ? ['.js'] : ['.ts'],
     },

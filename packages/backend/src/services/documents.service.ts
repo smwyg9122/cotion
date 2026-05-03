@@ -61,6 +61,30 @@ async function fetchDocumentTags(documentIds: string[]): Promise<Record<string, 
   return map;
 }
 
+// Check whether the 'status' column exists (cached after first call)
+let _hasStatusColumn: boolean | null = null;
+async function hasStatusColumn(): Promise<boolean> {
+  if (_hasStatusColumn !== null) return _hasStatusColumn;
+  try {
+    _hasStatusColumn = await db.schema.hasColumn('documents', 'status');
+  } catch {
+    _hasStatusColumn = false;
+  }
+  return _hasStatusColumn;
+}
+
+// Check whether 'document_tags' table exists (cached)
+let _hasDocumentTagsTable: boolean | null = null;
+async function hasDocumentTagsTable(): Promise<boolean> {
+  if (_hasDocumentTagsTable !== null) return _hasDocumentTagsTable;
+  try {
+    _hasDocumentTagsTable = await db.schema.hasTable('document_tags');
+  } catch {
+    _hasDocumentTagsTable = false;
+  }
+  return _hasDocumentTagsTable;
+}
+
 export class DocumentsService {
   static async getAll(workspace: string, category?: string, search?: string, status?: string): Promise<any[]> {
     const query = db('documents')
@@ -77,7 +101,7 @@ export class DocumentsService {
     if (category) {
       query.where('documents.category', category);
     }
-    if (status) {
+    if (status && await hasStatusColumn()) {
       query.where('documents.status', status);
     }
     if (search) {
@@ -90,11 +114,13 @@ export class DocumentsService {
     const rows = await query;
     const docs = mapDocumentsToResponse(rows);
 
-    // Attach tagged users
-    const docIds = docs.map((d: any) => d.id);
-    const tagsMap = await fetchDocumentTags(docIds);
-    for (const doc of docs) {
-      doc.taggedUsers = tagsMap[doc.id] || [];
+    // Attach tagged users (only if table exists)
+    if (await hasDocumentTagsTable()) {
+      const docIds = docs.map((d: any) => d.id);
+      const tagsMap = await fetchDocumentTags(docIds);
+      for (const doc of docs) {
+        doc.taggedUsers = tagsMap[doc.id] || [];
+      }
     }
 
     return docs;
@@ -115,25 +141,33 @@ export class DocumentsService {
     if (!row) return null;
 
     const doc = mapDocumentToResponse(row);
-    const tagsMap = await fetchDocumentTags([doc.id]);
-    doc.taggedUsers = tagsMap[doc.id] || [];
+    if (await hasDocumentTagsTable()) {
+      const tagsMap = await fetchDocumentTags([doc.id]);
+      doc.taggedUsers = tagsMap[doc.id] || [];
+    }
     return doc;
   }
 
   static async create(input: DocumentCreateInput, userId: string): Promise<any> {
+    const insertData: any = {
+      title: input.title,
+      category: input.category || 'other',
+      file_id: input.fileId || null,
+      page_id: input.pageId || null,
+      description: input.description || null,
+      workspace: input.workspace,
+      created_by: userId,
+      created_at: db.fn.now(),
+      updated_at: db.fn.now(),
+    };
+
+    // Only include status if the column exists in DB
+    if (await hasStatusColumn()) {
+      insertData.status = (input as any).status || 'draft';
+    }
+
     const [row] = await db('documents')
-      .insert({
-        title: input.title,
-        category: input.category || 'other',
-        status: (input as any).status || 'draft',
-        file_id: input.fileId || null,
-        page_id: input.pageId || null,
-        description: input.description || null,
-        workspace: input.workspace,
-        created_by: userId,
-        created_at: db.fn.now(),
-        updated_at: db.fn.now(),
-      })
+      .insert(insertData)
       .returning('*');
 
     return mapDocumentToResponse(row);
@@ -151,7 +185,9 @@ export class DocumentsService {
     const updateFields: any = { updated_at: db.fn.now() };
     if (input.title !== undefined) updateFields.title = input.title;
     if (input.category !== undefined) updateFields.category = input.category;
-    if ((input as any).status !== undefined) updateFields.status = (input as any).status;
+    if ((input as any).status !== undefined && await hasStatusColumn()) {
+      updateFields.status = (input as any).status;
+    }
     if (input.fileId !== undefined) updateFields.file_id = input.fileId;
     if (input.pageId !== undefined) updateFields.page_id = input.pageId;
     if (input.description !== undefined) updateFields.description = input.description;
@@ -181,6 +217,10 @@ export class DocumentsService {
   // ─── Tag management ────────────────────────────────────────
 
   static async addTags(documentId: string, userIds: string[], taggedBy: string): Promise<any[]> {
+    if (!(await hasDocumentTagsTable())) {
+      return []; // Table not yet created
+    }
+
     const existing = await db('documents').where({ id: documentId }).first();
     if (!existing) {
       throw new AppError(404, API_ERRORS.NOT_FOUND, '문서를 찾을 수 없습니다');
@@ -217,6 +257,10 @@ export class DocumentsService {
   }
 
   static async removeTags(documentId: string, userIds: string[]): Promise<any[]> {
+    if (!(await hasDocumentTagsTable())) {
+      return [];
+    }
+
     const existing = await db('documents').where({ id: documentId }).first();
     if (!existing) {
       throw new AppError(404, API_ERRORS.NOT_FOUND, '문서를 찾을 수 없습니다');
@@ -232,6 +276,9 @@ export class DocumentsService {
   }
 
   static async getTagsByDocumentId(documentId: string): Promise<any[]> {
+    if (!(await hasDocumentTagsTable())) {
+      return [];
+    }
     const tagsMap = await fetchDocumentTags([documentId]);
     return tagsMap[documentId] || [];
   }
@@ -239,6 +286,10 @@ export class DocumentsService {
   // ─── Status update (for kanban drag) ───────────────────────
 
   static async updateStatus(id: string, status: string): Promise<any> {
+    if (!(await hasStatusColumn())) {
+      throw new AppError(400, 'MIGRATION_PENDING', 'status 컬럼이 아직 생성되지 않았습니다. 서버를 재시작해주세요.');
+    }
+
     const existing = await db('documents').where({ id }).first();
     if (!existing) {
       throw new AppError(404, API_ERRORS.NOT_FOUND, '문서를 찾을 수 없습니다');
