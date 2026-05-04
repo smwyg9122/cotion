@@ -61,28 +61,53 @@ async function fetchDocumentTags(documentIds: string[]): Promise<Record<string, 
   return map;
 }
 
-// Check whether the 'status' column exists (cached after first call)
-let _hasStatusColumn: boolean | null = null;
-async function hasStatusColumn(): Promise<boolean> {
-  if (_hasStatusColumn !== null) return _hasStatusColumn;
+// ─── Auto-ensure schema (self-healing if migrations fail) ──────────
+let _statusColumnReady = false;
+async function ensureStatusColumn(): Promise<boolean> {
+  if (_statusColumnReady) return true;
   try {
-    _hasStatusColumn = await db.schema.hasColumn('documents', 'status');
-  } catch {
-    _hasStatusColumn = false;
+    const exists = await db.schema.hasColumn('documents', 'status');
+    if (!exists) {
+      await db.schema.alterTable('documents', (table) => {
+        table.string('status', 30).notNullable().defaultTo('draft');
+      });
+      await db.schema.alterTable('documents', (table) => {
+        table.index(['status'], 'idx_documents_status');
+      });
+      console.log('✅ Auto-created documents.status column');
+    }
+    _statusColumnReady = true;
+    return true;
+  } catch (err) {
+    console.error('❌ Failed to ensure status column:', err);
+    return false;
   }
-  return _hasStatusColumn;
 }
 
-// Check whether 'document_tags' table exists (cached)
-let _hasDocumentTagsTable: boolean | null = null;
-async function hasDocumentTagsTable(): Promise<boolean> {
-  if (_hasDocumentTagsTable !== null) return _hasDocumentTagsTable;
+let _tagsTableReady = false;
+async function ensureDocumentTagsTable(): Promise<boolean> {
+  if (_tagsTableReady) return true;
   try {
-    _hasDocumentTagsTable = await db.schema.hasTable('document_tags');
-  } catch {
-    _hasDocumentTagsTable = false;
+    const exists = await db.schema.hasTable('document_tags');
+    if (!exists) {
+      await db.schema.createTable('document_tags', (table) => {
+        table.uuid('id').primary().defaultTo(db.raw('gen_random_uuid()'));
+        table.uuid('document_id').notNullable().references('id').inTable('documents').onDelete('CASCADE');
+        table.uuid('user_id').notNullable().references('id').inTable('users').onDelete('CASCADE');
+        table.uuid('tagged_by').notNullable().references('id').inTable('users').onDelete('CASCADE');
+        table.timestamp('created_at').notNullable().defaultTo(db.fn.now());
+        table.unique(['document_id', 'user_id']);
+        table.index(['document_id'], 'idx_document_tags_document_id');
+        table.index(['user_id'], 'idx_document_tags_user_id');
+      });
+      console.log('✅ Auto-created document_tags table');
+    }
+    _tagsTableReady = true;
+    return true;
+  } catch (err) {
+    console.error('❌ Failed to ensure document_tags table:', err);
+    return false;
   }
-  return _hasDocumentTagsTable;
 }
 
 export class DocumentsService {
@@ -101,7 +126,7 @@ export class DocumentsService {
     if (category) {
       query.where('documents.category', category);
     }
-    if (status && await hasStatusColumn()) {
+    if (status && await ensureStatusColumn()) {
       query.where('documents.status', status);
     }
     if (search) {
@@ -115,7 +140,7 @@ export class DocumentsService {
     const docs = mapDocumentsToResponse(rows);
 
     // Attach tagged users (only if table exists)
-    if (await hasDocumentTagsTable()) {
+    if (await ensureDocumentTagsTable()) {
       const docIds = docs.map((d: any) => d.id);
       const tagsMap = await fetchDocumentTags(docIds);
       for (const doc of docs) {
@@ -141,7 +166,7 @@ export class DocumentsService {
     if (!row) return null;
 
     const doc = mapDocumentToResponse(row);
-    if (await hasDocumentTagsTable()) {
+    if (await ensureDocumentTagsTable()) {
       const tagsMap = await fetchDocumentTags([doc.id]);
       doc.taggedUsers = tagsMap[doc.id] || [];
     }
@@ -162,7 +187,7 @@ export class DocumentsService {
     };
 
     // Only include status if the column exists in DB
-    if (await hasStatusColumn()) {
+    if (await ensureStatusColumn()) {
       insertData.status = (input as any).status || 'draft';
     }
 
@@ -185,7 +210,7 @@ export class DocumentsService {
     const updateFields: any = { updated_at: db.fn.now() };
     if (input.title !== undefined) updateFields.title = input.title;
     if (input.category !== undefined) updateFields.category = input.category;
-    if ((input as any).status !== undefined && await hasStatusColumn()) {
+    if ((input as any).status !== undefined && await ensureStatusColumn()) {
       updateFields.status = (input as any).status;
     }
     if (input.fileId !== undefined) updateFields.file_id = input.fileId;
@@ -217,9 +242,7 @@ export class DocumentsService {
   // ─── Tag management ────────────────────────────────────────
 
   static async addTags(documentId: string, userIds: string[], taggedBy: string): Promise<any[]> {
-    if (!(await hasDocumentTagsTable())) {
-      return []; // Table not yet created
-    }
+    await ensureDocumentTagsTable();
 
     const existing = await db('documents').where({ id: documentId }).first();
     if (!existing) {
@@ -259,9 +282,7 @@ export class DocumentsService {
   }
 
   static async removeTags(documentId: string, userIds: string[]): Promise<any[]> {
-    if (!(await hasDocumentTagsTable())) {
-      return [];
-    }
+    await ensureDocumentTagsTable();
 
     const existing = await db('documents').where({ id: documentId }).first();
     if (!existing) {
@@ -278,9 +299,7 @@ export class DocumentsService {
   }
 
   static async getTagsByDocumentId(documentId: string): Promise<any[]> {
-    if (!(await hasDocumentTagsTable())) {
-      return [];
-    }
+    await ensureDocumentTagsTable();
     const tagsMap = await fetchDocumentTags([documentId]);
     return tagsMap[documentId] || [];
   }
@@ -288,9 +307,7 @@ export class DocumentsService {
   // ─── Status update (for kanban drag) ───────────────────────
 
   static async updateStatus(id: string, status: string): Promise<any> {
-    if (!(await hasStatusColumn())) {
-      throw new AppError(400, 'MIGRATION_PENDING', 'status 컬럼이 아직 생성되지 않았습니다. 서버를 재시작해주세요.');
-    }
+    await ensureStatusColumn();
 
     const existing = await db('documents').where({ id }).first();
     if (!existing) {
