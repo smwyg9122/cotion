@@ -228,12 +228,13 @@ export class ProjectsService {
       await db('task_assignees').insert(assigneeRows);
 
       // 인앱 알림 + 카카오톡 알림
+      const ws = project.workspace || '';
       NotificationsService.notifyMany(
         assignees,
         userId,
         'task_assign',
-        `"${input.title}" 업무가 배정되었습니다.`,
-        '새 업무 배정'
+        `[${ws}] "${input.title}" 업무가 배정되었습니다.`,
+        `[${ws}] 새 업무 배정`
       ).catch(() => {});
     }
 
@@ -287,12 +288,14 @@ export class ProjectsService {
         const newAssignees = input.assignees.filter((uid: string) => !oldAssigneeIds.includes(uid));
         if (newAssignees.length > 0 && userId) {
           const taskTitle = input.title || existing.title;
+          const proj = await db('projects').where({ id: existing.project_id }).first();
+          const ws = proj?.workspace || '';
           NotificationsService.notifyMany(
             newAssignees,
             userId,
             'task_assign',
-            `"${taskTitle}" 업무가 배정되었습니다.`,
-            '업무 담당 배정'
+            `[${ws}] "${taskTitle}" 업무가 배정되었습니다.`,
+            `[${ws}] 업무 담당 배정`
           ).catch(() => {});
         }
       }

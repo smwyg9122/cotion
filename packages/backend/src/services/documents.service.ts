@@ -267,12 +267,13 @@ export class DocumentsService {
       );
 
       // 인앱 알림 + 카카오톡 알림 (fire-and-forget)
+      const ws = existing.workspace || '';
       NotificationsService.notifyMany(
         newUserIds,
         taggedBy,
         'document_tag',
-        `"${existing.title}" 문서에 태그되었습니다.`,
-        '📎 문서 태그 알림'
+        `[${ws}] "${existing.title}" 문서에 태그되었습니다.`,
+        `📎 [${ws}] 문서 태그 알림`
       ).catch(() => {});
     }
 

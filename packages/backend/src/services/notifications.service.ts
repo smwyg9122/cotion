@@ -37,7 +37,8 @@ export class NotificationsService {
       db('pages').where({ id: pageId }).first(),
     ]);
 
-    const message = `${triggerUser?.name || '누군가'}님이 "${page?.title || '페이지'}"에서 회원님을 멘션했습니다`;
+    const ws = page?.workspace || '';
+    const message = `[${ws}] ${triggerUser?.name || '누군가'}님이 "${page?.title || '페이지'}"에서 회원님을 멘션했습니다`;
 
     const [notification] = await db('notifications')
       .insert({
@@ -53,7 +54,7 @@ export class NotificationsService {
     const linkUrl = `https://cotion-ten.vercel.app`;
     KakaoService.notifyUsers(
       [mentionedUserId],
-      '페이지 멘션',
+      `[${ws}] 페이지 멘션`,
       message,
       linkUrl
     );

@@ -27,18 +27,19 @@ export class CommentsService {
 
     const [user, page] = await Promise.all([
       db('users').where({ id: userId }).first('name', 'username'),
-      db('pages').where({ id: pageId }).first('title', 'created_by'),
+      db('pages').where({ id: pageId }).first('title', 'created_by', 'workspace'),
     ]);
 
     // 페이지 작성자에게 댓글 알림 (자기 자신 제외)
     if (page?.created_by && page.created_by !== userId) {
-      const msg = `${user?.name || '누군가'}님이 "${page?.title || '페이지'}"에 댓글을 남겼습니다`;
+      const ws = page?.workspace || '';
+      const msg = `[${ws}] ${user?.name || '누군가'}님이 "${page?.title || '페이지'}"에 댓글을 남겼습니다`;
       NotificationsService.createGeneral(
         page.created_by,
         userId,
         'comment',
         msg,
-        '새 댓글 알림',
+        `[${ws}] 새 댓글 알림`,
         pageId
       ).catch(() => {});
     }

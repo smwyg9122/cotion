@@ -95,12 +95,13 @@ export class CalendarService {
       await db('calendar_event_attendees').insert(attendeeRows);
 
       // 인앱 알림 + 카카오톡 알림
+      const ws = input.workspace || '';
       NotificationsService.notifyMany(
         attendees,
         userId,
         'calendar_invite',
-        `"${input.title}" 일정에 참석자로 추가되었습니다.`,
-        '캘린더 일정 초대'
+        `[${ws}] "${input.title}" 일정에 참석자로 추가되었습니다.`,
+        `[${ws}] 캘린더 일정 초대`
       ).catch(() => {});
     }
 
@@ -154,12 +155,13 @@ export class CalendarService {
         const newAttendees = input.attendees.filter((uid: string) => !oldAttendeeIds.includes(uid));
         if (newAttendees.length > 0) {
           const eventTitle = input.title || event.title;
+          const ws = event.workspace || '';
           NotificationsService.notifyMany(
             newAttendees,
             userId,
             'calendar_invite',
-            `"${eventTitle}" 일정에 참석자로 추가되었습니다.`,
-            '캘린더 일정 초대'
+            `[${ws}] "${eventTitle}" 일정에 참석자로 추가되었습니다.`,
+            `[${ws}] 캘린더 일정 초대`
           ).catch(() => {});
         }
       }
