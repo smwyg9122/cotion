@@ -8,7 +8,7 @@ export const cuppingLogCreateSchema = z.object({
   offeredBeans: z.string().max(1000).optional(),
   reaction: z.string().max(2000).optional(),
   purchaseIntent: z.string().max(500).optional(),
-  followupDate: z.string().optional(),
+  followupDate: z.string().optional().nullable(),
   followupNotified: z.boolean().optional().default(false),
   notes: z.string().max(5000).optional(),
   workspace: z.string().max(100),

@@ -24,7 +24,7 @@ export interface CuppingLogCreateInput {
   offeredBeans?: string;
   reaction?: string;
   purchaseIntent?: string;
-  followupDate?: string;
+  followupDate?: string | null;
   followupNotified?: boolean;
   notes?: string;
   workspace: string;

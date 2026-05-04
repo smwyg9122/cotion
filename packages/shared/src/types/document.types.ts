@@ -29,8 +29,8 @@ export interface DocumentCreateInput {
   title: string;
   category?: string;
   status?: string;
-  fileId?: string;
-  pageId?: string;
+  fileId?: string | null;
+  pageId?: string | null;
   description?: string;
   workspace: string;
 }

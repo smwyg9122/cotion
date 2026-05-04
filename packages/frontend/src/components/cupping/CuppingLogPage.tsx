@@ -14,6 +14,10 @@ import {
 import { api } from '../../services/api';
 import { Modal } from '../common/Modal';
 
+function toLocalDateStr(d: Date): string {
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
 interface CuppingLogPageProps {
   workspace: string;
 }
@@ -45,7 +49,7 @@ interface CuppingFormData {
 }
 
 const INITIAL_FORM: CuppingFormData = {
-  visitDate: new Date().toISOString().split('T')[0],
+  visitDate: toLocalDateStr(new Date()),
   roasteryName: '',
   contactPerson: '',
   offeredBeans: '',
