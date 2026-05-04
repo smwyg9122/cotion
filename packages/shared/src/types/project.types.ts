@@ -49,7 +49,7 @@ export interface TaskCreateInput {
   status?: 'todo' | 'in_progress' | 'done';
   priority?: 'low' | 'medium' | 'high';
   position?: number;
-  dueDate?: string;
+  dueDate?: string | null;
   assignees?: string[];
 }
 
