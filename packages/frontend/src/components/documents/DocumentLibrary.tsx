@@ -348,6 +348,9 @@ export function DocumentLibrary({ workspace }: DocumentLibraryProps) {
     setTagModalUsers(doc.taggedUsers || []);
   };
 
+  const [tagSaving, setTagSaving] = useState(false);
+  const [tagSuccess, setTagSuccess] = useState('');
+
   const handleAddTag = async (userId: string) => {
     if (!tagModalDocId) return;
     try {
@@ -357,6 +360,9 @@ export function DocumentLibrary({ workspace }: DocumentLibraryProps) {
       setDocuments((prev) =>
         prev.map((d) => (d.id === tagModalDocId ? { ...d, taggedUsers: newTags } : d))
       );
+      const taggedUser = users.find((u) => u.id === userId);
+      setTagSuccess(`${taggedUser?.name || '사용자'}님을 태그하고 알림을 보냈습니다.`);
+      setTimeout(() => setTagSuccess(''), 3000);
     } catch {
       alert('태그 추가에 실패했습니다.');
     }
@@ -816,11 +822,19 @@ export function DocumentLibrary({ workspace }: DocumentLibraryProps) {
       </Modal>
 
       {/* ── Tag Modal (always rendered) ── */}
-      <Modal isOpen={!!tagModalDocId} onClose={() => setTagModalDocId(null)} title="사용자 태그 관리" size="sm">
+      <Modal isOpen={!!tagModalDocId} onClose={() => { setTagModalDocId(null); setTagSuccess(''); }} title="사용자 태그 관리" size="sm">
         <div className="space-y-4">
+          {/* Success feedback */}
+          {tagSuccess && (
+            <div className="flex items-center gap-2 p-2.5 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700">
+              <Check size={16} className="text-green-600 shrink-0" />
+              <span>{tagSuccess}</span>
+            </div>
+          )}
+
           {/* Currently tagged */}
           <div>
-            <h3 className="text-sm font-medium text-gray-700 mb-2">태그된 사용자</h3>
+            <h3 className="text-sm font-medium text-gray-700 mb-2">태그된 사용자 ({tagModalUsers.length}명)</h3>
             {tagModalUsers.length === 0 ? (
               <p className="text-sm text-gray-400">아직 태그된 사용자가 없습니다.</p>
             ) : (
@@ -861,6 +875,17 @@ export function DocumentLibrary({ workspace }: DocumentLibraryProps) {
                 <p className="text-sm text-gray-400">추가할 수 있는 사용자가 없습니다.</p>
               )}
             </div>
+          </div>
+
+          {/* Info + Close button */}
+          <div className="pt-2 border-t border-gray-100">
+            <p className="text-xs text-gray-400 mb-3">태그된 사용자에게 인앱 알림과 카카오톡 알림이 자동 전송됩니다.</p>
+            <button
+              onClick={() => { setTagModalDocId(null); setTagSuccess(''); }}
+              className="w-full px-4 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
+            >
+              확인
+            </button>
           </div>
         </div>
       </Modal>
