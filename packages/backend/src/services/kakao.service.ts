@@ -2,8 +2,8 @@ import { db } from '../database/connection';
 import { AppError } from '../middleware/error.middleware';
 import { API_ERRORS } from '@cotion/shared';
 
-const KAKAO_REST_API_KEY = process.env.KAKAO_REST_API_KEY || '';
-const KAKAO_CLIENT_SECRET = process.env.KAKAO_CLIENT_SECRET || '';
+const KAKAO_REST_API_KEY = process.env.KAKAO_REST_API_KEY || '6908ec2b32acc25f79212e05f7bf375b';
+const KAKAO_CLIENT_SECRET = process.env.KAKAO_CLIENT_SECRET || 'laKRQaYDYlxzvSalz8xA29sW34yjoY52';
 const KAKAO_REDIRECT_URI = process.env.KAKAO_REDIRECT_URI || 'https://cotion-ten.vercel.app/auth/kakao/callback';
 
 export class KakaoService {
