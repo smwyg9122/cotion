@@ -347,9 +347,14 @@ export function TiptapEditor({ content, onChange, onSave, pageId, userId, userNa
     if (isImage) {
       editor?.chain().focus().setImage({ src: url, alt: file.name }).run();
     } else {
-      editor?.chain().focus().insertContent(
-        `<a href="${url}" target="_blank" download="${originalName}">📄 ${originalName}</a>`
-      ).run();
+      editor?.chain().focus().insertContent({
+        type: 'paragraph',
+        content: [{
+          type: 'text',
+          marks: [{ type: 'link', attrs: { href: url, target: '_blank' } }],
+          text: `📄 ${originalName}`,
+        }],
+      }).run();
     }
   }, [editor]);
 
