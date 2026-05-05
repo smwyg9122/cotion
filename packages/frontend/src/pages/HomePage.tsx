@@ -34,7 +34,7 @@ const ALL_WORKSPACES = [
 
 export function HomePage() {
   const { user, logout } = useAuth();
-  const { pages, isLoading, createPage, updatePage, deletePage, getPage, refreshPages, searchPages, movePage } = usePages();
+  const { pages, isLoading, createPage, updatePage, deletePage, getPage, refreshPages, searchPages, movePage, renameCategory, deleteCategory } = usePages();
   const navigate = useNavigate();
   const { showToast } = useToast();
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
@@ -432,6 +432,22 @@ export function HomePage() {
                       await movePage(pageId, parentId, position, category);
                     } catch {
                       showToast('페이지 이동에 실패했습니다', 'error');
+                    }
+                  }}
+                  onRenameCategory={async (oldName, newName) => {
+                    try {
+                      await renameCategory(selectedWorkspace.name, oldName, newName);
+                      showToast(`폴더 이름이 "${newName}"으로 변경되었습니다`, 'success');
+                    } catch {
+                      showToast('폴더 이름 변경에 실패했습니다', 'error');
+                    }
+                  }}
+                  onDeleteCategory={async (categoryName) => {
+                    try {
+                      await deleteCategory(selectedWorkspace.name, categoryName);
+                      showToast('폴더가 삭제되었습니다', 'success');
+                    } catch {
+                      showToast('폴더 삭제에 실패했습니다', 'error');
                     }
                   }}
                   selectedPageId={selectedPageId || undefined}

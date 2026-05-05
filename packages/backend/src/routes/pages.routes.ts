@@ -10,6 +10,8 @@ router.use(authMiddleware);
 router.get('/', pagesController.getAll);
 router.get('/search', pagesController.search);
 router.get('/trash/all', pagesController.getDeleted);
+router.put('/categories/rename', pagesController.renameCategory);
+router.put('/categories/delete', pagesController.deleteCategory);
 router.get('/:id', pagesController.getById);
 router.post('/', pagesController.create);
 router.put('/:id', pagesController.update);

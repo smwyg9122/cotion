@@ -146,4 +146,22 @@ export const pagesController = {
       data: page,
     });
   }),
+
+  renameCategory: asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { workspace, oldName, newName } = req.body;
+    if (!workspace || !oldName || !newName) {
+      return res.status(400).json({ success: false, error: 'workspace, oldName, newName 필수' });
+    }
+    const count = await PagesService.renameCategory(workspace, oldName, newName.trim());
+    res.json({ success: true, data: { updatedCount: count } });
+  }),
+
+  deleteCategory: asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { workspace, categoryName } = req.body;
+    if (!workspace || !categoryName) {
+      return res.status(400).json({ success: false, error: 'workspace, categoryName 필수' });
+    }
+    const count = await PagesService.deleteCategory(workspace, categoryName);
+    res.json({ success: true, data: { updatedCount: count } });
+  }),
 };

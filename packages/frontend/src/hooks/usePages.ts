@@ -57,6 +57,16 @@ export function usePages() {
     await fetchPages(false);
   }
 
+  async function renameCategory(workspace: string, oldName: string, newName: string): Promise<void> {
+    await api.put('/pages/categories/rename', { workspace, oldName, newName });
+    await fetchPages(false);
+  }
+
+  async function deleteCategory(workspace: string, categoryName: string): Promise<void> {
+    await api.put('/pages/categories/delete', { workspace, categoryName });
+    await fetchPages(false);
+  }
+
   return {
     pages,
     isLoading,
@@ -68,5 +78,7 @@ export function usePages() {
     refreshPages: fetchPages,
     searchPages,
     movePage,
+    renameCategory,
+    deleteCategory,
   };
 }

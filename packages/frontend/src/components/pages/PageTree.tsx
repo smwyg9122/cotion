@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { PageTreeNode } from '@cotion/shared';
-import { ChevronRight, ChevronDown, FileText, Plus, Trash2, GripVertical, Folder } from 'lucide-react';
+import { ChevronRight, ChevronDown, FileText, Plus, Trash2, GripVertical, Folder, Pencil, FolderMinus } from 'lucide-react';
 import {
   DndContext,
   closestCenter,
@@ -22,12 +22,14 @@ interface PageTreeProps {
   onCreatePage?: (parentId?: string, category?: string) => void;
   onDeletePage?: (pageId: string) => void;
   onMovePage?: (pageId: string, newParentId?: string, position?: number, category?: string) => void;
+  onRenameCategory?: (oldName: string, newName: string) => void;
+  onDeleteCategory?: (categoryName: string) => void;
   selectedPageId?: string;
   expandedIds?: Set<string>;
   onToggleExpand?: (id: string) => void;
 }
 
-export function PageTree({ pages, onPageSelect, onCreatePage, onDeletePage, onMovePage, selectedPageId, expandedIds, onToggleExpand }: PageTreeProps) {
+export function PageTree({ pages, onPageSelect, onCreatePage, onDeletePage, onMovePage, onRenameCategory, onDeleteCategory, selectedPageId, expandedIds, onToggleExpand }: PageTreeProps) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
   );
@@ -101,6 +103,8 @@ export function PageTree({ pages, onPageSelect, onCreatePage, onDeletePage, onMo
               onPageSelect={onPageSelect}
               onCreatePage={onCreatePage}
               onDeletePage={onDeletePage}
+              onRenameCategory={onRenameCategory}
+              onDeleteCategory={onDeleteCategory}
               selectedPageId={selectedPageId}
               expandedIds={expandedIds}
               onToggleExpand={onToggleExpand}
@@ -150,27 +154,100 @@ interface CategorySectionProps {
   onPageSelect?: (pageId: string) => void;
   onCreatePage?: (parentId?: string, category?: string) => void;
   onDeletePage?: (pageId: string) => void;
+  onRenameCategory?: (oldName: string, newName: string) => void;
+  onDeleteCategory?: (categoryName: string) => void;
   selectedPageId?: string;
   expandedIds?: Set<string>;
   onToggleExpand?: (id: string) => void;
 }
 
-function CategorySection({ name, pages, onPageSelect, onCreatePage, onDeletePage, selectedPageId, expandedIds, onToggleExpand }: CategorySectionProps) {
+function CategorySection({ name, pages, onPageSelect, onCreatePage, onDeletePage, onRenameCategory, onDeleteCategory, selectedPageId, expandedIds, onToggleExpand }: CategorySectionProps) {
   const categoryKey = `cat:${name}`;
   const isExpanded = expandedIds ? expandedIds.has(categoryKey) : true;
   const toggleExpand = () => onToggleExpand ? onToggleExpand(categoryKey) : undefined;
+  const [isEditing, setIsEditing] = useState(false);
+  const [editValue, setEditValue] = useState(name);
+  const [isHovered, setIsHovered] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [isEditing]);
+
+  const handleRenameSubmit = () => {
+    const trimmed = editValue.trim();
+    if (trimmed && trimmed !== name) {
+      onRenameCategory?.(name, trimmed);
+    }
+    setIsEditing(false);
+  };
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (window.confirm(`"${name}" 폴더를 삭제하시겠습니까?\n(폴더만 삭제되고 안의 페이지는 미분류로 이동됩니다)`)) {
+      onDeleteCategory?.(name);
+    }
+  };
 
   return (
     <div className="mb-2">
-      <button
-        onClick={toggleExpand}
+      <div
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
         className="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-gray-500 hover:text-gray-700 hover:bg-gray-200/60 rounded-lg w-full transition-colors uppercase tracking-wider"
       >
-        {isExpanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
-        <Folder size={13} className="text-gray-400" />
-        <span className="flex-1 text-left">{name}</span>
-        <span className="bg-gray-200/80 text-gray-500 text-[10px] font-medium px-1.5 py-0.5 rounded-full normal-case tracking-normal">{pages.length}</span>
-      </button>
+        <button onClick={toggleExpand} className="flex items-center gap-0">
+          {isExpanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+        </button>
+        <Folder size={13} className="text-gray-400 flex-shrink-0" />
+        {isEditing ? (
+          <input
+            ref={inputRef}
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+            onBlur={handleRenameSubmit}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleRenameSubmit();
+              if (e.key === 'Escape') { setEditValue(name); setIsEditing(false); }
+            }}
+            className="flex-1 bg-white border border-blue-400 rounded px-1.5 py-0.5 text-xs font-medium text-gray-700 outline-none normal-case tracking-normal"
+            onClick={(e) => e.stopPropagation()}
+          />
+        ) : (
+          <button onClick={toggleExpand} className="flex-1 text-left truncate">
+            {name}
+          </button>
+        )}
+        <span className="bg-gray-200/80 text-gray-500 text-[10px] font-medium px-1.5 py-0.5 rounded-full normal-case tracking-normal flex-shrink-0">{pages.length}</span>
+        {isHovered && !isEditing && (
+          <div className="flex items-center gap-0.5 flex-shrink-0">
+            <button
+              onClick={(e) => { e.stopPropagation(); setEditValue(name); setIsEditing(true); }}
+              className="p-0.5 hover:bg-gray-300/50 rounded transition-colors"
+              title="폴더 이름 변경"
+            >
+              <Pencil size={12} />
+            </button>
+            <button
+              onClick={handleDelete}
+              className="p-0.5 hover:bg-red-100 hover:text-red-600 rounded transition-colors"
+              title="폴더 삭제 (페이지는 유지)"
+            >
+              <FolderMinus size={12} />
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); onCreatePage?.(undefined, name); }}
+              className="p-0.5 hover:bg-gray-300/50 rounded transition-colors"
+              title="이 폴더에 페이지 추가"
+            >
+              <Plus size={12} />
+            </button>
+          </div>
+        )}
+      </div>
       {isExpanded && (
         pages.map((page) => (
           <SortablePageNode

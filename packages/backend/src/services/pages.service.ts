@@ -365,4 +365,27 @@ export class PagesService {
 
     return roots;
   }
+
+  // ─── 카테고리(폴더) 이름 변경 ─────────────────────────────
+  static async renameCategory(
+    workspace: string,
+    oldName: string,
+    newName: string
+  ): Promise<number> {
+    const updated = await db('pages')
+      .where({ workspace, category: oldName, is_deleted: false })
+      .update({ category: newName, updated_at: db.fn.now() });
+    return updated;
+  }
+
+  // ─── 카테고리(폴더) 삭제 (페이지를 미분류로 이동) ─────────
+  static async deleteCategory(
+    workspace: string,
+    categoryName: string
+  ): Promise<number> {
+    const updated = await db('pages')
+      .where({ workspace, category: categoryName, is_deleted: false })
+      .update({ category: null, updated_at: db.fn.now() });
+    return updated;
+  }
 }
