@@ -106,12 +106,17 @@ export class KakaoService {
   // Refresh access token if expired
   static async refreshAccessToken(userId: string): Promise<string | null> {
     const token = await db('kakao_tokens').where({ user_id: userId }).first();
-    if (!token) return null;
+    if (!token) {
+      console.log(`[Kakao] No token found for user ${userId}`);
+      return null;
+    }
 
     // If not expired, return existing
     if (new Date(token.expires_at) > new Date()) {
       return token.access_token;
     }
+
+    console.log(`[Kakao] Token expired for user ${userId}, refreshing...`);
 
     // Refresh
     try {
@@ -127,9 +132,14 @@ export class KakaoService {
       });
 
       if (!response.ok) {
-        console.error('Kakao token refresh failed');
-        // Delete invalid tokens
-        await db('kakao_tokens').where({ user_id: userId }).delete();
+        const errorBody = await response.text();
+        console.error(`[Kakao] Token refresh failed for user ${userId}: ${response.status}`, errorBody);
+
+        // refresh_token까지 만료된 경우에만 토큰 삭제 (KOE322 = refresh token expired)
+        if (errorBody.includes('KOE322') || errorBody.includes('invalid_grant')) {
+          console.error(`[Kakao] Refresh token expired for user ${userId}, removing tokens. User needs to re-link.`);
+          await db('kakao_tokens').where({ user_id: userId }).delete();
+        }
         return null;
       }
 
@@ -147,9 +157,10 @@ export class KakaoService {
       }
 
       await db('kakao_tokens').where({ user_id: userId }).update(updateFields);
+      console.log(`[Kakao] Token refreshed successfully for user ${userId}`);
       return data.access_token;
     } catch (e) {
-      console.error('Kakao refresh error:', e);
+      console.error(`[Kakao] Refresh error for user ${userId}:`, e);
       return null;
     }
   }
@@ -158,18 +169,19 @@ export class KakaoService {
   static async sendMessage(userId: string, title: string, description: string, linkUrl?: string): Promise<boolean> {
     const accessToken = await this.refreshAccessToken(userId);
     if (!accessToken) {
-      console.log(`No Kakao token for user ${userId}, skipping notification`);
+      console.log(`[Kakao] No valid token for user ${userId}, skipping notification`);
       return false;
     }
 
+    // title과 description에 이미 워크스페이스 접두사가 포함되어 있으므로 [Cotion]만 추가
     const templateObject = {
       object_type: 'text',
-      text: `[Cotion] ${title}\n${description}`,
+      text: `${title}\n\n${description}`,
       link: {
         web_url: linkUrl || 'https://cotion-ten.vercel.app',
         mobile_web_url: linkUrl || 'https://cotion-ten.vercel.app',
       },
-      button_title: '코션에서 확인',
+      button_title: 'Cotion에서 확인',
     };
 
     let result = false;
@@ -188,10 +200,19 @@ export class KakaoService {
 
       if (!response.ok) {
         const error = await response.text();
-        console.error(`Kakao message send failed for user ${userId}:`, error);
+        console.error(`[Kakao] Message send FAILED for user ${userId} (${response.status}):`, error);
+
+        // -401 = token expired during send, try refresh next time
+        if (error.includes('-401') || response.status === 401) {
+          console.log(`[Kakao] Access token invalid for user ${userId}, clearing expires_at to force refresh next time`);
+          await db('kakao_tokens').where({ user_id: userId }).update({
+            expires_at: new Date(0),
+            updated_at: db.fn.now(),
+          });
+        }
         result = false;
       } else {
-        console.log(`✅ Kakao message sent to user ${userId}`);
+        console.log(`[Kakao] Message sent successfully to user ${userId}`);
         result = true;
       }
     } catch (e) {
@@ -214,15 +235,14 @@ export class KakaoService {
     return result;
   }
 
-  // Send notification to multiple users (non-blocking)
+  // Send notification to multiple users
   static async notifyUsers(userIds: string[], title: string, description: string, linkUrl?: string): Promise<void> {
-    // Fire-and-forget, don't block the main request
-    Promise.allSettled(
+    const results = await Promise.allSettled(
       userIds.map((userId) => this.sendMessage(userId, title, description, linkUrl))
-    ).then((results) => {
-      const sent = results.filter((r) => r.status === 'fulfilled' && r.value).length;
-      console.log(`Kakao notifications: ${sent}/${userIds.length} sent`);
-    });
+    );
+    const sent = results.filter((r) => r.status === 'fulfilled' && r.value).length;
+    const failed = results.filter((r) => r.status === 'rejected').length;
+    console.log(`[Kakao] Notifications: ${sent} sent, ${failed} failed out of ${userIds.length}`);
   }
 
   // Check if user has linked Kakao
