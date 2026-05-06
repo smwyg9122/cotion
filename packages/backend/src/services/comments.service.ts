@@ -30,9 +30,11 @@ export class CommentsService {
       db('pages').where({ id: pageId }).first('title', 'created_by', 'workspace'),
     ]);
 
+    const ws = page?.workspace || '';
+    const notifiedUserIds = new Set<string>();
+
     // 페이지 작성자에게 댓글 알림 (자기 자신 제외)
     if (page?.created_by && page.created_by !== userId) {
-      const ws = page?.workspace || '';
       const msg = `[${ws}] ${user?.name || '누군가'}님이 "${page?.title || '페이지'}"에 댓글을 남겼습니다`;
       NotificationsService.createGeneral(
         page.created_by,
@@ -41,7 +43,36 @@ export class CommentsService {
         msg,
         `[${ws}] 새 댓글 알림`,
         pageId
-      ).catch(() => {});
+      ).catch((err) => console.error('댓글 알림 발송 실패:', err));
+      notifiedUserIds.add(page.created_by);
+    }
+
+    // 댓글 내 @멘션된 사용자에게도 알림 발송
+    const mentionPattern = /@([^\s@]+)/g;
+    let match;
+    const mentionedNames: string[] = [];
+    while ((match = mentionPattern.exec(content)) !== null) {
+      mentionedNames.push(match[1]);
+    }
+
+    if (mentionedNames.length > 0) {
+      const mentionedUsers = await db('users')
+        .whereIn('name', mentionedNames)
+        .select('id', 'name');
+
+      for (const mu of mentionedUsers) {
+        if (mu.id === userId || notifiedUserIds.has(mu.id)) continue;
+        const mentionMsg = `[${ws}] ${user?.name || '누군가'}님이 "${page?.title || '페이지'}" 댓글에서 회원님을 멘션했습니다`;
+        NotificationsService.createGeneral(
+          mu.id,
+          userId,
+          'mention',
+          mentionMsg,
+          `[${ws}] 댓글 멘션`,
+          pageId
+        ).catch((err) => console.error('댓글 멘션 알림 실패:', err));
+        notifiedUserIds.add(mu.id);
+      }
     }
 
     return {

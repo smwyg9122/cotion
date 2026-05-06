@@ -57,7 +57,7 @@ export class NotificationsService {
       `[${ws}] 페이지 멘션`,
       message,
       linkUrl
-    );
+    ).catch((err) => console.error('멘션 카카오 발송 실패:', err));
 
     return notification;
   }
@@ -94,7 +94,7 @@ export class NotificationsService {
         kakaoTitle,
         message,
         'https://cotion-ten.vercel.app'
-      ).catch(() => {});
+      ).catch((err) => console.error(`카카오 알림 발송 실패 (user=${targetUserId}, type=${type}):`, err));
 
       return notification;
     } catch (err) {
