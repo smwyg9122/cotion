@@ -2,12 +2,38 @@ import { Request, Response, NextFunction } from 'express';
 import { JWTService, JWTPayload } from '../services/jwt.service';
 import { AppError } from './error.middleware';
 import { API_ERRORS } from '@cotion/shared';
+import { db } from '../database/connection';
 
 export interface AuthRequest extends Request {
   user?: JWTPayload;
 }
 
-export function authMiddleware(req: AuthRequest, res: Response, next: NextFunction) {
+/**
+ * In-memory cache so we don't issue a SELECT for every authenticated request.
+ * Maps userId → { isActive, expiresAt(ms) }. TTL keeps deactivations
+ * propagating within `ACTIVE_CACHE_TTL_MS`.
+ */
+const activeCache = new Map<string, { isActive: boolean; expiresAt: number }>();
+const ACTIVE_CACHE_TTL_MS = 60 * 1000; // 1 minute
+
+async function isUserActive(userId: string): Promise<boolean> {
+  const now = Date.now();
+  const cached = activeCache.get(userId);
+  if (cached && cached.expiresAt > now) return cached.isActive;
+
+  const row = await db('users').where({ id: userId }).select('is_active').first();
+  // Treat missing row as inactive (defense in depth), nullable column as active
+  // for legacy rows, explicit false as inactive.
+  const isActive = row ? row.is_active !== false : false;
+  activeCache.set(userId, { isActive, expiresAt: now + ACTIVE_CACHE_TTL_MS });
+  return isActive;
+}
+
+export function invalidateActiveCache(userId: string) {
+  activeCache.delete(userId);
+}
+
+export async function authMiddleware(req: AuthRequest, res: Response, next: NextFunction) {
   try {
     // Get token from Authorization header
     const authHeader = req.headers.authorization;
@@ -19,6 +45,13 @@ export function authMiddleware(req: AuthRequest, res: Response, next: NextFuncti
 
     // Verify token
     const payload = JWTService.verifyAccessToken(token);
+
+    // Reject tokens belonging to deactivated users. Bounded by a short TTL
+    // cache so this doesn't add a DB roundtrip per request.
+    const active = await isUserActive(payload.userId);
+    if (!active) {
+      throw new AppError(403, API_ERRORS.FORBIDDEN, '비활성화된 계정입니다');
+    }
 
     // Attach user to request
     req.user = payload;
@@ -33,17 +66,6 @@ export function authMiddleware(req: AuthRequest, res: Response, next: NextFuncti
   }
 }
 
-export function optionalAuthMiddleware(req: AuthRequest, res: Response, next: NextFunction) {
-  try {
-    const authHeader = req.headers.authorization;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.substring(7);
-      const payload = JWTService.verifyAccessToken(token);
-      req.user = payload;
-    }
-    next();
-  } catch (error) {
-    // Ignore errors for optional auth
-    next();
-  }
-}
+// optionalAuthMiddleware removed — it was unused and would silently treat
+// invalid tokens as anonymous, which is a footgun for any future write
+// endpoint. If you need it back, prefer explicit handling at the route.

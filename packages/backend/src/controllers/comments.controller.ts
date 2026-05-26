@@ -6,7 +6,7 @@ import { AuthRequest } from '../middleware/auth.middleware';
 export const commentsController = {
   getByPage: asyncHandler(async (req: AuthRequest, res: Response) => {
     const { pageId } = req.params;
-    const comments = await CommentsService.getCommentsByPage(pageId);
+    const comments = await CommentsService.getCommentsByPage(pageId, req.user!.userId);
     res.json({ success: true, data: comments });
   }),
 

@@ -37,7 +37,14 @@ export const clientsController = {
 
   getById: asyncHandler(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
-    const client = await ClientsService.getById(id);
+    const workspace = (req.query.workspace as string) || '';
+    if (!workspace) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'workspace is required' },
+      });
+    }
+    const client = await ClientsService.getById(id, workspace);
 
     if (!client) {
       return res.status(404).json({
@@ -67,8 +74,15 @@ export const clientsController = {
 
   update: asyncHandler(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
+    const workspace = (req.query.workspace as string) || '';
+    if (!workspace) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'workspace is required' },
+      });
+    }
     const input = clientUpdateSchema.parse(req.body);
-    const client = await ClientsService.update(id, input);
+    const client = await ClientsService.update(id, input, workspace);
 
     res.json({
       success: true,
@@ -78,7 +92,14 @@ export const clientsController = {
 
   delete: asyncHandler(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
-    await ClientsService.delete(id);
+    const workspace = (req.query.workspace as string) || '';
+    if (!workspace) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'workspace is required' },
+      });
+    }
+    await ClientsService.delete(id, workspace);
 
     res.json({
       success: true,

@@ -54,11 +54,10 @@ export class CuppingService {
     return mapCuppingLogsToResponse(rows);
   }
 
-  static async getById(id: string): Promise<CuppingLog | null> {
-    const row = await db('cupping_logs')
-      .where({ id })
-      .first();
-
+  static async getById(id: string, workspace?: string): Promise<CuppingLog | null> {
+    const q = db('cupping_logs').where({ id });
+    if (workspace) q.andWhere({ workspace });
+    const row = await q.first();
     return row ? mapCuppingLogToResponse(row) : null;
   }
 
@@ -85,10 +84,10 @@ export class CuppingService {
     return mapCuppingLogToResponse(row);
   }
 
-  static async update(id: string, input: CuppingLogUpdateInput): Promise<CuppingLog> {
-    const existing = await db('cupping_logs')
-      .where({ id })
-      .first();
+  static async update(id: string, input: CuppingLogUpdateInput, workspace?: string): Promise<CuppingLog> {
+    const q = db('cupping_logs').where({ id });
+    if (workspace) q.andWhere({ workspace });
+    const existing = await q.first();
 
     if (!existing) {
       throw new AppError(404, API_ERRORS.NOT_FOUND, '커핑 로그를 찾을 수 없습니다');
@@ -106,26 +105,25 @@ export class CuppingService {
     if (input.followupNotified !== undefined) updateFields.followup_notified = input.followupNotified;
     if (input.notes !== undefined) updateFields.notes = input.notes;
 
-    const [updatedRow] = await db('cupping_logs')
-      .where({ id })
-      .update(updateFields)
-      .returning('*');
+    const writeQ = db('cupping_logs').where({ id });
+    if (workspace) writeQ.andWhere({ workspace });
+    const [updatedRow] = await writeQ.update(updateFields).returning('*');
 
     return mapCuppingLogToResponse(updatedRow);
   }
 
-  static async delete(id: string): Promise<void> {
-    const existing = await db('cupping_logs')
-      .where({ id })
-      .first();
+  static async delete(id: string, workspace?: string): Promise<void> {
+    const q = db('cupping_logs').where({ id });
+    if (workspace) q.andWhere({ workspace });
+    const existing = await q.first();
 
     if (!existing) {
       throw new AppError(404, API_ERRORS.NOT_FOUND, '커핑 로그를 찾을 수 없습니다');
     }
 
-    await db('cupping_logs')
-      .where({ id })
-      .delete();
+    const deleteQ = db('cupping_logs').where({ id });
+    if (workspace) deleteQ.andWhere({ workspace });
+    await deleteQ.delete();
   }
 
   static async getDueFollowups(workspace: string): Promise<CuppingLog[]> {

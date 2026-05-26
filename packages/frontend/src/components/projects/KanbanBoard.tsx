@@ -124,7 +124,7 @@ export function KanbanBoard({ workspace, initialProjectId }: KanbanBoardProps) {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await api.get(`/projects/${selectedProjectId}/tasks`);
+      const response = await api.get(`/projects/${selectedProjectId}/tasks`, { params: { workspace } });
       setTasks(response.data.data || []);
     } catch (err: any) {
       console.error('Failed to fetch tasks:', err);
@@ -214,9 +214,9 @@ export function KanbanBoard({ workspace, initialProjectId }: KanbanBoardProps) {
       };
 
       if (selectedTask) {
-        await api.put(`/projects/tasks/${selectedTask.id}`, payload);
+        await api.put(`/projects/tasks/${selectedTask.id}`, payload, { params: { workspace } });
       } else {
-        await api.post(`/projects/${selectedProjectId}/tasks`, payload);
+        await api.post(`/projects/${selectedProjectId}/tasks`, payload, { params: { workspace } });
       }
       await fetchTasks();
       setIsTaskModalOpen(false);
@@ -232,7 +232,7 @@ export function KanbanBoard({ workspace, initialProjectId }: KanbanBoardProps) {
 
   const handleDeleteTask = async (taskId: string) => {
     try {
-      await api.delete(`/projects/tasks/${taskId}`);
+      await api.delete(`/projects/tasks/${taskId}`, { params: { workspace } });
       setTasks((prev) => prev.filter((t) => t.id !== taskId));
       setDeleteConfirmTaskId(null);
       if (isTaskModalOpen && selectedTask?.id === taskId) {
@@ -280,7 +280,7 @@ export function KanbanBoard({ workspace, initialProjectId }: KanbanBoardProps) {
     setDraggedTaskId(null);
 
     try {
-      await api.put(`/projects/tasks/${taskId}/move`, { status: targetStatus });
+      await api.put(`/projects/tasks/${taskId}/move`, { status: targetStatus }, { params: { workspace } });
     } catch (err: any) {
       console.error('Failed to move task:', err);
       // Revert on failure

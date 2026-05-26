@@ -34,7 +34,14 @@ export const cuppingController = {
 
   getById: asyncHandler(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
-    const log = await CuppingService.getById(id);
+    const workspace = (req.query.workspace as string) || '';
+    if (!workspace) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'workspace is required' },
+      });
+    }
+    const log = await CuppingService.getById(id, workspace);
 
     if (!log) {
       return res.status(404).json({
@@ -64,8 +71,15 @@ export const cuppingController = {
 
   update: asyncHandler(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
+    const workspace = (req.query.workspace as string) || '';
+    if (!workspace) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'workspace is required' },
+      });
+    }
     const input = cuppingLogUpdateSchema.parse(req.body);
-    const log = await CuppingService.update(id, input);
+    const log = await CuppingService.update(id, input, workspace);
 
     res.json({
       success: true,
@@ -75,7 +89,14 @@ export const cuppingController = {
 
   delete: asyncHandler(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
-    await CuppingService.delete(id);
+    const workspace = (req.query.workspace as string) || '';
+    if (!workspace) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'workspace is required' },
+      });
+    }
+    await CuppingService.delete(id, workspace);
 
     res.json({
       success: true,

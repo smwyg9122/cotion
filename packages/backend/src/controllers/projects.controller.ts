@@ -28,7 +28,14 @@ export const projectsController = {
 
   getById: asyncHandler(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
-    const project = await ProjectsService.getById(id);
+    const workspace = (req.query.workspace as string) || '';
+    if (!workspace) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'workspace is required' },
+      });
+    }
+    const project = await ProjectsService.getById(id, workspace);
 
     if (!project) {
       return res.status(404).json({
@@ -58,8 +65,15 @@ export const projectsController = {
 
   update: asyncHandler(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
+    const workspace = (req.query.workspace as string) || '';
+    if (!workspace) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'workspace is required' },
+      });
+    }
     const input = projectUpdateSchema.parse(req.body);
-    const project = await ProjectsService.update(id, input);
+    const project = await ProjectsService.update(id, input, workspace);
 
     res.json({
       success: true,
@@ -69,7 +83,14 @@ export const projectsController = {
 
   delete: asyncHandler(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
-    await ProjectsService.delete(id);
+    const workspace = (req.query.workspace as string) || '';
+    if (!workspace) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'workspace is required' },
+      });
+    }
+    await ProjectsService.delete(id, workspace);
 
     res.json({
       success: true,
@@ -77,10 +98,18 @@ export const projectsController = {
     });
   }),
 
-  // Task endpoints
+  // Task endpoints — workspace is needed because tasks inherit it from the
+  // parent project. We accept it as a query param on every entry point.
   getTasks: asyncHandler(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
-    const tasks = await ProjectsService.getTasks(id);
+    const workspace = (req.query.workspace as string) || '';
+    if (!workspace) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'workspace is required' },
+      });
+    }
+    const tasks = await ProjectsService.getTasks(id, undefined, workspace);
 
     res.json({
       success: true,
@@ -90,8 +119,15 @@ export const projectsController = {
 
   createTask: asyncHandler(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
+    const workspace = (req.query.workspace as string) || '';
+    if (!workspace) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'workspace is required' },
+      });
+    }
     const input = taskCreateSchema.parse(req.body);
-    const task = await ProjectsService.createTask(id, input, req.user!.userId);
+    const task = await ProjectsService.createTask(id, input, req.user!.userId, workspace);
 
     res.status(201).json({
       success: true,
@@ -101,8 +137,15 @@ export const projectsController = {
 
   updateTask: asyncHandler(async (req: AuthRequest, res: Response) => {
     const { taskId } = req.params;
+    const workspace = (req.query.workspace as string) || '';
+    if (!workspace) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'workspace is required' },
+      });
+    }
     const input = taskUpdateSchema.parse(req.body);
-    const task = await ProjectsService.updateTask(taskId, input, req.user!.userId);
+    const task = await ProjectsService.updateTask(taskId, input, req.user!.userId, workspace);
 
     res.json({
       success: true,
@@ -112,8 +155,15 @@ export const projectsController = {
 
   moveTask: asyncHandler(async (req: AuthRequest, res: Response) => {
     const { taskId } = req.params;
+    const workspace = (req.query.workspace as string) || '';
+    if (!workspace) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'workspace is required' },
+      });
+    }
     const input = taskMoveSchema.parse(req.body);
-    const task = await ProjectsService.moveTask(taskId, input.status, input.position);
+    const task = await ProjectsService.moveTask(taskId, input.status, input.position, workspace);
 
     res.json({
       success: true,
@@ -123,7 +173,14 @@ export const projectsController = {
 
   deleteTask: asyncHandler(async (req: AuthRequest, res: Response) => {
     const { taskId } = req.params;
-    await ProjectsService.deleteTask(taskId);
+    const workspace = (req.query.workspace as string) || '';
+    if (!workspace) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'workspace is required' },
+      });
+    }
+    await ProjectsService.deleteTask(taskId, workspace);
 
     res.json({
       success: true,

@@ -65,10 +65,14 @@ export class ClientsService {
     return mapClientsToResponse(rows);
   }
 
-  static async getById(id: string): Promise<Client | null> {
-    const row = await db('clients')
+  // workspace enforces tenant isolation when provided. Controllers must
+  // always pass it; internal callers may omit when they've already verified.
+  static async getById(id: string, workspace?: string): Promise<Client | null> {
+    const q = db('clients')
       .leftJoin('users', 'clients.assigned_to', 'users.id')
-      .where('clients.id', id)
+      .where('clients.id', id);
+    if (workspace) q.andWhere('clients.workspace', workspace);
+    const row = await q
       .select(
         'clients.*',
         db.raw('users.name as assigned_to_name')
@@ -114,10 +118,10 @@ export class ClientsService {
     return client!;
   }
 
-  static async update(id: string, input: ClientUpdateInput): Promise<Client> {
-    const existing = await db('clients')
-      .where({ id })
-      .first();
+  static async update(id: string, input: ClientUpdateInput, workspace?: string): Promise<Client> {
+    const q = db('clients').where({ id });
+    if (workspace) q.andWhere({ workspace });
+    const existing = await q.first();
 
     if (!existing) {
       throw new AppError(404, API_ERRORS.NOT_FOUND, '클라이언트를 찾을 수 없습니다');
@@ -135,9 +139,10 @@ export class ClientsService {
     if (input.assignedTo !== undefined) updateFields.assigned_to = input.assignedTo;
     if (input.notes !== undefined) updateFields.notes = input.notes;
 
-    await db('clients')
-      .where({ id })
-      .update(updateFields);
+    // Scope the actual UPDATE by workspace too (TOCTOU defense).
+    const writeQ = db('clients').where({ id });
+    if (workspace) writeQ.andWhere({ workspace });
+    await writeQ.update(updateFields);
 
     // Send Kakao notification if assignee changed
     if (input.assignedTo && input.assignedTo !== existing.assigned_to) {
@@ -151,21 +156,21 @@ export class ClientsService {
     }
 
     // Re-fetch with join to get assignedToName
-    const client = await this.getById(id);
+    const client = await this.getById(id, workspace);
     return client!;
   }
 
-  static async delete(id: string): Promise<void> {
-    const existing = await db('clients')
-      .where({ id })
-      .first();
+  static async delete(id: string, workspace?: string): Promise<void> {
+    const q = db('clients').where({ id });
+    if (workspace) q.andWhere({ workspace });
+    const existing = await q.first();
 
     if (!existing) {
       throw new AppError(404, API_ERRORS.NOT_FOUND, '클라이언트를 찾을 수 없습니다');
     }
 
-    await db('clients')
-      .where({ id })
-      .delete();
+    const deleteQ = db('clients').where({ id });
+    if (workspace) deleteQ.andWhere({ workspace });
+    await deleteQ.delete();
   }
 }

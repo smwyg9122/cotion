@@ -77,11 +77,15 @@ export function errorHandler(
     stack: error.stack?.split('\n').slice(0, 5).join('\n'),
   });
 
+  // Never echo raw error.message to clients — it can leak DB column names,
+  // file paths, library internals, etc. Detailed info stays in server logs.
+  const isDev = process.env.NODE_ENV !== 'production';
   return res.status(500).json({
     success: false,
     error: {
       code: API_ERRORS.INTERNAL_ERROR,
-      message: `서버 오류: ${error.message}`,
+      message: '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.',
+      ...(isDev ? { devMessage: error.message } : {}),
     },
   });
 }

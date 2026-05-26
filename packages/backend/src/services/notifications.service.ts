@@ -1,6 +1,8 @@
 import { db } from '../database/connection';
 import { AppError } from '../middleware/error.middleware';
+import { API_ERRORS } from '@cotion/shared';
 import { KakaoService } from './kakao.service';
+import { getUserAccessibleWorkspaces } from './pages.service';
 
 export class NotificationsService {
   static async getNotifications(userId: string) {
@@ -32,13 +34,22 @@ export class NotificationsService {
     // Don't notify yourself
     if (mentionedUserId === triggeredByUserId) return null;
 
-    const [triggerUser, page] = await Promise.all([
-      db('users').where({ id: triggeredByUserId }).first(),
-      db('pages').where({ id: pageId }).first(),
-    ]);
+    // Verify the caller can actually access this page. Without this check,
+    // any authenticated user could spam fake mention notifications to any
+    // other user by guessing pageId/userId.
+    const page = await db('pages').where({ id: pageId }).first();
+    if (!page) {
+      throw new AppError(404, API_ERRORS.NOT_FOUND, '페이지를 찾을 수 없습니다');
+    }
+    const callerAccess = await getUserAccessibleWorkspaces(triggeredByUserId);
+    if (callerAccess !== null && !callerAccess.includes(page.workspace)) {
+      throw new AppError(404, API_ERRORS.NOT_FOUND, '페이지를 찾을 수 없습니다');
+    }
 
-    const ws = page?.workspace || '';
-    const message = `[${ws}] ${triggerUser?.name || '누군가'}님이 "${page?.title || '페이지'}"에서 회원님을 멘션했습니다`;
+    const triggerUser = await db('users').where({ id: triggeredByUserId }).first();
+
+    const ws = page.workspace || '';
+    const message = `[${ws}] ${triggerUser?.name || '누군가'}님이 "${page.title || '페이지'}"에서 회원님을 멘션했습니다`;
 
     const [notification] = await db('notifications')
       .insert({

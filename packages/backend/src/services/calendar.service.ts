@@ -57,10 +57,10 @@ export class CalendarService {
     return events.map((e: any) => mapEventToResponse(e, attendeesMap[e.id] || []));
   }
 
-  static async getEventById(id: string): Promise<CalendarEvent | null> {
-    const event = await db('calendar_events')
-      .where({ id })
-      .first();
+  static async getEventById(id: string, workspace?: string): Promise<CalendarEvent | null> {
+    const q = db('calendar_events').where({ id });
+    if (workspace) q.andWhere({ workspace });
+    const event = await q.first();
 
     if (!event) return null;
 
@@ -111,11 +111,12 @@ export class CalendarService {
   static async updateEvent(
     id: string,
     input: CalendarEventUpdateInput,
-    userId: string
+    userId: string,
+    workspace?: string
   ): Promise<CalendarEvent> {
-    const event = await db('calendar_events')
-      .where({ id })
-      .first();
+    const q = db('calendar_events').where({ id });
+    if (workspace) q.andWhere({ workspace });
+    const event = await q.first();
 
     if (!event) {
       throw new AppError(404, API_ERRORS.NOT_FOUND, '이벤트를 찾을 수 없습니다');
@@ -130,10 +131,9 @@ export class CalendarService {
     if (input.color !== undefined) updateFields.color = input.color;
     if (input.pageId !== undefined) updateFields.page_id = input.pageId;
 
-    const [updatedEvent] = await db('calendar_events')
-      .where({ id })
-      .update(updateFields)
-      .returning('*');
+    const writeQ = db('calendar_events').where({ id });
+    if (workspace) writeQ.andWhere({ workspace });
+    const [updatedEvent] = await writeQ.update(updateFields).returning('*');
 
     // Update attendees if provided
     let finalAttendees: string[] = [];
@@ -174,19 +174,19 @@ export class CalendarService {
     return mapEventToResponse(updatedEvent, finalAttendees);
   }
 
-  static async deleteEvent(id: string, userId: string): Promise<void> {
-    const event = await db('calendar_events')
-      .where({ id })
-      .first();
+  static async deleteEvent(id: string, _userId: string, workspace?: string): Promise<void> {
+    const q = db('calendar_events').where({ id });
+    if (workspace) q.andWhere({ workspace });
+    const event = await q.first();
 
     if (!event) {
       throw new AppError(404, API_ERRORS.NOT_FOUND, '이벤트를 찾을 수 없습니다');
     }
 
     // Attendees are deleted via CASCADE
-    await db('calendar_events')
-      .where({ id })
-      .delete();
+    const deleteQ = db('calendar_events').where({ id });
+    if (workspace) deleteQ.andWhere({ workspace });
+    await deleteQ.delete();
   }
 
   static async getPageDeadlines(workspace: string): Promise<any[]> {

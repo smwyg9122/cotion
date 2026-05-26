@@ -31,7 +31,14 @@ export const documentsController = {
 
   getById: asyncHandler(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
-    const document = await DocumentsService.getById(id);
+    const workspace = (req.query.workspace as string) || '';
+    if (!workspace) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'workspace is required' },
+      });
+    }
+    const document = await DocumentsService.getById(id, workspace);
 
     if (!document) {
       return res.status(404).json({
@@ -61,8 +68,15 @@ export const documentsController = {
 
   update: asyncHandler(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
+    const workspace = (req.query.workspace as string) || '';
+    if (!workspace) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'workspace is required' },
+      });
+    }
     const input = documentUpdateSchema.parse(req.body);
-    const document = await DocumentsService.update(id, input);
+    const document = await DocumentsService.update(id, input, workspace);
 
     res.json({
       success: true,
@@ -72,7 +86,14 @@ export const documentsController = {
 
   delete: asyncHandler(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
-    await DocumentsService.delete(id);
+    const workspace = (req.query.workspace as string) || '';
+    if (!workspace) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'workspace is required' },
+      });
+    }
+    await DocumentsService.delete(id, workspace);
 
     res.json({
       success: true,
@@ -84,8 +105,15 @@ export const documentsController = {
 
   addTags: asyncHandler(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
+    const workspace = (req.query.workspace as string) || '';
     const { userIds } = req.body as { userIds: string[] };
 
+    if (!workspace) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'workspace is required' },
+      });
+    }
     if (!Array.isArray(userIds) || userIds.length === 0) {
       return res.status(400).json({
         success: false,
@@ -93,15 +121,22 @@ export const documentsController = {
       });
     }
 
-    const tags = await DocumentsService.addTags(id, userIds, req.user!.userId);
+    const tags = await DocumentsService.addTags(id, userIds, req.user!.userId, workspace);
 
     res.json({ success: true, data: tags });
   }),
 
   removeTags: asyncHandler(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
+    const workspace = (req.query.workspace as string) || '';
     const { userIds } = req.body as { userIds: string[] };
 
+    if (!workspace) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'workspace is required' },
+      });
+    }
     if (!Array.isArray(userIds) || userIds.length === 0) {
       return res.status(400).json({
         success: false,
@@ -109,7 +144,7 @@ export const documentsController = {
       });
     }
 
-    const tags = await DocumentsService.removeTags(id, userIds);
+    const tags = await DocumentsService.removeTags(id, userIds, workspace);
 
     res.json({ success: true, data: tags });
   }),
@@ -125,8 +160,15 @@ export const documentsController = {
 
   updateStatus: asyncHandler(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
+    const workspace = (req.query.workspace as string) || '';
     const { status } = req.body as { status: string };
 
+    if (!workspace) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'workspace is required' },
+      });
+    }
     if (!status) {
       return res.status(400).json({
         success: false,
@@ -134,7 +176,7 @@ export const documentsController = {
       });
     }
 
-    const document = await DocumentsService.updateStatus(id, status);
+    const document = await DocumentsService.updateStatus(id, status, workspace);
 
     res.json({ success: true, data: document });
   }),

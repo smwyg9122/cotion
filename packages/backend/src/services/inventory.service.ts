@@ -71,11 +71,10 @@ export class InventoryService {
     return mapInventoriesToResponse(rows);
   }
 
-  static async getById(id: string): Promise<Inventory | null> {
-    const row = await db('inventory')
-      .where({ id })
-      .first();
-
+  static async getById(id: string, workspace?: string): Promise<Inventory | null> {
+    const q = db('inventory').where({ id });
+    if (workspace) q.andWhere({ workspace });
+    const row = await q.first();
     return row ? mapInventoryToResponse(row) : null;
   }
 
@@ -100,10 +99,10 @@ export class InventoryService {
     return mapInventoryToResponse(row);
   }
 
-  static async update(id: string, input: InventoryUpdateInput): Promise<Inventory> {
-    const existing = await db('inventory')
-      .where({ id })
-      .first();
+  static async update(id: string, input: InventoryUpdateInput, workspace?: string): Promise<Inventory> {
+    const q = db('inventory').where({ id });
+    if (workspace) q.andWhere({ workspace });
+    const existing = await q.first();
 
     if (!existing) {
       throw new AppError(404, API_ERRORS.NOT_FOUND, '재고를 찾을 수 없습니다');
@@ -119,36 +118,38 @@ export class InventoryService {
     if (input.currentStock !== undefined) updateFields.current_stock = input.currentStock;
     if (input.storageLocation !== undefined) updateFields.storage_location = input.storageLocation;
 
-    const [updatedRow] = await db('inventory')
-      .where({ id })
-      .update(updateFields)
-      .returning('*');
+    const writeQ = db('inventory').where({ id });
+    if (workspace) writeQ.andWhere({ workspace });
+    const [updatedRow] = await writeQ.update(updateFields).returning('*');
 
     return mapInventoryToResponse(updatedRow);
   }
 
-  static async delete(id: string): Promise<void> {
-    const existing = await db('inventory')
-      .where({ id })
-      .first();
+  static async delete(id: string, workspace?: string): Promise<void> {
+    const q = db('inventory').where({ id });
+    if (workspace) q.andWhere({ workspace });
+    const existing = await q.first();
 
     if (!existing) {
       throw new AppError(404, API_ERRORS.NOT_FOUND, '재고를 찾을 수 없습니다');
     }
 
-    await db('inventory')
-      .where({ id })
-      .delete();
+    const deleteQ = db('inventory').where({ id });
+    if (workspace) deleteQ.andWhere({ workspace });
+    await deleteQ.delete();
   }
 
   static async addTransaction(
     inventoryId: string,
     input: InventoryTransactionCreateInput,
-    userId: string
+    userId: string,
+    workspace?: string
   ): Promise<InventoryTransaction> {
-    const existing = await db('inventory')
-      .where({ id: inventoryId })
-      .first();
+    // Verify the parent inventory belongs to the requested workspace.
+    // Transactions inherit their workspace from the parent inventory.
+    const parentQ = db('inventory').where({ id: inventoryId });
+    if (workspace) parentQ.andWhere({ workspace });
+    const existing = await parentQ.first();
 
     if (!existing) {
       throw new AppError(404, API_ERRORS.NOT_FOUND, '재고를 찾을 수 없습니다');
@@ -187,7 +188,15 @@ export class InventoryService {
     return mapTransactionToResponse(result);
   }
 
-  static async getTransactions(inventoryId: string): Promise<InventoryTransaction[]> {
+  static async getTransactions(inventoryId: string, workspace?: string): Promise<InventoryTransaction[]> {
+    // Same parent-workspace check as addTransaction.
+    if (workspace) {
+      const parent = await db('inventory').where({ id: inventoryId, workspace }).first();
+      if (!parent) {
+        throw new AppError(404, API_ERRORS.NOT_FOUND, '재고를 찾을 수 없습니다');
+      }
+    }
+
     const rows = await db('inventory_transactions')
       .where({ inventory_id: inventoryId })
       .orderBy('created_at', 'desc')

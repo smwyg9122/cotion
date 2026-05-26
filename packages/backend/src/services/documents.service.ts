@@ -151,10 +151,12 @@ export class DocumentsService {
     return docs;
   }
 
-  static async getById(id: string): Promise<any | null> {
-    const row = await db('documents')
+  static async getById(id: string, workspace?: string): Promise<any | null> {
+    const q = db('documents')
       .leftJoin('files', 'documents.file_id', 'files.id')
-      .where('documents.id', id)
+      .where('documents.id', id);
+    if (workspace) q.andWhere('documents.workspace', workspace);
+    const row = await q
       .select(
         'documents.*',
         'files.original_name as file_name',
@@ -198,10 +200,10 @@ export class DocumentsService {
     return mapDocumentToResponse(row);
   }
 
-  static async update(id: string, input: DocumentUpdateInput): Promise<any> {
-    const existing = await db('documents')
-      .where({ id })
-      .first();
+  static async update(id: string, input: DocumentUpdateInput, workspace?: string): Promise<any> {
+    const q = db('documents').where({ id });
+    if (workspace) q.andWhere({ workspace });
+    const existing = await q.first();
 
     if (!existing) {
       throw new AppError(404, API_ERRORS.NOT_FOUND, '문서를 찾을 수 없습니다');
@@ -217,34 +219,35 @@ export class DocumentsService {
     if (input.pageId !== undefined) updateFields.page_id = input.pageId;
     if (input.description !== undefined) updateFields.description = input.description;
 
-    const [updatedRow] = await db('documents')
-      .where({ id })
-      .update(updateFields)
-      .returning('*');
+    const writeQ = db('documents').where({ id });
+    if (workspace) writeQ.andWhere({ workspace });
+    const [updatedRow] = await writeQ.update(updateFields).returning('*');
 
     return mapDocumentToResponse(updatedRow);
   }
 
-  static async delete(id: string): Promise<void> {
-    const existing = await db('documents')
-      .where({ id })
-      .first();
+  static async delete(id: string, workspace?: string): Promise<void> {
+    const q = db('documents').where({ id });
+    if (workspace) q.andWhere({ workspace });
+    const existing = await q.first();
 
     if (!existing) {
       throw new AppError(404, API_ERRORS.NOT_FOUND, '문서를 찾을 수 없습니다');
     }
 
-    await db('documents')
-      .where({ id })
-      .delete();
+    const deleteQ = db('documents').where({ id });
+    if (workspace) deleteQ.andWhere({ workspace });
+    await deleteQ.delete();
   }
 
   // ─── Tag management ────────────────────────────────────────
 
-  static async addTags(documentId: string, userIds: string[], taggedBy: string): Promise<any[]> {
+  static async addTags(documentId: string, userIds: string[], taggedBy: string, workspace?: string): Promise<any[]> {
     await ensureDocumentTagsTable();
 
-    const existing = await db('documents').where({ id: documentId }).first();
+    const q = db('documents').where({ id: documentId });
+    if (workspace) q.andWhere({ workspace });
+    const existing = await q.first();
     if (!existing) {
       throw new AppError(404, API_ERRORS.NOT_FOUND, '문서를 찾을 수 없습니다');
     }
@@ -282,10 +285,12 @@ export class DocumentsService {
     return tagsMap[documentId] || [];
   }
 
-  static async removeTags(documentId: string, userIds: string[]): Promise<any[]> {
+  static async removeTags(documentId: string, userIds: string[], workspace?: string): Promise<any[]> {
     await ensureDocumentTagsTable();
 
-    const existing = await db('documents').where({ id: documentId }).first();
+    const q = db('documents').where({ id: documentId });
+    if (workspace) q.andWhere({ workspace });
+    const existing = await q.first();
     if (!existing) {
       throw new AppError(404, API_ERRORS.NOT_FOUND, '문서를 찾을 수 없습니다');
     }
@@ -307,18 +312,19 @@ export class DocumentsService {
 
   // ─── Status update (for kanban drag) ───────────────────────
 
-  static async updateStatus(id: string, status: string): Promise<any> {
+  static async updateStatus(id: string, status: string, workspace?: string): Promise<any> {
     await ensureStatusColumn();
 
-    const existing = await db('documents').where({ id }).first();
+    const q = db('documents').where({ id });
+    if (workspace) q.andWhere({ workspace });
+    const existing = await q.first();
     if (!existing) {
       throw new AppError(404, API_ERRORS.NOT_FOUND, '문서를 찾을 수 없습니다');
     }
 
-    const [updatedRow] = await db('documents')
-      .where({ id })
-      .update({ status, updated_at: db.fn.now() })
-      .returning('*');
+    const writeQ = db('documents').where({ id });
+    if (workspace) writeQ.andWhere({ workspace });
+    const [updatedRow] = await writeQ.update({ status, updated_at: db.fn.now() }).returning('*');
 
     return mapDocumentToResponse(updatedRow);
   }

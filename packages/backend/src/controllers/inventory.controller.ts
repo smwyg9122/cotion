@@ -30,7 +30,14 @@ export const inventoryController = {
 
   getById: asyncHandler(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
-    const item = await InventoryService.getById(id);
+    const workspace = (req.query.workspace as string) || '';
+    if (!workspace) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'workspace is required' },
+      });
+    }
+    const item = await InventoryService.getById(id, workspace);
 
     if (!item) {
       return res.status(404).json({
@@ -60,8 +67,15 @@ export const inventoryController = {
 
   update: asyncHandler(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
+    const workspace = (req.query.workspace as string) || '';
+    if (!workspace) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'workspace is required' },
+      });
+    }
     const input = inventoryUpdateSchema.parse(req.body);
-    const item = await InventoryService.update(id, input);
+    const item = await InventoryService.update(id, input, workspace);
 
     res.json({
       success: true,
@@ -71,7 +85,14 @@ export const inventoryController = {
 
   delete: asyncHandler(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
-    await InventoryService.delete(id);
+    const workspace = (req.query.workspace as string) || '';
+    if (!workspace) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'workspace is required' },
+      });
+    }
+    await InventoryService.delete(id, workspace);
 
     res.json({
       success: true,
@@ -81,8 +102,15 @@ export const inventoryController = {
 
   addTransaction: asyncHandler(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
+    const workspace = (req.query.workspace as string) || '';
+    if (!workspace) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'workspace is required' },
+      });
+    }
     const input = inventoryTransactionCreateSchema.parse(req.body);
-    const transaction = await InventoryService.addTransaction(id, input, req.user!.userId);
+    const transaction = await InventoryService.addTransaction(id, input, req.user!.userId, workspace);
 
     res.status(201).json({
       success: true,
@@ -92,7 +120,14 @@ export const inventoryController = {
 
   getTransactions: asyncHandler(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
-    const transactions = await InventoryService.getTransactions(id);
+    const workspace = (req.query.workspace as string) || '';
+    if (!workspace) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'workspace is required' },
+      });
+    }
+    const transactions = await InventoryService.getTransactions(id, workspace);
 
     res.json({
       success: true,

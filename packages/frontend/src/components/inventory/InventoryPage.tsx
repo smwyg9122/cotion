@@ -101,7 +101,7 @@ export function InventoryPage({ workspace }: InventoryPageProps) {
   const fetchTransactions = useCallback(async (itemId: string) => {
     setTransactionsLoading(true);
     try {
-      const response = await api.get(`/inventory/${itemId}/transactions`);
+      const response = await api.get(`/inventory/${itemId}/transactions`, { params: { workspace } });
       setTransactions(response.data.data || []);
     } catch (err: any) {
       console.error('Failed to fetch transactions:', err);
@@ -150,7 +150,7 @@ export function InventoryPage({ workspace }: InventoryPageProps) {
     if (!formData.name.trim()) return;
     try {
       if (selectedItem) {
-        await api.put(`/inventory/${selectedItem.id}`, formData);
+        await api.put(`/inventory/${selectedItem.id}`, formData, { params: { workspace } });
       } else {
         await api.post('/inventory', { ...formData, workspace });
       }
@@ -165,7 +165,7 @@ export function InventoryPage({ workspace }: InventoryPageProps) {
   const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     try {
-      await api.delete(`/inventory/${id}`);
+      await api.delete(`/inventory/${id}`, { params: { workspace } });
       setItems((prev) => prev.filter((i) => i.id !== id));
       setDeleteConfirmId(null);
       if (expandedId === id) setExpandedId(null);
@@ -191,7 +191,7 @@ export function InventoryPage({ workspace }: InventoryPageProps) {
         type: transactionType,
         quantity: transactionQuantity,
         note: transactionNote,
-      });
+      }, { params: { workspace } });
       await fetchItems();
       if (expandedId === transactionItemId) {
         await fetchTransactions(transactionItemId);

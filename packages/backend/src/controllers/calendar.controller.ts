@@ -31,7 +31,14 @@ export const calendarController = {
 
   getEvent: asyncHandler(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
-    const event = await CalendarService.getEventById(id);
+    const workspace = (req.query.workspace as string) || '';
+    if (!workspace) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'workspace is required' },
+      });
+    }
+    const event = await CalendarService.getEventById(id, workspace);
 
     if (!event) {
       return res.status(404).json({
@@ -63,8 +70,15 @@ export const calendarController = {
 
   updateEvent: asyncHandler(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
+    const workspace = (req.query.workspace as string) || '';
+    if (!workspace) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'workspace is required' },
+      });
+    }
     const input = calendarEventUpdateSchema.parse(req.body);
-    const event = await CalendarService.updateEvent(id, input, req.user!.userId);
+    const event = await CalendarService.updateEvent(id, input, req.user!.userId, workspace);
 
     ActivityLogService.log(req.user!.userId, 'event_update', 'event', id, { title: event.title });
 
@@ -76,7 +90,14 @@ export const calendarController = {
 
   deleteEvent: asyncHandler(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
-    await CalendarService.deleteEvent(id, req.user!.userId);
+    const workspace = (req.query.workspace as string) || '';
+    if (!workspace) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'workspace is required' },
+      });
+    }
+    await CalendarService.deleteEvent(id, req.user!.userId, workspace);
 
     ActivityLogService.log(req.user!.userId, 'event_delete', 'event', id);
 

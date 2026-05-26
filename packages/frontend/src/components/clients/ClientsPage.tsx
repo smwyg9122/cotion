@@ -164,7 +164,7 @@ export function ClientsPage({ workspace }: ClientsPageProps) {
     if (!formData.name.trim()) return;
     try {
       if (selectedClient) {
-        await api.put(`/clients/${selectedClient.id}`, formData);
+        await api.put(`/clients/${selectedClient.id}`, formData, { params: { workspace } });
       } else {
         await api.post('/clients', { ...formData, workspace });
       }
@@ -178,7 +178,7 @@ export function ClientsPage({ workspace }: ClientsPageProps) {
 
   const handleDelete = async (id: string) => {
     try {
-      await api.delete(`/clients/${id}`);
+      await api.delete(`/clients/${id}`, { params: { workspace } });
       setClients((prev) => prev.filter((c) => c.id !== id));
       setDeleteConfirmId(null);
     } catch (err: any) {
@@ -190,7 +190,7 @@ export function ClientsPage({ workspace }: ClientsPageProps) {
   const handleToggleField = async (client: Client, field: 'visited' | 'cuppingDone' | 'purchased') => {
     try {
       const updated = { ...client, [field]: !client[field] };
-      await api.put(`/clients/${client.id}`, { [field]: !client[field] });
+      await api.put(`/clients/${client.id}`, { [field]: !client[field] }, { params: { workspace } });
       setClients((prev) => prev.map((c) => (c.id === client.id ? { ...c, [field]: !c[field] } : c)));
     } catch (err: any) {
       console.error('Failed to update client:', err);

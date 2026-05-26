@@ -156,7 +156,7 @@ export function CuppingLogPage({ workspace }: CuppingLogPageProps) {
         followupDate: formData.followupDate || null,
       };
       if (selectedLog) {
-        await api.put(`/cupping-logs/${selectedLog.id}`, payload);
+        await api.put(`/cupping-logs/${selectedLog.id}`, payload, { params: { workspace } });
       } else {
         await api.post('/cupping-logs', { ...payload, workspace });
       }
@@ -170,7 +170,7 @@ export function CuppingLogPage({ workspace }: CuppingLogPageProps) {
 
   const handleDelete = async (id: string) => {
     try {
-      await api.delete(`/cupping-logs/${id}`);
+      await api.delete(`/cupping-logs/${id}`, { params: { workspace } });
       setLogs((prev) => prev.filter((l) => l.id !== id));
       setDeleteConfirmId(null);
     } catch (err: any) {

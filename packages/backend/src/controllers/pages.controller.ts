@@ -152,7 +152,7 @@ export const pagesController = {
     if (!workspace || !oldName || !newName) {
       return res.status(400).json({ success: false, error: 'workspace, oldName, newName 필수' });
     }
-    const count = await PagesService.renameCategory(workspace, oldName, newName.trim());
+    const count = await PagesService.renameCategory(workspace, oldName, newName.trim(), req.user!.userId);
     res.json({ success: true, data: { updatedCount: count } });
   }),
 
@@ -161,7 +161,7 @@ export const pagesController = {
     if (!workspace || !categoryName) {
       return res.status(400).json({ success: false, error: 'workspace, categoryName 필수' });
     }
-    const count = await PagesService.deleteCategory(workspace, categoryName);
+    const count = await PagesService.deleteCategory(workspace, categoryName, req.user!.userId);
     res.json({ success: true, data: { updatedCount: count } });
   }),
 };

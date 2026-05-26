@@ -42,6 +42,22 @@ export class AdminService {
 
     await db('users').where({ id: userId }).update({ is_active: isActive });
 
+    // Invalidate auth middleware's cached is_active so deactivation takes
+    // effect on the user's next request, not after the TTL elapses.
+    // Lazy-required to avoid a circular import at module load time.
+    try {
+      const { invalidateActiveCache } = require('../middleware/auth.middleware');
+      invalidateActiveCache(userId);
+    } catch {
+      // best-effort; cache will expire within TTL anyway
+    }
+
+    // Also kill all existing refresh tokens so the user can't refresh into
+    // a new access token after deactivation.
+    if (!isActive) {
+      await db('sessions').where({ user_id: userId }).delete();
+    }
+
     return { id: userId, is_active: isActive };
   }
 
@@ -54,6 +70,16 @@ export class AdminService {
     await db('users').where({ id: userId }).update({
       allowed_workspaces: JSON.stringify(workspaces),
     });
+
+    // Invalidate the pages-service workspace cache so the user's next page
+    // request reflects the new permissions immediately (otherwise they wait
+    // up to TTL_MS).
+    try {
+      const { invalidatePagesWorkspaceCache } = require('./pages.service');
+      invalidatePagesWorkspaceCache(userId);
+    } catch {
+      // best-effort
+    }
 
     return { id: userId, allowed_workspaces: workspaces };
   }

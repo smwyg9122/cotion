@@ -200,7 +200,7 @@ export function DesignLibrary({ workspace }: DesignLibraryProps) {
       if (!selectedAsset) payload.workspace = workspace;
 
       if (selectedAsset) {
-        await api.put(`/documents/${selectedAsset.id}`, payload);
+        await api.put(`/documents/${selectedAsset.id}`, payload, { params: { workspace } });
       } else {
         await api.post('/documents', payload);
       }
@@ -210,7 +210,7 @@ export function DesignLibrary({ workspace }: DesignLibraryProps) {
 
       if (selectedAsset && detailAsset?.id === selectedAsset.id) {
         try {
-          const detailRes = await api.get(`/documents/${selectedAsset.id}`);
+          const detailRes = await api.get(`/documents/${selectedAsset.id}`, { params: { workspace } });
           if (detailRes.data.data) setDetailAsset(detailRes.data.data);
         } catch { setDetailAsset(null); }
       }
@@ -226,7 +226,7 @@ export function DesignLibrary({ workspace }: DesignLibraryProps) {
   const handleDelete = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     try {
-      await api.delete(`/documents/${id}`);
+      await api.delete(`/documents/${id}`, { params: { workspace } });
       setAssets((prev) => prev.filter((d) => d.id !== id));
       setDeleteConfirmId(null);
       if (detailAsset?.id === id) setDetailAsset(null);

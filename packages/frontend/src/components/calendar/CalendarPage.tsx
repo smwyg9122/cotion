@@ -339,7 +339,7 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
       };
 
       if (selectedEvent) {
-        await api.put(`/calendar/${selectedEvent.id}`, eventData);
+        await api.put(`/calendar/${selectedEvent.id}`, eventData, { params: { workspace } });
       } else {
         await api.post('/calendar', eventData);
       }
@@ -357,7 +357,7 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
     if (!selectedEvent) return;
 
     try {
-      await api.delete(`/calendar/${selectedEvent.id}`);
+      await api.delete(`/calendar/${selectedEvent.id}`, { params: { workspace } });
       setEvents((prev) => prev.filter((e) => e.id !== selectedEvent.id));
       setIsModalOpen(false);
     } catch (error) {

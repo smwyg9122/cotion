@@ -197,7 +197,7 @@ export function V2TestPage({ workspace }: { workspace: string }) {
           await api.put(`/clients/${clientId}`, {
             name: '__TEST_거래처_수정__',
             visited: true,
-          });
+          }, { params: { workspace } });
           return '수정 성공';
         })
       )
@@ -213,7 +213,7 @@ export function V2TestPage({ workspace }: { workspace: string }) {
     if (clientId) {
       if (
         await runTest(g0, 3, async () => {
-          await api.delete(`/clients/${clientId}`);
+          await api.delete(`/clients/${clientId}`, { params: { workspace } });
           return '삭제 성공';
         })
       )
@@ -269,7 +269,7 @@ export function V2TestPage({ workspace }: { workspace: string }) {
             type: 'in',
             quantity: 10,
             note: '테스트 입고',
-          });
+          }, { params: { workspace } });
           return '입고 10kg 기록 성공';
         })
       )
@@ -285,7 +285,7 @@ export function V2TestPage({ workspace }: { workspace: string }) {
     if (inventoryId) {
       if (
         await runTest(g1, 3, async () => {
-          const res = await api.get(`/inventory/${inventoryId}/transactions`);
+          const res = await api.get(`/inventory/${inventoryId}/transactions`, { params: { workspace } });
           const data = res.data.data || res.data;
           return `${Array.isArray(data) ? data.length : 0}건 내역 조회`;
         })
@@ -302,7 +302,7 @@ export function V2TestPage({ workspace }: { workspace: string }) {
     if (inventoryId) {
       if (
         await runTest(g1, 4, async () => {
-          await api.delete(`/inventory/${inventoryId}`);
+          await api.delete(`/inventory/${inventoryId}`, { params: { workspace } });
           return '삭제 성공';
         })
       )
@@ -358,7 +358,7 @@ export function V2TestPage({ workspace }: { workspace: string }) {
             status: 'todo',
             priority: 'high',
             position: 0,
-          });
+          }, { params: { workspace } });
           taskId = res.data.data?.id || res.data?.id || '';
           return `태스크 생성 (id: ${taskId.slice(0, 8)}...)`;
         })
@@ -375,7 +375,7 @@ export function V2TestPage({ workspace }: { workspace: string }) {
     if (projectId) {
       if (
         await runTest(g2, 3, async () => {
-          const res = await api.get(`/projects/${projectId}/tasks`);
+          const res = await api.get(`/projects/${projectId}/tasks`, { params: { workspace } });
           const data = res.data.data || res.data;
           return `${Array.isArray(data) ? data.length : 0}개 태스크 조회`;
         })
@@ -395,7 +395,7 @@ export function V2TestPage({ workspace }: { workspace: string }) {
           await api.put(`/projects/tasks/${taskId}`, {
             title: '__TEST_태스크_수정__',
             status: 'in_progress',
-          });
+          }, { params: { workspace } });
           return '태스크 수정 성공 (→ in_progress)';
         })
       )
@@ -411,7 +411,7 @@ export function V2TestPage({ workspace }: { workspace: string }) {
     if (taskId) {
       if (
         await runTest(g2, 5, async () => {
-          await api.delete(`/projects/tasks/${taskId}`);
+          await api.delete(`/projects/tasks/${taskId}`, { params: { workspace } });
           return '태스크 삭제 성공';
         })
       )
@@ -427,7 +427,7 @@ export function V2TestPage({ workspace }: { workspace: string }) {
     if (projectId) {
       if (
         await runTest(g2, 6, async () => {
-          await api.delete(`/projects/${projectId}`);
+          await api.delete(`/projects/${projectId}`, { params: { workspace } });
           return '프로젝트 삭제 성공';
         })
       )
@@ -481,7 +481,7 @@ export function V2TestPage({ workspace }: { workspace: string }) {
           await api.put(`/cupping-logs/${cuppingId}`, {
             reaction: '매우 긍정적 (수정됨)',
             purchaseIntent: 'medium',
-          });
+          }, { params: { workspace } });
           return '수정 성공';
         })
       )
@@ -496,7 +496,7 @@ export function V2TestPage({ workspace }: { workspace: string }) {
     if (cuppingId) {
       if (
         await runTest(g3, 3, async () => {
-          await api.delete(`/cupping-logs/${cuppingId}`);
+          await api.delete(`/cupping-logs/${cuppingId}`, { params: { workspace } });
           return '삭제 성공';
         })
       )
@@ -545,7 +545,7 @@ export function V2TestPage({ workspace }: { workspace: string }) {
           await api.put(`/documents/${docId}`, {
             title: '__TEST_문서_수정__',
             category: 'pricelist',
-          });
+          }, { params: { workspace } });
           return '수정 성공';
         })
       )
@@ -560,7 +560,7 @@ export function V2TestPage({ workspace }: { workspace: string }) {
     if (docId) {
       if (
         await runTest(g4, 3, async () => {
-          await api.delete(`/documents/${docId}`);
+          await api.delete(`/documents/${docId}`, { params: { workspace } });
           return '삭제 성공';
         })
       )

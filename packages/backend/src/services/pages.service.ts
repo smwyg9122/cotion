@@ -3,33 +3,93 @@ import { AppError } from '../middleware/error.middleware';
 import { API_ERRORS } from '@cotion/shared';
 import { Page, PageCreateInput, PageUpdateInput, PageMoveInput, PageTreeNode } from '@cotion/shared';
 
+// ─── Workspace access helper ─────────────────────────────────────
+// Returns the list of workspaces the user can read/write to, or null for
+// superadmin (= unrestricted). Bounded TTL cache so we don't query
+// users-table on every page request.
+
+const workspaceCache = new Map<string, { workspaces: string[] | null; expiresAt: number }>();
+const WORKSPACE_CACHE_TTL_MS = 60 * 1000;
+
+export async function getUserAccessibleWorkspaces(userId: string): Promise<string[] | null> {
+  const now = Date.now();
+  const cached = workspaceCache.get(userId);
+  if (cached && cached.expiresAt > now) return cached.workspaces;
+
+  const user = await db('users')
+    .where({ id: userId })
+    .select('role', 'allowed_workspaces')
+    .first();
+  if (!user) throw new AppError(403, API_ERRORS.FORBIDDEN, '사용자를 찾을 수 없습니다');
+
+  let workspaces: string[] | null;
+  if (user.role === 'superadmin') {
+    workspaces = null; // unrestricted
+  } else {
+    const aw = user.allowed_workspaces;
+    if (!aw) {
+      workspaces = [];
+    } else {
+      try {
+        const parsed = typeof aw === 'string' ? JSON.parse(aw) : aw;
+        workspaces = Array.isArray(parsed) ? parsed : [];
+      } catch {
+        workspaces = [];
+      }
+    }
+  }
+
+  workspaceCache.set(userId, { workspaces, expiresAt: now + WORKSPACE_CACHE_TTL_MS });
+  return workspaces;
+}
+
+export function invalidatePagesWorkspaceCache(userId: string) {
+  workspaceCache.delete(userId);
+}
+
 export class PagesService {
   static async getAllPages(userId: string): Promise<PageTreeNode[]> {
-    const pages = await db('pages')
-      .where({ is_deleted: false })
-      .orderBy('path')
-      .select('*');
+    const accessible = await getUserAccessibleWorkspaces(userId);
 
+    const query = db('pages').where({ is_deleted: false }).orderBy('path');
+    if (accessible !== null) {
+      // Members only see pages from workspaces they are allowed in.
+      // Empty list → empty result (no access at all).
+      if (accessible.length === 0) return [];
+      query.whereIn('workspace', accessible);
+    }
+    const pages = await query.select('*');
     return this.buildTree(pages);
   }
 
   static async getPageById(pageId: string, userId: string): Promise<Page | null> {
-    const page = await db('pages')
-      .where({ id: pageId, is_deleted: false })
-      .first();
+    const accessible = await getUserAccessibleWorkspaces(userId);
 
+    const query = db('pages').where({ id: pageId, is_deleted: false });
+    if (accessible !== null) {
+      if (accessible.length === 0) return null;
+      query.whereIn('workspace', accessible);
+    }
+    const page = await query.first();
     return page || null;
   }
 
   static async createPage(input: PageCreateInput, userId: string): Promise<Page> {
+    const accessible = await getUserAccessibleWorkspaces(userId);
+
+    // Enforce workspace access when explicit workspace is requested.
+    if (input.workspace && accessible !== null && !accessible.includes(input.workspace)) {
+      throw new AppError(403, API_ERRORS.FORBIDDEN, '해당 워크스페이스에 접근 권한이 없습니다');
+    }
+
     let path: string;
     let position = 0;
 
     if (input.parentId) {
-      // Get parent page
-      const parent = await db('pages')
-        .where({ id: input.parentId, is_deleted: false })
-        .first();
+      // Get parent page — also scoped by accessible workspace
+      const parentQuery = db('pages').where({ id: input.parentId, is_deleted: false });
+      if (accessible !== null) parentQuery.whereIn('workspace', accessible);
+      const parent = await parentQuery.first();
 
       if (!parent) {
         throw new AppError(404, API_ERRORS.NOT_FOUND, '상위 페이지를 찾을 수 없습니다');
@@ -82,16 +142,22 @@ export class PagesService {
   }
 
   static async updatePage(pageId: string, input: PageUpdateInput, userId: string): Promise<Page> {
-    const page = await db('pages')
-      .where({ id: pageId, is_deleted: false })
-      .first();
+    const accessible = await getUserAccessibleWorkspaces(userId);
+
+    const q = db('pages').where({ id: pageId, is_deleted: false });
+    if (accessible !== null) {
+      if (accessible.length === 0) throw new AppError(404, API_ERRORS.NOT_FOUND, '페이지를 찾을 수 없습니다');
+      q.whereIn('workspace', accessible);
+    }
+    const page = await q.first();
 
     if (!page) {
       throw new AppError(404, API_ERRORS.NOT_FOUND, '페이지를 찾을 수 없습니다');
     }
 
-    const [updatedPage] = await db('pages')
-      .where({ id: pageId })
+    const writeQ = db('pages').where({ id: pageId });
+    if (accessible !== null) writeQ.whereIn('workspace', accessible);
+    const [updatedPage] = await writeQ
       .update({
         ...input,
         updated_by: userId,
@@ -102,15 +168,21 @@ export class PagesService {
   }
 
   static async deletePage(pageId: string, userId: string): Promise<void> {
-    const page = await db('pages')
-      .where({ id: pageId, is_deleted: false })
-      .first();
+    const accessible = await getUserAccessibleWorkspaces(userId);
+
+    const q = db('pages').where({ id: pageId, is_deleted: false });
+    if (accessible !== null) {
+      if (accessible.length === 0) throw new AppError(404, API_ERRORS.NOT_FOUND, '페이지를 찾을 수 없습니다');
+      q.whereIn('workspace', accessible);
+    }
+    const page = await q.first();
 
     if (!page) {
       throw new AppError(404, API_ERRORS.NOT_FOUND, '페이지를 찾을 수 없습니다');
     }
 
-    // Soft delete the page and all its descendants
+    // Soft delete the page and all its descendants. The cascade is scoped
+    // to the same workspace via the parent path being in the user's reach.
     await db('pages')
       .where('path', '<@', page.path) // All descendants (using LTREE operator)
       .orWhere({ id: pageId })
@@ -121,21 +193,33 @@ export class PagesService {
       });
   }
 
-  static async getDeletedPages(userId: string, isSuperAdmin = false): Promise<any[]> {
+  static async getDeletedPages(userId: string, _isSuperAdmin = false): Promise<any[]> {
+    const accessible = await getUserAccessibleWorkspaces(userId);
+
     const query = db('pages')
       .leftJoin('users', 'pages.updated_by', 'users.id')
       .where({ 'pages.is_deleted': true })
       .orderBy('pages.deleted_at', 'desc')
       .select('pages.*', 'users.name as deleted_by_name');
 
+    if (accessible !== null) {
+      if (accessible.length === 0) return [];
+      query.whereIn('pages.workspace', accessible);
+    }
+
     const pages = await query;
     return pages;
   }
 
   static async restorePage(pageId: string, userId: string): Promise<void> {
-    const page = await db('pages')
-      .where({ id: pageId, is_deleted: true })
-      .first();
+    const accessible = await getUserAccessibleWorkspaces(userId);
+
+    const q = db('pages').where({ id: pageId, is_deleted: true });
+    if (accessible !== null) {
+      if (accessible.length === 0) throw new AppError(404, API_ERRORS.NOT_FOUND, '삭제된 페이지를 찾을 수 없습니다');
+      q.whereIn('workspace', accessible);
+    }
+    const page = await q.first();
 
     if (!page) {
       throw new AppError(404, API_ERRORS.NOT_FOUND, '삭제된 페이지를 찾을 수 없습니다');
@@ -153,9 +237,14 @@ export class PagesService {
   }
 
   static async permanentDeletePage(pageId: string, userId: string): Promise<void> {
-    const page = await db('pages')
-      .where({ id: pageId, is_deleted: true })
-      .first();
+    const accessible = await getUserAccessibleWorkspaces(userId);
+
+    const q = db('pages').where({ id: pageId, is_deleted: true });
+    if (accessible !== null) {
+      if (accessible.length === 0) throw new AppError(404, API_ERRORS.NOT_FOUND, '삭제된 페이지를 찾을 수 없습니다');
+      q.whereIn('workspace', accessible);
+    }
+    const page = await q.first();
 
     if (!page) {
       throw new AppError(404, API_ERRORS.NOT_FOUND, '삭제된 페이지를 찾을 수 없습니다');
@@ -169,9 +258,14 @@ export class PagesService {
   }
 
   static async getChildren(pageId: string, userId: string): Promise<Page[]> {
-    const page = await db('pages')
-      .where({ id: pageId, is_deleted: false })
-      .first();
+    const accessible = await getUserAccessibleWorkspaces(userId);
+
+    const q = db('pages').where({ id: pageId, is_deleted: false });
+    if (accessible !== null) {
+      if (accessible.length === 0) throw new AppError(404, API_ERRORS.NOT_FOUND, '페이지를 찾을 수 없습니다');
+      q.whereIn('workspace', accessible);
+    }
+    const page = await q.first();
 
     if (!page) {
       throw new AppError(404, API_ERRORS.NOT_FOUND, '페이지를 찾을 수 없습니다');
@@ -186,9 +280,14 @@ export class PagesService {
   }
 
   static async getBreadcrumb(pageId: string, userId: string): Promise<Page[]> {
-    const page = await db('pages')
-      .where({ id: pageId, is_deleted: false })
-      .first();
+    const accessible = await getUserAccessibleWorkspaces(userId);
+
+    const q = db('pages').where({ id: pageId, is_deleted: false });
+    if (accessible !== null) {
+      if (accessible.length === 0) throw new AppError(404, API_ERRORS.NOT_FOUND, '페이지를 찾을 수 없습니다');
+      q.whereIn('workspace', accessible);
+    }
+    const page = await q.first();
 
     if (!page) {
       throw new AppError(404, API_ERRORS.NOT_FOUND, '페이지를 찾을 수 없습니다');
@@ -215,9 +314,14 @@ export class PagesService {
   }
 
   static async movePage(pageId: string, input: PageMoveInput, userId: string): Promise<Page> {
-    const page = await db('pages')
-      .where({ id: pageId, is_deleted: false })
-      .first();
+    const accessible = await getUserAccessibleWorkspaces(userId);
+
+    const q = db('pages').where({ id: pageId, is_deleted: false });
+    if (accessible !== null) {
+      if (accessible.length === 0) throw new AppError(404, API_ERRORS.NOT_FOUND, '페이지를 찾을 수 없습니다');
+      q.whereIn('workspace', accessible);
+    }
+    const page = await q.first();
 
     if (!page) {
       throw new AppError(404, API_ERRORS.NOT_FOUND, '페이지를 찾을 수 없습니다');
@@ -225,12 +329,17 @@ export class PagesService {
 
     // Check if trying to move to a descendant (would create a cycle)
     if (input.newParentId) {
-      const newParent = await db('pages')
-        .where({ id: input.newParentId, is_deleted: false })
-        .first();
+      const parentQ = db('pages').where({ id: input.newParentId, is_deleted: false });
+      if (accessible !== null) parentQ.whereIn('workspace', accessible);
+      const newParent = await parentQ.first();
 
       if (!newParent) {
         throw new AppError(404, API_ERRORS.NOT_FOUND, '대상 페이지를 찾을 수 없습니다');
+      }
+
+      // Disallow cross-workspace move: source and destination must share workspace.
+      if (newParent.workspace !== page.workspace) {
+        throw new AppError(400, API_ERRORS.VALIDATION_ERROR, '다른 워크스페이스로 이동할 수 없습니다');
       }
 
       // Check if newParent is a descendant of the page being moved
@@ -312,19 +421,29 @@ export class PagesService {
   }
 
   static async searchPages(query: string, userId: string): Promise<Page[]> {
-    const searchPattern = `%${query}%`;
+    const accessible = await getUserAccessibleWorkspaces(userId);
 
-    const pages = await db('pages')
+    // Cap input length and escape LIKE wildcards so a literal "50%" search
+    // matches a literal "50%" and doesn't melt the DB on a large term.
+    const capped = query.slice(0, 100);
+    const escapeLike = (s: string) => s.replace(/[\\%_]/g, '\\$&');
+    const searchPattern = `%${escapeLike(capped)}%`;
+
+    const q = db('pages')
       .where({ is_deleted: false })
       .andWhere(function () {
         this.where('title', 'ILIKE', searchPattern)
           .orWhere('content', 'ILIKE', searchPattern);
       })
       .orderBy('updated_at', 'desc')
-      .limit(20)
-      .select('id', 'title', 'icon', 'category', 'path', 'parent_id', 'updated_at');
+      .limit(20);
 
-    return pages;
+    if (accessible !== null) {
+      if (accessible.length === 0) return [];
+      q.whereIn('workspace', accessible);
+    }
+
+    return q.select('id', 'title', 'icon', 'category', 'path', 'parent_id', 'updated_at');
   }
 
   private static async calculateNewPath(parentId: string): Promise<string> {
@@ -370,8 +489,13 @@ export class PagesService {
   static async renameCategory(
     workspace: string,
     oldName: string,
-    newName: string
+    newName: string,
+    userId: string
   ): Promise<number> {
+    const accessible = await getUserAccessibleWorkspaces(userId);
+    if (accessible !== null && !accessible.includes(workspace)) {
+      throw new AppError(403, API_ERRORS.FORBIDDEN, '해당 워크스페이스에 접근 권한이 없습니다');
+    }
     const updated = await db('pages')
       .where({ workspace, category: oldName, is_deleted: false })
       .update({ category: newName, updated_at: db.fn.now() });
@@ -381,8 +505,13 @@ export class PagesService {
   // ─── 카테고리(폴더) 삭제 (페이지를 미분류로 이동) ─────────
   static async deleteCategory(
     workspace: string,
-    categoryName: string
+    categoryName: string,
+    userId: string
   ): Promise<number> {
+    const accessible = await getUserAccessibleWorkspaces(userId);
+    if (accessible !== null && !accessible.includes(workspace)) {
+      throw new AppError(403, API_ERRORS.FORBIDDEN, '해당 워크스페이스에 접근 권한이 없습니다');
+    }
     const updated = await db('pages')
       .where({ workspace, category: categoryName, is_deleted: false })
       .update({ category: null, updated_at: db.fn.now() });

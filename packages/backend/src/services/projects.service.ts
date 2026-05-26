@@ -84,11 +84,10 @@ export class ProjectsService {
     return mapProjectsToResponse(rows);
   }
 
-  static async getById(id: string): Promise<Project | null> {
-    const row = await db('projects')
-      .where({ id })
-      .first();
-
+  static async getById(id: string, workspace?: string): Promise<Project | null> {
+    const q = db('projects').where({ id });
+    if (workspace) q.andWhere({ workspace });
+    const row = await q.first();
     return row ? mapProjectToResponse(row) : null;
   }
 
@@ -112,10 +111,10 @@ export class ProjectsService {
     return project;
   }
 
-  static async update(id: string, input: ProjectUpdateInput): Promise<Project> {
-    const existing = await db('projects')
-      .where({ id })
-      .first();
+  static async update(id: string, input: ProjectUpdateInput, workspace?: string): Promise<Project> {
+    const q = db('projects').where({ id });
+    if (workspace) q.andWhere({ workspace });
+    const existing = await q.first();
 
     if (!existing) {
       throw new AppError(404, API_ERRORS.NOT_FOUND, '프로젝트를 찾을 수 없습니다');
@@ -126,18 +125,17 @@ export class ProjectsService {
     if (input.description !== undefined) updateFields.description = input.description;
     if (input.status !== undefined) updateFields.status = input.status;
 
-    const [updatedRow] = await db('projects')
-      .where({ id })
-      .update(updateFields)
-      .returning('*');
+    const writeQ = db('projects').where({ id });
+    if (workspace) writeQ.andWhere({ workspace });
+    const [updatedRow] = await writeQ.update(updateFields).returning('*');
 
     return mapProjectToResponse(updatedRow);
   }
 
-  static async delete(id: string): Promise<void> {
-    const existing = await db('projects')
-      .where({ id })
-      .first();
+  static async delete(id: string, workspace?: string): Promise<void> {
+    const q = db('projects').where({ id });
+    if (workspace) q.andWhere({ workspace });
+    const existing = await q.first();
 
     if (!existing) {
       throw new AppError(404, API_ERRORS.NOT_FOUND, '프로젝트를 찾을 수 없습니다');
@@ -166,8 +164,18 @@ export class ProjectsService {
   }
 
   // ── Tasks ──
+  // Tasks inherit workspace from their parent project. Every task entry
+  // point that takes a taskId must first resolve project → workspace and
+  // verify the caller's workspace matches before touching task rows.
 
-  static async getTasks(projectId: string, status?: string): Promise<Task[]> {
+  static async getTasks(projectId: string, status?: string, workspace?: string): Promise<Task[]> {
+    // Confirm the project belongs to the caller's workspace before exposing
+    // its tasks.
+    if (workspace) {
+      const proj = await db('projects').where({ id: projectId, workspace }).first();
+      if (!proj) throw new AppError(404, API_ERRORS.NOT_FOUND, '프로젝트를 찾을 수 없습니다');
+    }
+
     const query = db('tasks')
       .where({ project_id: projectId })
       .orderBy('position', 'asc')
@@ -184,10 +192,10 @@ export class ProjectsService {
     return rows.map((row: any) => mapTaskToResponse(row, assigneesMap[row.id] || []));
   }
 
-  static async createTask(projectId: string, input: TaskCreateInput, userId: string): Promise<Task> {
-    const project = await db('projects')
-      .where({ id: projectId })
-      .first();
+  static async createTask(projectId: string, input: TaskCreateInput, userId: string, workspace?: string): Promise<Task> {
+    const q = db('projects').where({ id: projectId });
+    if (workspace) q.andWhere({ workspace });
+    const project = await q.first();
 
     if (!project) {
       throw new AppError(404, API_ERRORS.NOT_FOUND, '프로젝트를 찾을 수 없습니다');
@@ -245,13 +253,17 @@ export class ProjectsService {
     return mapTaskToResponse(row, assigneesMap[row.id] || []);
   }
 
-  static async updateTask(id: string, input: TaskUpdateInput, userId?: string): Promise<Task> {
-    const existing = await db('tasks')
-      .where({ id })
-      .first();
+  static async updateTask(id: string, input: TaskUpdateInput, userId?: string, workspace?: string): Promise<Task> {
+    const existing = await db('tasks').where({ id }).first();
 
     if (!existing) {
       throw new AppError(404, API_ERRORS.NOT_FOUND, '태스크를 찾을 수 없습니다');
+    }
+
+    // Verify parent project workspace matches caller's workspace.
+    if (workspace) {
+      const proj = await db('projects').where({ id: existing.project_id, workspace }).first();
+      if (!proj) throw new AppError(404, API_ERRORS.NOT_FOUND, '태스크를 찾을 수 없습니다');
     }
 
     const updateFields: any = { updated_at: db.fn.now() };
@@ -306,13 +318,16 @@ export class ProjectsService {
     return mapTaskToResponse(updatedRow, assigneesMap[id] || []);
   }
 
-  static async moveTask(id: string, status: string, position: number): Promise<Task> {
-    const existing = await db('tasks')
-      .where({ id })
-      .first();
+  static async moveTask(id: string, status: string, position: number, workspace?: string): Promise<Task> {
+    const existing = await db('tasks').where({ id }).first();
 
     if (!existing) {
       throw new AppError(404, API_ERRORS.NOT_FOUND, '태스크를 찾을 수 없습니다');
+    }
+
+    if (workspace) {
+      const proj = await db('projects').where({ id: existing.project_id, workspace }).first();
+      if (!proj) throw new AppError(404, API_ERRORS.NOT_FOUND, '태스크를 찾을 수 없습니다');
     }
 
     const [updatedRow] = await db('tasks')
@@ -328,21 +343,19 @@ export class ProjectsService {
     return mapTaskToResponse(updatedRow, assigneesMap[id] || []);
   }
 
-  static async deleteTask(id: string): Promise<void> {
-    const existing = await db('tasks')
-      .where({ id })
-      .first();
+  static async deleteTask(id: string, workspace?: string): Promise<void> {
+    const existing = await db('tasks').where({ id }).first();
 
     if (!existing) {
       throw new AppError(404, API_ERRORS.NOT_FOUND, '태스크를 찾을 수 없습니다');
     }
 
-    await db('task_assignees')
-      .where({ task_id: id })
-      .delete();
+    if (workspace) {
+      const proj = await db('projects').where({ id: existing.project_id, workspace }).first();
+      if (!proj) throw new AppError(404, API_ERRORS.NOT_FOUND, '태스크를 찾을 수 없습니다');
+    }
 
-    await db('tasks')
-      .where({ id })
-      .delete();
+    await db('task_assignees').where({ task_id: id }).delete();
+    await db('tasks').where({ id }).delete();
   }
 }

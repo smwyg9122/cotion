@@ -268,7 +268,7 @@ export function DocumentLibrary({ workspace }: DocumentLibraryProps) {
       if (!selectedDocument) payload.workspace = workspace;
 
       if (selectedDocument) {
-        await api.put(`/documents/${selectedDocument.id}`, payload);
+        await api.put(`/documents/${selectedDocument.id}`, payload, { params: { workspace } });
       } else {
         await api.post('/documents', payload);
       }
@@ -278,7 +278,7 @@ export function DocumentLibrary({ workspace }: DocumentLibraryProps) {
 
       if (selectedDocument && detailDocument?.id === selectedDocument.id) {
         try {
-          const detailRes = await api.get(`/documents/${selectedDocument.id}`);
+          const detailRes = await api.get(`/documents/${selectedDocument.id}`, { params: { workspace } });
           if (detailRes.data.data) setDetailDocument(detailRes.data.data);
         } catch { setDetailDocument(null); }
       }
@@ -297,7 +297,7 @@ export function DocumentLibrary({ workspace }: DocumentLibraryProps) {
   const handleDelete = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     try {
-      await api.delete(`/documents/${id}`);
+      await api.delete(`/documents/${id}`, { params: { workspace } });
       setDocuments((prev) => prev.filter((d) => d.id !== id));
       setDeleteConfirmId(null);
       if (detailDocument?.id === id) setDetailDocument(null);
@@ -319,7 +319,7 @@ export function DocumentLibrary({ workspace }: DocumentLibraryProps) {
 
   const handleStatusChange = async (docId: string, newStatus: string) => {
     try {
-      await api.patch(`/documents/${docId}/status`, { status: newStatus });
+      await api.patch(`/documents/${docId}/status`, { status: newStatus }, { params: { workspace } });
       setDocuments((prev) =>
         prev.map((d) => (d.id === docId ? { ...d, status: newStatus } : d))
       );
@@ -354,7 +354,7 @@ export function DocumentLibrary({ workspace }: DocumentLibraryProps) {
   const handleAddTag = async (userId: string) => {
     if (!tagModalDocId) return;
     try {
-      const res = await api.post(`/documents/${tagModalDocId}/tags`, { userIds: [userId] });
+      const res = await api.post(`/documents/${tagModalDocId}/tags`, { userIds: [userId] }, { params: { workspace } });
       const newTags = res.data.data || [];
       setTagModalUsers(newTags);
       setDocuments((prev) =>
@@ -371,7 +371,7 @@ export function DocumentLibrary({ workspace }: DocumentLibraryProps) {
   const handleRemoveTag = async (userId: string) => {
     if (!tagModalDocId) return;
     try {
-      const res = await api.delete(`/documents/${tagModalDocId}/tags`, { data: { userIds: [userId] } });
+      const res = await api.delete(`/documents/${tagModalDocId}/tags`, { data: { userIds: [userId] }, params: { workspace } });
       const newTags = res.data.data || [];
       setTagModalUsers(newTags);
       setDocuments((prev) =>

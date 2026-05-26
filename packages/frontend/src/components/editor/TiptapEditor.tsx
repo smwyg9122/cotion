@@ -83,6 +83,10 @@ export function TiptapEditor({ content, onChange, onSave, pageId, userId, userNa
     setDoc(newDoc);
 
     const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:3000';
+    // Browsers cannot set custom headers on WebSocket upgrade, so the
+    // JWT rides as a query parameter and the server verifies it before
+    // accepting the connection.
+    const wsToken = localStorage.getItem('accessToken') || '';
 
     const wsProvider = new WebsocketProvider(
       WS_URL,
@@ -93,6 +97,7 @@ export function TiptapEditor({ content, onChange, onSave, pageId, userId, userNa
           doc: `page-${pageId}`,
           userId,
           userName: encodeURIComponent(userName),
+          token: wsToken,
         },
       }
     );
