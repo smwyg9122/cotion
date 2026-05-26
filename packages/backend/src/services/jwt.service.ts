@@ -1,4 +1,5 @@
 import jwt, { SignOptions } from 'jsonwebtoken';
+import { randomUUID } from 'crypto';
 import { config } from '../config';
 
 export interface JWTPayload {
@@ -8,9 +9,14 @@ export interface JWTPayload {
 }
 
 export class JWTService {
+  // jwtid (jti) ensures every issued token is unique even when generated
+  // within the same second for the same user — otherwise the JWT bytes
+  // would be identical (iat is second-granularity) and the sessions table's
+  // UNIQUE(refresh_token) constraint would explode on rapid logins/refreshes.
   static generateAccessToken(payload: JWTPayload): string {
     const options: SignOptions = {
       expiresIn: config.jwt.accessExpiry,
+      jwtid: randomUUID(),
     };
     return jwt.sign(payload, config.jwt.accessSecret, options);
   }
@@ -18,6 +24,7 @@ export class JWTService {
   static generateRefreshToken(payload: JWTPayload): string {
     const options: SignOptions = {
       expiresIn: config.jwt.refreshExpiry,
+      jwtid: randomUUID(),
     };
     return jwt.sign(payload, config.jwt.refreshSecret, options);
   }

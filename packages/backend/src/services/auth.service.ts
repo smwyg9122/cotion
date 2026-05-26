@@ -56,7 +56,8 @@ export class AuthService {
     return {
       user: userWithoutPassword,
       accessToken,
-    };
+      refreshToken,
+    } as AuthResponse;
   }
 
   static async login(input: UserLoginInput): Promise<AuthResponse> {
@@ -70,6 +71,12 @@ export class AuthService {
     const isPasswordValid = await bcrypt.compare(input.password, user.password_hash);
     if (!isPasswordValid) {
       throw new AppError(401, API_ERRORS.UNAUTHORIZED, '아이디 또는 비밀번호가 올바르지 않습니다');
+    }
+
+    // Reject deactivated accounts. is_active is nullable for legacy rows;
+    // explicit false blocks login, undefined/null is treated as active.
+    if (user.is_active === false) {
+      throw new AppError(403, API_ERRORS.FORBIDDEN, '비활성화된 계정입니다. 관리자에게 문의하세요.');
     }
 
     // Update last login
@@ -95,7 +102,8 @@ export class AuthService {
     return {
       user: userWithoutPassword,
       accessToken,
-    };
+      refreshToken,
+    } as AuthResponse;
   }
 
   static async changePassword(userId: string, input: PasswordChangeInput): Promise<void> {
@@ -121,24 +129,68 @@ export class AuthService {
     await db('sessions').where({ user_id: userId }).delete();
   }
 
-  static async refreshAccessToken(refreshToken: string): Promise<string> {
-    // Verify refresh token
-    const payload = JWTService.verifyRefreshToken(refreshToken);
+  /**
+   * Refresh access token AND rotate the refresh token.
+   *
+   * Behavior:
+   *  - Validates the JWT signature + DB row.
+   *  - If the refresh token is signature-valid but NOT in DB sessions, we
+   *    treat that as a reuse attempt (token was previously rotated out) and
+   *    revoke ALL sessions for that user — forcing re-login everywhere.
+   *  - On success, deletes the consumed refresh token, issues a new pair,
+   *    and stores the new refresh token.
+   *
+   * Returns: { accessToken, refreshToken } so the caller can set the new
+   * refresh cookie. Older callers that ignore refreshToken still work.
+   */
+  static async refreshAccessToken(
+    refreshToken: string
+  ): Promise<{ accessToken: string; refreshToken: string }> {
+    // Verify JWT signature first — invalid signatures get a clean 401
+    // without polluting our reuse-detection logic.
+    let payload: JWTPayload;
+    try {
+      payload = JWTService.verifyRefreshToken(refreshToken);
+    } catch {
+      throw new AppError(401, API_ERRORS.UNAUTHORIZED, '유효하지 않은 리프레시 토큰입니다');
+    }
 
-    // Check if refresh token exists in database
     const session = await db('sessions')
       .where({ refresh_token: refreshToken })
       .andWhere('expires_at', '>', db.fn.now())
       .first();
 
     if (!session) {
+      // The token is signature-valid but missing from DB. Either:
+      //   (a) It's a reused token from a previous rotation — possibly stolen.
+      //   (b) The user's sessions were already revoked elsewhere.
+      // Either way, blow away every active session for this user so a thief
+      // is locked out the moment the legit user does anything.
+      await db('sessions').where({ user_id: payload.userId }).delete();
       throw new AppError(401, API_ERRORS.UNAUTHORIZED, '유효하지 않은 리프레시 토큰입니다');
     }
 
-    // Generate new access token
-    const accessToken = JWTService.generateAccessToken(payload);
+    // Reject if the user has been deactivated since the token was issued.
+    const user = await db('users').where({ id: payload.userId }).select('is_active').first();
+    if (!user || user.is_active === false) {
+      await db('sessions').where({ user_id: payload.userId }).delete();
+      throw new AppError(403, API_ERRORS.FORBIDDEN, '비활성화된 계정입니다');
+    }
 
-    return accessToken;
+    // Rotate: invalidate the consumed refresh token, mint a new pair.
+    // The verified payload includes `iat`/`exp`/`jti` from the previous JWT;
+    // strip them so jsonwebtoken can re-issue with a fresh expiresIn + jti.
+    const cleanPayload: JWTPayload = {
+      userId: payload.userId,
+      email: payload.email,
+      role: payload.role,
+    };
+    await db('sessions').where({ refresh_token: refreshToken }).delete();
+    const newAccessToken = JWTService.generateAccessToken(cleanPayload);
+    const newRefreshToken = JWTService.generateRefreshToken(cleanPayload);
+    await this.storeRefreshToken(payload.userId, newRefreshToken);
+
+    return { accessToken: newAccessToken, refreshToken: newRefreshToken };
   }
 
   static async logout(refreshToken: string): Promise<void> {

@@ -6,6 +6,22 @@ import { userCreateSchema, userLoginSchema, passwordChangeSchema } from '@cotion
 import { db } from '../database/connection';
 import { ActivityLogService } from '../services/activity-log.service';
 
+/**
+ * Centralized refresh-cookie setter so login/signup/refresh all use the same
+ * flags. HttpOnly so JS can't read it, SameSite=lax for the FE on the same
+ * site, Secure only in production (localhost dev uses plain HTTP).
+ */
+function setRefreshCookie(res: Response, token: string | undefined) {
+  if (!token) return;
+  const isProd = process.env.NODE_ENV === 'production';
+  res.cookie('refreshToken', token, {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: 'lax',
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  });
+}
+
 export const authController = {
   signup: asyncHandler(async (req: AuthRequest, res: Response) => {
     // Validate input
@@ -14,9 +30,12 @@ export const authController = {
     // Create user
     const result = await AuthService.signup(input);
 
+    setRefreshCookie(res, (result as any).refreshToken);
+    const { refreshToken, ...publicResult } = result as any;
+
     res.status(201).json({
       success: true,
-      data: result,
+      data: publicResult,
     });
   }),
 
@@ -29,9 +48,12 @@ export const authController = {
 
     ActivityLogService.log(result.user.id, 'user_login', 'user', result.user.id);
 
+    setRefreshCookie(res, (result as any).refreshToken);
+    const { refreshToken, ...publicResult } = result as any;
+
     res.json({
       success: true,
-      data: result,
+      data: publicResult,
     });
   }),
 
@@ -63,7 +85,10 @@ export const authController = {
       });
     }
 
-    const accessToken = await AuthService.refreshAccessToken(refreshToken);
+    const { accessToken, refreshToken: newRefreshToken } =
+      await AuthService.refreshAccessToken(refreshToken);
+
+    setRefreshCookie(res, newRefreshToken);
 
     res.json({
       success: true,
