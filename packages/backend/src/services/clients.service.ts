@@ -1,8 +1,42 @@
 import { db } from '../database/connection';
 import { AppError } from '../middleware/error.middleware';
 import { API_ERRORS } from '@cotion/shared';
-import { Client, ClientCreateInput, ClientUpdateInput } from '@cotion/shared';
+import {
+  Client,
+  ClientCreateInput,
+  ClientUpdateInput,
+  ClientBusinessType,
+  ClientStatus,
+  ClientPaymentTerms,
+} from '@cotion/shared';
 import { KakaoService } from './kakao.service';
+
+// jsonb columns come back from pg as parsed arrays already; legacy rows
+// might still have the column NULL, so guard against that.
+function parseStringArray(value: unknown): string[] {
+  if (Array.isArray(value)) return value as string[];
+  if (typeof value === 'string') {
+    try {
+      const p = JSON.parse(value);
+      return Array.isArray(p) ? p : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
+function toNumber(value: unknown): number {
+  if (value === null || value === undefined) return 0;
+  const n = typeof value === 'string' ? parseFloat(value) : (value as number);
+  return isNaN(n) ? 0 : n;
+}
+
+function toDateString(value: unknown): string | null {
+  if (!value) return null;
+  if (value instanceof Date) return value.toISOString().slice(0, 10);
+  return String(value);
+}
 
 // Helper function to transform snake_case DB columns to camelCase for API response
 function mapClientToResponse(row: any): Client {
@@ -19,6 +53,28 @@ function mapClientToResponse(row: any): Client {
     assignedTo: row.assigned_to,
     assignedToName: row.assigned_to_name || undefined,
     notes: row.notes,
+
+    // A. 영업 관리 (nullable for legacy rows; status has a DB default)
+    kakaoId: row.kakao_id ?? null,
+    instagram: row.instagram ?? null,
+    region: row.region ?? null,
+    businessType: (row.business_type ?? null) as ClientBusinessType | null,
+    status: (row.status ?? '신규') as ClientStatus,
+    followUpDate: toDateString(row.follow_up_date),
+
+    // B. 거래 추적
+    firstOrderDate: toDateString(row.first_order_date),
+    lastOrderDate: toDateString(row.last_order_date),
+    totalOrderAmount: toNumber(row.total_order_amount),
+    monthlyVolumeKg: toNumber(row.monthly_volume_kg),
+    preferredItems: parseStringArray(row.preferred_items),
+
+    // C. B2B
+    taxId: row.tax_id ?? null,
+    invoiceEmail: row.invoice_email ?? null,
+    paymentTerms: (row.payment_terms ?? null) as ClientPaymentTerms | null,
+    shippingAddress: row.shipping_address ?? null,
+
     workspace: row.workspace,
     createdBy: row.created_by,
     createdAt: row.created_at,
@@ -35,6 +91,9 @@ interface ClientFilters {
   cuppingDone?: boolean;
   purchased?: boolean;
   assignedTo?: string;
+  status?: string;
+  businessType?: string;
+  region?: string;
 }
 
 export class ClientsService {
@@ -60,6 +119,9 @@ export class ClientsService {
     if (filters?.assignedTo !== undefined) {
       query.where('clients.assigned_to', filters.assignedTo);
     }
+    if (filters?.status) query.where('clients.status', filters.status);
+    if (filters?.businessType) query.where('clients.business_type', filters.businessType);
+    if (filters?.region) query.where('clients.region', filters.region);
 
     const rows = await query;
     return mapClientsToResponse(rows);
@@ -95,6 +157,28 @@ export class ClientsService {
         purchased: input.purchased ?? false,
         assigned_to: input.assignedTo || null,
         notes: input.notes || null,
+
+        // A. 영업 관리
+        kakao_id: input.kakaoId || null,
+        instagram: input.instagram || null,
+        region: input.region || null,
+        business_type: input.businessType || null,
+        status: input.status ?? '신규',
+        follow_up_date: input.followUpDate || null,
+
+        // B. 거래 추적
+        first_order_date: input.firstOrderDate || null,
+        last_order_date: input.lastOrderDate || null,
+        total_order_amount: input.totalOrderAmount ?? 0,
+        monthly_volume_kg: input.monthlyVolumeKg ?? 0,
+        preferred_items: JSON.stringify(input.preferredItems ?? []),
+
+        // C. B2B
+        tax_id: input.taxId || null,
+        invoice_email: input.invoiceEmail || null,
+        payment_terms: input.paymentTerms || null,
+        shipping_address: input.shippingAddress || null,
+
         workspace: input.workspace,
         created_by: userId,
         created_at: db.fn.now(),
@@ -138,6 +222,28 @@ export class ClientsService {
     if (input.purchased !== undefined) updateFields.purchased = input.purchased;
     if (input.assignedTo !== undefined) updateFields.assigned_to = input.assignedTo;
     if (input.notes !== undefined) updateFields.notes = input.notes;
+
+    // A. 영업 관리
+    if (input.kakaoId !== undefined) updateFields.kakao_id = input.kakaoId;
+    if (input.instagram !== undefined) updateFields.instagram = input.instagram;
+    if (input.region !== undefined) updateFields.region = input.region;
+    if (input.businessType !== undefined) updateFields.business_type = input.businessType;
+    if (input.status !== undefined) updateFields.status = input.status;
+    if (input.followUpDate !== undefined) updateFields.follow_up_date = input.followUpDate;
+
+    // B. 거래 추적
+    if (input.firstOrderDate !== undefined) updateFields.first_order_date = input.firstOrderDate;
+    if (input.lastOrderDate !== undefined) updateFields.last_order_date = input.lastOrderDate;
+    if (input.totalOrderAmount !== undefined) updateFields.total_order_amount = input.totalOrderAmount;
+    if (input.monthlyVolumeKg !== undefined) updateFields.monthly_volume_kg = input.monthlyVolumeKg;
+    if (input.preferredItems !== undefined)
+      updateFields.preferred_items = JSON.stringify(input.preferredItems);
+
+    // C. B2B
+    if (input.taxId !== undefined) updateFields.tax_id = input.taxId;
+    if (input.invoiceEmail !== undefined) updateFields.invoice_email = input.invoiceEmail;
+    if (input.paymentTerms !== undefined) updateFields.payment_terms = input.paymentTerms;
+    if (input.shippingAddress !== undefined) updateFields.shipping_address = input.shippingAddress;
 
     // Scope the actual UPDATE by workspace too (TOCTOU defense).
     const writeQ = db('clients').where({ id });
