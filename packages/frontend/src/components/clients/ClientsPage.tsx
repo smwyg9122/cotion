@@ -10,6 +10,7 @@ import {
   Filter,
 } from 'lucide-react';
 import { api } from '../../services/api';
+import { formatApiError } from '../../utils/apiError';
 import { Modal } from '../common/Modal';
 
 interface ClientsPageProps {
@@ -172,7 +173,7 @@ export function ClientsPage({ workspace }: ClientsPageProps) {
       setIsModalOpen(false);
     } catch (err: any) {
       console.error('Failed to save client:', err);
-      alert('거래처 저장에 실패했습니다. 다시 시도해주세요.');
+      alert(formatApiError(err, '거래처 저장에 실패했습니다.'));
     }
   };
 
@@ -183,7 +184,7 @@ export function ClientsPage({ workspace }: ClientsPageProps) {
       setDeleteConfirmId(null);
     } catch (err: any) {
       console.error('Failed to delete client:', err);
-      alert('거래처 삭제에 실패했습니다. 다시 시도해주세요.');
+      alert(formatApiError(err, '거래처 삭제에 실패했습니다.'));
     }
   };
 

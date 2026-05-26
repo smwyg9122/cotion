@@ -28,6 +28,7 @@ import {
   GripVertical,
 } from 'lucide-react';
 import { api } from '../../services/api';
+import { formatApiError } from '../../utils/apiError';
 import { Modal } from '../common/Modal';
 
 /* ───────────────── Types ────────────────── */
@@ -284,11 +285,7 @@ export function DocumentLibrary({ workspace }: DocumentLibraryProps) {
       }
     } catch (err: any) {
       console.error('Failed to save document:', err);
-      const serverMsg = err?.response?.data?.error?.message || '';
-      const details = err?.response?.data?.error?.details;
-      let msg = serverMsg || err.message || '문서 저장에 실패했습니다.';
-      if (details) msg += '\n\n상세: ' + JSON.stringify(details, null, 2);
-      alert(msg);
+      alert(formatApiError(err, '문서 저장에 실패했습니다.'));
     } finally {
       setIsSaving(false);
     }
@@ -301,8 +298,8 @@ export function DocumentLibrary({ workspace }: DocumentLibraryProps) {
       setDocuments((prev) => prev.filter((d) => d.id !== id));
       setDeleteConfirmId(null);
       if (detailDocument?.id === id) setDetailDocument(null);
-    } catch {
-      alert('문서 삭제에 실패했습니다.');
+    } catch (err) {
+      alert(formatApiError(err, '문서 삭제에 실패했습니다.'));
     }
   };
 
@@ -323,8 +320,8 @@ export function DocumentLibrary({ workspace }: DocumentLibraryProps) {
       setDocuments((prev) =>
         prev.map((d) => (d.id === docId ? { ...d, status: newStatus } : d))
       );
-    } catch {
-      alert('상태 변경에 실패했습니다.');
+    } catch (err) {
+      alert(formatApiError(err, '상태 변경에 실패했습니다.'));
     }
   };
 
@@ -363,8 +360,8 @@ export function DocumentLibrary({ workspace }: DocumentLibraryProps) {
       const taggedUser = users.find((u) => u.id === userId);
       setTagSuccess(`${taggedUser?.name || '사용자'}님을 태그하고 알림을 보냈습니다.`);
       setTimeout(() => setTagSuccess(''), 3000);
-    } catch {
-      alert('태그 추가에 실패했습니다.');
+    } catch (err) {
+      alert(formatApiError(err, '태그 추가에 실패했습니다.'));
     }
   };
 
@@ -377,8 +374,8 @@ export function DocumentLibrary({ workspace }: DocumentLibraryProps) {
       setDocuments((prev) =>
         prev.map((d) => (d.id === tagModalDocId ? { ...d, taggedUsers: newTags } : d))
       );
-    } catch {
-      alert('태그 제거에 실패했습니다.');
+    } catch (err) {
+      alert(formatApiError(err, '태그 제거에 실패했습니다.'));
     }
   };
 
@@ -406,8 +403,7 @@ export function DocumentLibrary({ workspace }: DocumentLibraryProps) {
       }
       await fetchDocuments();
     } catch (err: any) {
-      const serverMsg = err?.response?.data?.error?.message || '';
-      alert(serverMsg || '파일 업로드에 실패했습니다.');
+      alert(formatApiError(err, '파일 업로드에 실패했습니다.'));
     } finally {
       setIsUploading(false);
     }

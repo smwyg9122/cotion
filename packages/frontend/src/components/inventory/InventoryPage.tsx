@@ -12,6 +12,7 @@ import {
   Check,
 } from 'lucide-react';
 import { api } from '../../services/api';
+import { formatApiError } from '../../utils/apiError';
 import { Modal } from '../common/Modal';
 
 interface InventoryPageProps {
@@ -158,7 +159,7 @@ export function InventoryPage({ workspace }: InventoryPageProps) {
       setIsModalOpen(false);
     } catch (err: any) {
       console.error('Failed to save inventory item:', err);
-      alert('재고 저장에 실패했습니다. 다시 시도해주세요.');
+      alert(formatApiError(err, '재고 저장에 실패했습니다.'));
     }
   };
 
@@ -171,7 +172,7 @@ export function InventoryPage({ workspace }: InventoryPageProps) {
       if (expandedId === id) setExpandedId(null);
     } catch (err: any) {
       console.error('Failed to delete inventory item:', err);
-      alert('재고 삭제에 실패했습니다. 다시 시도해주세요.');
+      alert(formatApiError(err, '재고 삭제에 실패했습니다.'));
     }
   };
 
@@ -199,7 +200,7 @@ export function InventoryPage({ workspace }: InventoryPageProps) {
       setIsTransactionModalOpen(false);
     } catch (err: any) {
       console.error('Failed to save transaction:', err);
-      alert('입출고 처리에 실패했습니다. 다시 시도해주세요.');
+      alert(formatApiError(err, '입출고 처리에 실패했습니다.'));
     }
   };
 

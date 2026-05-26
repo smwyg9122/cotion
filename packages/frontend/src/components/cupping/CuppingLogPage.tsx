@@ -12,6 +12,7 @@ import {
   Clock,
 } from 'lucide-react';
 import { api } from '../../services/api';
+import { formatApiError } from '../../utils/apiError';
 import { Modal } from '../common/Modal';
 
 function toLocalDateStr(d: Date): string {
@@ -164,7 +165,7 @@ export function CuppingLogPage({ workspace }: CuppingLogPageProps) {
       setIsModalOpen(false);
     } catch (err: any) {
       console.error('Failed to save cupping log:', err);
-      alert('커핑 로그 저장에 실패했습니다. 다시 시도해주세요.');
+      alert(formatApiError(err, '커핑 로그 저장에 실패했습니다.'));
     }
   };
 
@@ -175,7 +176,7 @@ export function CuppingLogPage({ workspace }: CuppingLogPageProps) {
       setDeleteConfirmId(null);
     } catch (err: any) {
       console.error('Failed to delete cupping log:', err);
-      alert('커핑 로그 삭제에 실패했습니다. 다시 시도해주세요.');
+      alert(formatApiError(err, '커핑 로그 삭제에 실패했습니다.'));
     }
   };
 

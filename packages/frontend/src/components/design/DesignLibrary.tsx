@@ -21,6 +21,7 @@ import {
   Paperclip,
 } from 'lucide-react';
 import { api } from '../../services/api';
+import { formatApiError } from '../../utils/apiError';
 import { Modal } from '../common/Modal';
 
 /* ───────────────── Types ────────────────── */
@@ -216,8 +217,7 @@ export function DesignLibrary({ workspace }: DesignLibraryProps) {
       }
     } catch (err: any) {
       console.error('Failed to save design asset:', err);
-      const serverMsg = err?.response?.data?.error?.message || '';
-      alert(serverMsg || '디자인 자산 저장에 실패했습니다.');
+      alert(formatApiError(err, '디자인 자산 저장에 실패했습니다.'));
     } finally {
       setIsSaving(false);
     }
@@ -230,8 +230,8 @@ export function DesignLibrary({ workspace }: DesignLibraryProps) {
       setAssets((prev) => prev.filter((d) => d.id !== id));
       setDeleteConfirmId(null);
       if (detailAsset?.id === id) setDetailAsset(null);
-    } catch {
-      alert('디자인 자산 삭제에 실패했습니다.');
+    } catch (err) {
+      alert(formatApiError(err, '디자인 자산 삭제에 실패했습니다.'));
     }
   };
 
@@ -266,7 +266,7 @@ export function DesignLibrary({ workspace }: DesignLibraryProps) {
       }
       await fetchAssets();
     } catch (err: any) {
-      alert(err?.response?.data?.error?.message || '파일 업로드에 실패했습니다.');
+      alert(formatApiError(err, '파일 업로드에 실패했습니다.'));
     } finally {
       setIsUploading(false);
     }

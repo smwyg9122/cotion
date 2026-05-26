@@ -22,6 +22,7 @@ import {
   User,
 } from 'lucide-react';
 import { api } from '../../services/api';
+import { formatApiError } from '../../utils/apiError';
 import { Modal } from '../common/Modal';
 import type {
   AyutaBuyer,
@@ -309,8 +310,7 @@ export function AyutaBuyersPage({ workspace }: AyutaBuyersPageProps) {
       await Promise.all([fetchBuyers(), fetchStats()]);
     } catch (err: any) {
       console.error('Failed to save buyer:', err);
-      const msg = err?.response?.data?.error?.message || '구매처 저장에 실패했습니다.';
-      alert(msg);
+      alert(formatApiError(err, '구매처 저장에 실패했습니다.'));
     } finally {
       setSaving(false);
     }
@@ -324,7 +324,7 @@ export function AyutaBuyersPage({ workspace }: AyutaBuyersPageProps) {
       fetchStats();
     } catch (err) {
       console.error('Failed to delete buyer:', err);
-      alert('삭제에 실패했습니다.');
+      alert(formatApiError(err, '구매처 삭제에 실패했습니다.'));
     }
   };
 

@@ -12,6 +12,7 @@ import {
   User,
 } from 'lucide-react';
 import { api } from '../../services/api';
+import { formatApiError } from '../../utils/apiError';
 import { Modal } from '../common/Modal';
 
 interface KanbanBoardProps {
@@ -177,7 +178,7 @@ export function KanbanBoard({ workspace, initialProjectId }: KanbanBoardProps) {
       setIsProjectModalOpen(false);
     } catch (err: any) {
       console.error('Failed to create project:', err);
-      alert('프로젝트 생성에 실패했습니다.');
+      alert(formatApiError(err, '프로젝트 생성에 실패했습니다.'));
     }
   };
 
@@ -222,11 +223,7 @@ export function KanbanBoard({ workspace, initialProjectId }: KanbanBoardProps) {
       setIsTaskModalOpen(false);
     } catch (err: any) {
       console.error('Failed to save task:', err);
-      const serverMsg = err?.response?.data?.error?.message || '';
-      const details = err?.response?.data?.error?.details;
-      let msg = serverMsg || err.message || '작업 저장에 실패했습니다.';
-      if (details) msg += '\n\n상세: ' + JSON.stringify(details, null, 2);
-      alert(msg);
+      alert(formatApiError(err, '작업 저장에 실패했습니다.'));
     }
   };
 
@@ -240,7 +237,7 @@ export function KanbanBoard({ workspace, initialProjectId }: KanbanBoardProps) {
       }
     } catch (err: any) {
       console.error('Failed to delete task:', err);
-      alert('작업 삭제에 실패했습니다.');
+      alert(formatApiError(err, '작업 삭제에 실패했습니다.'));
     }
   };
 

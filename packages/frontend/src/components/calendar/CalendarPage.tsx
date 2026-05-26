@@ -13,6 +13,7 @@ import {
   Check,
 } from 'lucide-react';
 import { api } from '../../services/api';
+import { formatApiError } from '../../utils/apiError';
 import { Modal } from '../common/Modal';
 
 /** Returns YYYY-MM-DD in *local* timezone (avoids UTC shift from toISOString) */
@@ -348,8 +349,7 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
       setIsModalOpen(false);
     } catch (error: any) {
       console.error('Failed to save event:', error);
-      const serverMsg = error?.response?.data?.error?.message || error?.response?.data?.error?.details?.[0]?.message || '';
-      alert(`이벤트 저장에 실패했습니다. ${serverMsg ? `(${serverMsg})` : '다시 시도해주세요.'}`);
+      alert(formatApiError(error, '이벤트 저장에 실패했습니다.'));
     }
   };
 
@@ -362,7 +362,7 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
       setIsModalOpen(false);
     } catch (error) {
       console.error('Failed to delete event:', error);
-      alert('이벤트 삭제에 실패했습니다. 다시 시도해주세요.');
+      alert(formatApiError(error, '이벤트 삭제에 실패했습니다.'));
     }
   };
 
