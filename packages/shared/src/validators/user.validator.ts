@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { emptyToUndefined } from './helpers';
 
 export const userCreateSchema = z.object({
   username: z.string().min(3, '아이디는 최소 3자 이상이어야 합니다').max(50).regex(/^[a-zA-Z0-9_]+$/, '아이디는 영문, 숫자, _만 사용 가능합니다'),
@@ -15,7 +16,8 @@ export const userLoginSchema = z.object({
 
 export const userUpdateSchema = z.object({
   name: z.string().min(2).max(100).optional(),
-  avatarUrl: z.string().url().optional(),
+  // Blank avatar input is "not provided", not an invalid URL.
+  avatarUrl: emptyToUndefined(z.string().url().optional()),
 });
 
 export const passwordChangeSchema = z.object({

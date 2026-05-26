@@ -11,6 +11,7 @@ export * from './types/document.types';
 export * from './types/ayuta-buyer.types';
 
 // Validators
+export * from './validators/helpers';
 export * from './validators/user.validator';
 export * from './validators/page.validator';
 export * from './validators/calendar.validator';

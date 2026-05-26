@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { emptyToUndefined } from './helpers';
 
 export const projectCreateSchema = z.object({
   title: z.string().min(1, '제목을 입력하세요').max(200),
@@ -19,7 +20,8 @@ export const taskCreateSchema = z.object({
   status: z.enum(['todo', 'in_progress', 'done']).optional().default('todo'),
   priority: z.enum(['low', 'medium', 'high']).optional().default('medium'),
   position: z.number().min(0).optional(),
-  dueDate: z.string().optional().nullable(),
+  // FE date inputs send "" when cleared.
+  dueDate: emptyToUndefined(z.string().optional().nullable()),
   assignees: z.array(z.string().uuid()).optional().default([]),
 });
 
@@ -29,7 +31,7 @@ export const taskUpdateSchema = z.object({
   status: z.enum(['todo', 'in_progress', 'done']).optional(),
   priority: z.enum(['low', 'medium', 'high']).optional(),
   position: z.number().min(0).optional(),
-  dueDate: z.string().optional().nullable(),
+  dueDate: emptyToUndefined(z.string().optional().nullable()),
   assignees: z.array(z.string().uuid()).optional(),
 });
 
