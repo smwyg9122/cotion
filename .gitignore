@@ -44,3 +44,8 @@ Thumbs.db
 
 # Backups
 *.bak
+.harness/backups/
+
+# Integration test runtime artifacts (the test script itself IS committed)
+test-runtime/backend.log
+test-runtime/backend.pid

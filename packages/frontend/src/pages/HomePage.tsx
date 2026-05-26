@@ -17,6 +17,7 @@ import { api } from '../services/api';
 import { KakaoLinkButton } from '../components/settings/KakaoLinkButton';
 import { CalendarPage } from '../components/calendar/CalendarPage';
 import { ClientsPage } from '../components/clients/ClientsPage';
+import { AyutaBuyersPage } from '../components/ayuta-buyers/AyutaBuyersPage';
 import { InventoryPage } from '../components/inventory/InventoryPage';
 import { KanbanBoard } from '../components/projects/KanbanBoard';
 import { CuppingLogPage } from '../components/cupping/CuppingLogPage';
@@ -83,7 +84,7 @@ export function HomePage() {
   const [editedCategory, setEditedCategory] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [showNicknameModal, setShowNicknameModal] = useState(false);
-  const [currentView, setCurrentView] = useState<'pages' | 'calendar' | 'clients' | 'inventory' | 'kanban' | 'cupping' | 'documents' | 'design' | 'v2test' | 'admin'>('pages');
+  const [currentView, setCurrentView] = useState<'pages' | 'calendar' | 'clients' | 'ayuta-buyers' | 'inventory' | 'kanban' | 'cupping' | 'documents' | 'design' | 'v2test' | 'admin'>('pages');
   const [selectedKanbanProjectId, setSelectedKanbanProjectId] = useState<string | null>(null);
   const [sidebarTab, setSidebarTab] = useState<'pages' | 'business' | 'admin'>('pages');
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
@@ -119,7 +120,7 @@ export function HomePage() {
   async function handleDeleteProject(projectId: string) {
     if (!confirm('이 프로젝트와 관련 태스크를 모두 삭제하시겠습니까?')) return;
     try {
-      await api.delete(`/projects/${projectId}`);
+      await api.delete(`/projects/${projectId}`, { params: { workspace: selectedWorkspace.name } });
       setSidebarProjects((prev) => prev.filter((p) => p.id !== projectId));
       showToast('프로젝트가 삭제되었습니다', 'success');
     } catch (err) {
@@ -311,7 +312,7 @@ export function HomePage() {
                         // 제이로텍으로 전환 시 아유타 전용 뷰이면 pages로 리셋 (admin은 유지)
                         if (ws.name !== '아유타') {
                           if (sidebarTab !== 'admin') setSidebarTab('pages');
-                          if (['clients', 'inventory', 'kanban', 'cupping', 'documents', 'v2test'].includes(currentView)) {
+                          if (['clients', 'ayuta-buyers', 'inventory', 'kanban', 'cupping', 'documents', 'v2test'].includes(currentView)) {
                             setCurrentView('pages');
                           }
                         }
@@ -647,6 +648,24 @@ export function HomePage() {
             <Calendar size={16} />
             캘린더
           </button>
+          {selectedWorkspace.name === '아유타' && (
+            <button
+              onClick={() => {
+                setCurrentView('ayuta-buyers');
+                setSelectedPageId(null);
+                setSelectedPage(null);
+                if (isMobile) setIsSidebarOpen(false);
+              }}
+              className={`w-full px-3 py-2.5 text-sm rounded-md text-left transition-colors flex items-center gap-2 ${
+                currentView === 'ayuta-buyers'
+                  ? 'bg-[#FAEAE4] text-[#9C4A2D] font-medium'
+                  : 'text-gray-700 hover:bg-gray-200/70'
+              }`}
+            >
+              <Coffee size={16} />
+              구매처 관리
+            </button>
+          )}
           <button
             onClick={() => setIsTrashViewOpen(true)}
             className="w-full px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-200/70 rounded-md text-left transition-colors flex items-center gap-2"
@@ -698,6 +717,8 @@ export function HomePage() {
             />
           ) : currentView === 'clients' ? (
             <ClientsPage workspace={selectedWorkspace.name} />
+          ) : currentView === 'ayuta-buyers' ? (
+            <AyutaBuyersPage workspace={selectedWorkspace.name} />
           ) : currentView === 'inventory' ? (
             <InventoryPage workspace={selectedWorkspace.name} />
           ) : currentView === 'kanban' ? (

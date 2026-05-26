@@ -17,6 +17,7 @@ import inventoryRoutes from './routes/inventory.routes';
 import projectsRoutes from './routes/projects.routes';
 import cuppingRoutes from './routes/cupping.routes';
 import documentsRoutes from './routes/documents.routes';
+import ayutaBuyersRoutes from './routes/ayuta-buyers.routes';
 import kakaoRoutes from './routes/kakao.routes';
 import adminRoutes from './routes/admin.routes';
 import { initializeWebSocketServer } from './websocket/collaboration.handler';
@@ -55,6 +56,7 @@ app.use('/api/inventory', inventoryRoutes);
 app.use('/api/projects', projectsRoutes);
 app.use('/api/cupping-logs', cuppingRoutes);
 app.use('/api/documents', documentsRoutes);
+app.use('/api/ayuta-buyers', ayutaBuyersRoutes);
 app.use('/api/kakao', kakaoRoutes);
 app.use('/api/admin', adminRoutes);
 

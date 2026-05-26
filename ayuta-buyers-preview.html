@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Ayuta · 구매처 관리 — Preview (Claude Design)</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-base:        #F5F2EE;
+    --bg-surface:     #FAF9F7;
+    --bg-elevated:    #FFFFFF;
+    --bg-soft:        #EFECE7;
+    --accent:         #C96442;
+    --accent-hover:   #B5573A;
+    --accent-subtle:  #FAEAE4;
+    --accent-deep:    #9C4A2D;
+    --text-primary:   #1F1E1D;
+    --text-secondary: #3F3E3D;
+    --text-muted:     #7B7975;
+    --text-faint:     #9C9A93;
+    --border:         #E8E4DC;
+    --border-soft:    #EFECE7;
+  }
+  body {
+    font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    background: var(--bg-base);
+    color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
+  }
+  .serif {
+    font-family: 'Source Serif 4', 'Tiempos Headline', 'GT Sectra', Georgia, serif;
+    letter-spacing: -0.01em;
+  }
+  .btn-primary {
+    background: var(--accent); color: #fff; border-radius: 8px;
+    box-shadow: 0 1px 2px rgba(31,30,29,0.08);
+    transition: background-color 120ms ease, transform 80ms ease;
+  }
+  .btn-primary:hover { background: var(--accent-hover); }
+  .btn-primary:active { transform: translateY(1px); }
+  .btn-ghost {
+    background: transparent; color: var(--text-primary); border-radius: 8px;
+  }
+  .btn-ghost:hover { background: var(--bg-soft); }
+  .input {
+    background: #fff; border: 1px solid var(--border); border-radius: 8px;
+    color: var(--text-primary); outline: none;
+    transition: border-color 100ms ease, box-shadow 100ms ease;
+  }
+  .input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(201,100,66,0.15); }
+  .card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: 12px; }
+  .card-elevated { background: #fff; border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 1px 2px rgba(31,30,29,0.04); }
+</style>
+</head>
+<body class="h-screen overflow-hidden">
+
+<div class="h-full flex flex-col">
+
+  <!-- Header -->
+  <header class="bg-[#FAF9F7] border-b border-[#E8E4DC]">
+    <div class="px-8 pt-8 pb-6">
+
+      <!-- Title row -->
+      <div class="flex items-start justify-between mb-7">
+        <div>
+          <p class="text-xs font-medium uppercase tracking-[0.12em] mb-2" style="color:var(--text-faint)">Ayuta · CRM</p>
+          <h1 class="serif text-[28px] leading-tight font-semibold" style="color:var(--text-primary)">구매처 관리</h1>
+          <p class="text-sm mt-1.5" style="color:var(--text-muted)">
+            아유타 커피의 구매처를 한곳에서 추적하고 영업 파이프라인을 관리하세요.
+          </p>
+        </div>
+        <button onclick="openModal()" class="btn-primary inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+          신규 구매처
+        </button>
+      </div>
+
+      <!-- Dashboard -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+        <!-- Today -->
+        <div class="card-elevated px-5 py-4 ring-1 ring-[#F0D2C5]" style="background:#FBF3EE">
+          <div class="flex items-start justify-between">
+            <div>
+              <p class="text-[11px] font-medium uppercase tracking-[0.08em]" style="color:var(--text-muted)">오늘 재연락</p>
+              <p class="serif text-[26px] leading-none font-semibold mt-2" style="color:var(--text-primary)">3</p>
+            </div>
+            <div class="p-1.5 rounded-lg" style="background:var(--accent-subtle);color:var(--accent-deep)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>
+            </div>
+          </div>
+        </div>
+        <div class="card-elevated px-5 py-4">
+          <div class="flex items-start justify-between">
+            <div>
+              <p class="text-[11px] font-medium uppercase tracking-[0.08em]" style="color:var(--text-muted)">구매 완료</p>
+              <p class="serif text-[26px] leading-none font-semibold mt-2" style="color:var(--text-primary)">12</p>
+            </div>
+            <div class="p-1.5 rounded-lg" style="background:var(--bg-soft);color:var(--text-muted)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+            </div>
+          </div>
+        </div>
+        <div class="card-elevated px-5 py-4">
+          <div class="flex items-start justify-between">
+            <div>
+              <p class="text-[11px] font-medium uppercase tracking-[0.08em]" style="color:var(--text-muted)">잠재 고객</p>
+              <p class="serif text-[26px] leading-none font-semibold mt-2" style="color:var(--text-primary)">28</p>
+            </div>
+            <div class="p-1.5 rounded-lg" style="background:var(--bg-soft);color:var(--text-muted)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+          </div>
+        </div>
+        <div class="card-elevated px-5 py-4">
+          <div class="flex items-start justify-between">
+            <div>
+              <p class="text-[11px] font-medium uppercase tracking-[0.08em]" style="color:var(--text-muted)">이번 달 신규</p>
+              <p class="serif text-[26px] leading-none font-semibold mt-2" style="color:var(--text-primary)">7</p>
+            </div>
+            <div class="p-1.5 rounded-lg" style="background:var(--bg-soft);color:var(--text-muted)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Alert -->
+      <div class="mb-5 px-4 py-3 rounded-xl flex items-start gap-2.5" style="background:var(--accent-subtle);border:1px solid #F0D2C5">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 flex-shrink-0" style="color:var(--accent-deep)"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+        <div class="flex-1 text-sm">
+          <span class="font-semibold" style="color:var(--accent-deep)">오늘 재연락 3건 · </span>
+          <span style="color:#7A4127">블루보틀 성수, 모모스 본점, 프릳츠 양재점</span>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <div class="flex flex-wrap items-center gap-2">
+        <div class="relative flex-1 min-w-[220px] max-w-md">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="absolute left-3 top-1/2 -translate-y-1/2" style="color:var(--text-faint)"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input type="text" placeholder="업체명, 담당자, 연락처, 인스타, 메모 검색" class="input w-full pl-9 pr-3 py-2 text-sm" />
+        </div>
+        <div class="relative">
+          <select class="input appearance-none cursor-pointer pl-3 pr-8 py-2 text-sm">
+            <option>상태 전체</option><option>신규문의</option><option>연락완료</option><option>샘플발송</option>
+            <option>커핑완료</option><option>견적전달</option><option>테스트중</option><option>구매완료</option>
+            <option>재구매</option><option>보류</option><option>종료</option>
+          </select>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" style="color:var(--text-faint)"><path d="m6 9 6 6 6-6"/></svg>
+        </div>
+        <div class="relative">
+          <select class="input appearance-none cursor-pointer pl-3 pr-8 py-2 text-sm">
+            <option>지역 전체</option><option>서울</option><option>부산</option><option>대구</option><option>인천</option>
+          </select>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" style="color:var(--text-faint)"><path d="m6 9 6 6 6-6"/></svg>
+        </div>
+        <div class="relative">
+          <select class="input appearance-none cursor-pointer pl-3 pr-8 py-2 text-sm">
+            <option>업종 전체</option><option>카페</option><option>로스터리</option><option>도매</option>
+            <option>기업</option><option>유통사</option><option>기타</option>
+          </select>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" style="color:var(--text-faint)"><path d="m6 9 6 6 6-6"/></svg>
+        </div>
+        <div class="ml-auto flex items-center gap-0.5 rounded-lg p-0.5" style="background:var(--bg-soft)">
+          <button id="tableViewBtn" onclick="setView('table')" class="p-1.5 rounded-md bg-white shadow-[0_1px_2px_rgba(31,30,29,0.06)]" style="color:var(--text-primary)" title="테이블">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18"/><path d="M3 6h18"/><path d="M3 18h18"/></svg>
+          </button>
+          <button id="cardViewBtn" onclick="setView('card')" class="p-1.5 rounded-md" style="color:var(--text-muted)" title="카드">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Content -->
+  <div class="flex-1 overflow-auto px-8 py-6">
+
+    <!-- TABLE VIEW -->
+    <div id="tableView" class="card-elevated overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead>
+            <tr style="background:var(--bg-base);border-bottom:1px solid var(--border)">
+              <th class="text-left text-[11px] font-semibold uppercase tracking-[0.08em] px-4 py-3.5" style="color:var(--text-muted)">업체</th>
+              <th class="text-left text-[11px] font-semibold uppercase tracking-[0.08em] px-4 py-3.5" style="color:var(--text-muted)">담당자</th>
+              <th class="text-left text-[11px] font-semibold uppercase tracking-[0.08em] px-4 py-3.5" style="color:var(--text-muted)">연락</th>
+              <th class="text-left text-[11px] font-semibold uppercase tracking-[0.08em] px-4 py-3.5" style="color:var(--text-muted)">업종 · 지역</th>
+              <th class="text-left text-[11px] font-semibold uppercase tracking-[0.08em] px-4 py-3.5" style="color:var(--text-muted)">관심 품목</th>
+              <th class="text-left text-[11px] font-semibold uppercase tracking-[0.08em] px-4 py-3.5" style="color:var(--text-muted)">상태</th>
+              <th class="text-left text-[11px] font-semibold uppercase tracking-[0.08em] px-4 py-3.5" style="color:var(--text-muted)">관심도</th>
+              <th class="text-left text-[11px] font-semibold uppercase tracking-[0.08em] px-4 py-3.5" style="color:var(--text-muted)">다음 액션</th>
+              <th class="text-left text-[11px] font-semibold uppercase tracking-[0.08em] px-4 py-3.5" style="color:var(--text-muted)">재연락일</th>
+              <th class="text-right text-[11px] font-semibold uppercase tracking-[0.08em] px-4 py-3.5" style="color:var(--text-muted)">누적</th>
+              <th class="px-4 py-3.5"></th>
+            </tr>
+          </thead>
+          <tbody id="buyerTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- CARD VIEW -->
+    <div id="cardView" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+
+  </div>
+</div>
+
+<!-- MODAL -->
+<div id="buyerModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" style="background:rgba(31,30,29,0.32)">
+  <div class="bg-white rounded-2xl shadow-[0_24px_60px_rgba(31,30,29,0.18)] max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between px-8 py-5 border-b sticky top-0 bg-white z-10" style="border-color:var(--border)">
+      <h2 class="serif text-[20px] font-semibold" style="color:var(--text-primary)">신규 구매처 등록</h2>
+      <button onclick="closeModal()" class="p-1.5 rounded-md hover:bg-[#EFECE7]" style="color:var(--text-muted)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+    </div>
+
+    <div class="px-8 py-6 space-y-6">
+
+      <!-- 기본 정보 -->
+      <section class="space-y-3">
+        <h3 class="serif text-[15px] font-semibold pb-1.5" style="color:var(--text-primary);border-bottom:1px solid var(--border-soft)">기본 정보</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div><label class="block text-[11px] font-medium uppercase tracking-[0.06em] mb-1.5" style="color:var(--text-muted)">업체명<span style="color:var(--accent)" class="ml-0.5">*</span></label><input class="input w-full px-3 py-2 text-sm" placeholder="예: 아유타 카페" /></div>
+          <div><label class="block text-[11px] font-medium uppercase tracking-[0.06em] mb-1.5" style="color:var(--text-muted)">담당자명</label><input class="input w-full px-3 py-2 text-sm" placeholder="담당자 이름" /></div>
+          <div><label class="block text-[11px] font-medium uppercase tracking-[0.06em] mb-1.5" style="color:var(--text-muted)">연락처</label><input class="input w-full px-3 py-2 text-sm" placeholder="010-0000-0000" /></div>
+          <div><label class="block text-[11px] font-medium uppercase tracking-[0.06em] mb-1.5" style="color:var(--text-muted)">이메일</label><input type="email" class="input w-full px-3 py-2 text-sm" placeholder="example@email.com" /></div>
+          <div><label class="block text-[11px] font-medium uppercase tracking-[0.06em] mb-1.5" style="color:var(--text-muted)">카카오톡 ID</label><input class="input w-full px-3 py-2 text-sm" placeholder="카카오 ID" /></div>
+          <div><label class="block text-[11px] font-medium uppercase tracking-[0.06em] mb-1.5" style="color:var(--text-muted)">인스타그램</label><input class="input w-full px-3 py-2 text-sm" placeholder="@username" /></div>
+          <div><label class="block text-[11px] font-medium uppercase tracking-[0.06em] mb-1.5" style="color:var(--text-muted)">지역</label><input class="input w-full px-3 py-2 text-sm" placeholder="예: 부산, 서울" /></div>
+          <div><label class="block text-[11px] font-medium uppercase tracking-[0.06em] mb-1.5" style="color:var(--text-muted)">업종</label><select class="input w-full px-3 py-2 text-sm"><option>선택</option><option>카페</option><option>로스터리</option><option>도매</option><option>기업</option><option>유통사</option><option>기타</option></select></div>
+          <div><label class="block text-[11px] font-medium uppercase tracking-[0.06em] mb-1.5" style="color:var(--text-muted)">규모</label><select class="input w-full px-3 py-2 text-sm"><option>선택</option><option>소형</option><option>중형</option><option>대형</option></select></div>
+          <div><label class="block text-[11px] font-medium uppercase tracking-[0.06em] mb-1.5" style="color:var(--text-muted)">유입 경로</label><select class="input w-full px-3 py-2 text-sm"><option>선택</option><option>영도커피축제</option><option>인스타그램</option><option>소개</option><option>스마트스토어</option><option>네이버</option><option>지인</option><option>커핑행사</option><option>기타</option></select></div>
+        </div>
+        <div><label class="block text-[11px] font-medium uppercase tracking-[0.06em] mb-1.5" style="color:var(--text-muted)">주소</label><input class="input w-full px-3 py-2 text-sm" placeholder="상세 주소" /></div>
+      </section>
+
+      <!-- 관심·구매 정보 -->
+      <section class="space-y-3">
+        <h3 class="serif text-[15px] font-semibold pb-1.5" style="color:var(--text-primary);border-bottom:1px solid var(--border-soft)">관심 · 구매 정보</h3>
+        <div>
+          <label class="block text-[11px] font-medium uppercase tracking-[0.06em] mb-1.5" style="color:var(--text-muted)">관심 품목 (복수 선택)</label>
+          <div class="flex flex-wrap gap-1.5" id="interestItems">
+            <button data-on="false" onclick="toggleChip(this)" class="chip px-3 py-1.5 text-xs font-medium rounded-full border" style="background:#fff;color:var(--text-secondary);border-color:var(--border)">로부스타</button>
+            <button data-on="true" onclick="toggleChip(this)" class="chip px-3 py-1.5 text-xs font-medium rounded-full border" style="background:var(--accent);color:#fff;border-color:var(--accent)">아라비카</button>
+            <button data-on="true" onclick="toggleChip(this)" class="chip px-3 py-1.5 text-xs font-medium rounded-full border" style="background:var(--accent);color:#fff;border-color:var(--accent)">원두</button>
+            <button data-on="false" onclick="toggleChip(this)" class="chip px-3 py-1.5 text-xs font-medium rounded-full border" style="background:#fff;color:var(--text-secondary);border-color:var(--border)">생두</button>
+            <button data-on="false" onclick="toggleChip(this)" class="chip px-3 py-1.5 text-xs font-medium rounded-full border" style="background:#fff;color:var(--text-secondary);border-color:var(--border)">바닐라</button>
+            <button data-on="false" onclick="toggleChip(this)" class="chip px-3 py-1.5 text-xs font-medium rounded-full border" style="background:#fff;color:var(--text-secondary);border-color:var(--border)">드립백</button>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div><label class="block text-[11px] font-medium uppercase tracking-[0.06em] mb-1.5" style="color:var(--text-muted)">관심 제품</label><input class="input w-full px-3 py-2 text-sm" placeholder="예: 베트남 G1, 콜롬비아 디카페인" /></div>
+          <div><label class="block text-[11px] font-medium uppercase tracking-[0.06em] mb-1.5" style="color:var(--text-muted)">월 예상 물량</label><input class="input w-full px-3 py-2 text-sm" placeholder="예: 5kg, 10kg" /></div>
+        </div>
+        <div class="flex gap-6">
+          <label class="flex items-center gap-2 cursor-pointer text-sm" style="color:var(--text-secondary)"><input type="checkbox" style="accent-color:var(--accent)" class="w-4 h-4" />샘플 발송</label>
+          <label class="flex items-center gap-2 cursor-pointer text-sm" style="color:var(--text-secondary)"><input type="checkbox" style="accent-color:var(--accent)" class="w-4 h-4" checked />커핑 진행</label>
+        </div>
+      </section>
+
+      <!-- 영업 파이프라인 -->
+      <section class="space-y-3">
+        <h3 class="serif text-[15px] font-semibold pb-1.5" style="color:var(--text-primary);border-bottom:1px solid var(--border-soft)">영업 파이프라인</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div><label class="block text-[11px] font-medium uppercase tracking-[0.06em] mb-1.5" style="color:var(--text-muted)">상태</label><select class="input w-full px-3 py-2 text-sm"><option>신규문의</option><option selected>샘플발송</option><option>커핑완료</option><option>구매완료</option><option>재구매</option><option>보류</option><option>종료</option></select></div>
+          <div><label class="block text-[11px] font-medium uppercase tracking-[0.06em] mb-1.5" style="color:var(--text-muted)">관심도</label><select class="input w-full px-3 py-2 text-sm"><option>🔥 높음</option><option selected>🟡 중간</option><option>⚪ 낮음</option></select></div>
+          <div><label class="block text-[11px] font-medium uppercase tracking-[0.06em] mb-1.5" style="color:var(--text-muted)">마지막 연락일</label><input type="date" class="input w-full px-3 py-2 text-sm" /></div>
+          <div><label class="block text-[11px] font-medium uppercase tracking-[0.06em] mb-1.5" style="color:var(--text-muted)">재연락 예정일</label><input type="date" class="input w-full px-3 py-2 text-sm" /></div>
+        </div>
+        <div><label class="block text-[11px] font-medium uppercase tracking-[0.06em] mb-1.5" style="color:var(--text-muted)">다음 액션</label><input class="input w-full px-3 py-2 text-sm" placeholder="예: 500g 샘플 발송, 견적 전달" /></div>
+      </section>
+
+      <!-- 주문 관리 -->
+      <section class="space-y-3">
+        <h3 class="serif text-[15px] font-semibold pb-1.5" style="color:var(--text-primary);border-bottom:1px solid var(--border-soft)">주문 관리</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div><label class="block text-[11px] font-medium uppercase tracking-[0.06em] mb-1.5" style="color:var(--text-muted)">첫 주문일</label><input type="date" class="input w-full px-3 py-2 text-sm" /></div>
+          <div><label class="block text-[11px] font-medium uppercase tracking-[0.06em] mb-1.5" style="color:var(--text-muted)">최근 주문일</label><input type="date" class="input w-full px-3 py-2 text-sm" /></div>
+          <div><label class="block text-[11px] font-medium uppercase tracking-[0.06em] mb-1.5" style="color:var(--text-muted)">누적 구매액 (원)</label><input type="number" min="0" step="1000" class="input w-full px-3 py-2 text-sm" /></div>
+          <div><label class="block text-[11px] font-medium uppercase tracking-[0.06em] mb-1.5" style="color:var(--text-muted)">총 구매량 (KG)</label><input type="number" min="0" step="0.1" class="input w-full px-3 py-2 text-sm" /></div>
+          <div><label class="block text-[11px] font-medium uppercase tracking-[0.06em] mb-1.5" style="color:var(--text-muted)">재구매 횟수</label><input type="number" min="0" step="1" class="input w-full px-3 py-2 text-sm" /></div>
+        </div>
+      </section>
+
+      <!-- 메모 -->
+      <section class="space-y-3">
+        <h3 class="serif text-[15px] font-semibold pb-1.5" style="color:var(--text-primary);border-bottom:1px solid var(--border-soft)">메모</h3>
+        <textarea class="input w-full px-3 py-2 text-sm min-h-[100px]" rows="4" placeholder="예: 산미 약한 원두 선호, 가격 민감, 인스타 DM 선호"></textarea>
+      </section>
+
+      <div class="flex justify-end gap-2 pt-3 border-t" style="border-color:var(--border-soft)">
+        <button onclick="closeModal()" class="btn-ghost px-4 py-2 text-sm font-medium">취소</button>
+        <button class="btn-primary px-5 py-2 text-sm font-medium">등록</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ----- Palette -----
+const STATUS = {
+  '신규문의': { bg:'#EDEAE4', text:'#5B5B5A', dot:'#9C9A93' },
+  '연락완료': { bg:'#E3E8EF', text:'#4B5C73', dot:'#7388A6' },
+  '샘플발송': { bg:'#DCE7F1', text:'#3F5C7E', dot:'#5C7CA3' },
+  '커핑완료': { bg:'#E5DEF0', text:'#5B4A7E', dot:'#7E6BA8' },
+  '견적전달': { bg:'#EBDFEF', text:'#6B4A75', dot:'#9268A0' },
+  '테스트중': { bg:'#F5E4C1', text:'#7A5B1F', dot:'#B58A3E' },
+  '구매완료': { bg:'#DDE9DC', text:'#3F6240', dot:'#65885E' },
+  '재구매':   { bg:'#C9DAC4', text:'#2D5535', dot:'#4E7A4A' },
+  '보류':     { bg:'#F4D9C2', text:'#7A4A1A', dot:'#B57534' },
+  '종료':     { bg:'#EDD2CF', text:'#7A3F37', dot:'#A35A50' },
+};
+const LEVEL = {
+  high:   { icon:'🔥', bg:'#FAEAE4', text:'#9C4A2D', label:'높음' },
+  medium: { icon:'🟡', bg:'#F5EBD3', text:'#7A5B1F', label:'중간' },
+  low:    { icon:'⚪', bg:'#EDEAE4', text:'#7B7975', label:'낮음' },
+};
+const today = '2026-05-25';
+
+const BUYERS = [
+  { company:'블루보틀 성수', size:'대형', person:'김지영', phone:'010-1234-5678', kakao:'bluebottle_kr', insta:'bluebottle_seongsu',
+    business:'카페', region:'서울', items:['아라비카','원두','드립백'], status:'샘플발송', level:'high',
+    nextAction:'500g 샘플 발송 + 커핑 일정 조율', followUp:'2026-05-25', amount:0, kg:0, repeat:0, email:'kim@bluebottle.kr' },
+  { company:'모모스 본점', size:'중형', person:'박서연', phone:'010-2345-6789', kakao:'momos_busan', insta:'momoscoffee',
+    business:'로스터리', region:'부산', items:['생두','아라비카'], status:'구매완료', level:'high',
+    nextAction:'다음 달 재발주 확인', followUp:'2026-05-25', amount:4520000, kg:35.5, repeat:3, email:'park@momos.co.kr' },
+  { company:'프릳츠 양재점', size:'중형', person:'이도현', phone:'010-3456-7890', kakao:'fritz_y', insta:'fritz_coffee',
+    business:'카페', region:'서울', items:['원두'], status:'커핑완료', level:'medium',
+    nextAction:'견적서 메일 전달', followUp:'2026-05-25', amount:1800000, kg:12, repeat:1, email:'lee@fritz.co.kr' },
+  { company:'테라로사 강릉', size:'대형', person:'최수민', phone:'010-4567-8901', kakao:'terarosa', insta:'terarosa_official',
+    business:'로스터리', region:'강원', items:['생두','아라비카','로부스타'], status:'재구매', level:'high',
+    nextAction:'분기 정기 미팅', followUp:'2026-06-10', amount:12800000, kg:120, repeat:8, email:'' },
+  { company:'스타벅스 동래점', size:'대형', person:'정민준', phone:'010-5678-9012', kakao:'', insta:'',
+    business:'기업', region:'부산', items:['원두','드립백'], status:'견적전달', level:'medium',
+    nextAction:'본사 승인 대기', followUp:'2026-05-30', amount:0, kg:0, repeat:0, email:'' },
+  { company:'커피랩스토리', size:'소형', person:'한지원', phone:'010-6789-0123', kakao:'coffeelab', insta:'coffeelabstory',
+    business:'카페', region:'대구', items:['바닐라','드립백'], status:'신규문의', level:'low',
+    nextAction:'카탈로그 전달', followUp:'2026-05-28', amount:0, kg:0, repeat:0, email:'' },
+  { company:'그라인더스 부산', size:'중형', person:'송민호', phone:'010-7890-1234', kakao:'grinders', insta:'grinders_bs',
+    business:'도매', region:'부산', items:['생두','아라비카','로부스타'], status:'테스트중', level:'high',
+    nextAction:'시즈널 블렌딩 테스트', followUp:'2026-05-22', amount:680000, kg:5, repeat:0, email:'' },
+  { company:'커피베이 인천', size:'소형', person:'윤채영', phone:'010-8901-2345', kakao:'coffeebay', insta:'',
+    business:'유통사', region:'인천', items:['원두'], status:'보류', level:'low',
+    nextAction:'단가 협상 대기', followUp:'2026-06-15', amount:0, kg:0, repeat:0, email:'' },
+];
+
+function statusPill(s){
+  const st = STATUS[s];
+  return `<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium" style="background:${st.bg};color:${st.text}">
+    <span class="w-1.5 h-1.5 rounded-full" style="background:${st.dot}"></span>${s}
+  </span>`;
+}
+function levelPill(l){
+  const v = LEVEL[l];
+  return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium" style="background:${v.bg};color:${v.text}">
+    <span class="text-[10px]">${v.icon}</span><span>${v.label}</span>
+  </span>`;
+}
+function quickStatus(s){
+  const st = STATUS[s];
+  return `<div class="relative inline-block">
+    <select class="appearance-none cursor-pointer pl-2.5 pr-7 py-1 text-[11px] font-medium rounded-full border-0 focus:outline-none" style="background:${st.bg};color:${st.text}">
+      ${Object.keys(STATUS).map(k=>`<option ${k===s?'selected':''}>${k}</option>`).join('')}
+    </select>
+    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" style="color:${st.text}"><path d="m6 9 6 6 6-6"/></svg>
+  </div>`;
+}
+function followBadge(date){
+  if(!date) return '<span style="color:#C2BFB8">—</span>';
+  const isOver = date < today, isToday = date === today;
+  const bg = isOver ? '#EDD2CF' : isToday ? '#FAEAE4' : 'transparent';
+  const col = isOver ? '#7A3F37' : isToday ? '#9C4A2D' : '#5B5B5A';
+  return `<span class="px-2 py-0.5 rounded-full text-[11px] font-medium" style="background:${bg};color:${col}">${date}</span>`;
+}
+
+// ----- Render table -----
+function renderTable(){
+  document.getElementById('buyerTableBody').innerHTML = BUYERS.map(b=>`
+    <tr style="border-bottom:1px solid var(--border-soft)" class="hover:bg-[#FBF8F4] transition-colors">
+      <td class="px-4 py-3.5">
+        <div class="font-semibold text-sm" style="color:var(--text-primary)">${b.company}</div>
+        <div class="text-[11px] mt-0.5" style="color:var(--text-faint)">${b.size}</div>
+      </td>
+      <td class="px-4 py-3.5 text-sm" style="color:var(--text-secondary)">${b.person||'—'}</td>
+      <td class="px-4 py-3.5 text-sm">
+        <div class="space-y-0.5">
+          ${b.phone ? `<div class="text-[12px]" style="color:var(--text-secondary)">${b.phone}</div>` : ''}
+          ${b.kakao ? `<div class="text-[11px]" style="color:#7A5B1F">카 · ${b.kakao}</div>` : ''}
+          ${b.insta ? `<div class="text-[11px]" style="color:#9C4A2D">@${b.insta}</div>` : ''}
+        </div>
+      </td>
+      <td class="px-4 py-3.5 text-sm">
+        <div style="color:var(--text-secondary)">${b.business||'—'}</div>
+        <div class="text-[11px]" style="color:var(--text-faint)">${b.region||''}</div>
+      </td>
+      <td class="px-4 py-3.5">
+        <div class="flex flex-wrap gap-1 max-w-[160px]">
+          ${b.items.slice(0,3).map(i=>`<span class="text-[10px] px-1.5 py-0.5 rounded" style="background:#F5EBD3;color:#7A5B1F">${i}</span>`).join('')}
+          ${b.items.length>3 ? `<span class="text-[10px]" style="color:var(--text-faint)">+${b.items.length-3}</span>` : ''}
+        </div>
+      </td>
+      <td class="px-4 py-3.5">${quickStatus(b.status)}</td>
+      <td class="px-4 py-3.5">${levelPill(b.level)}</td>
+      <td class="px-4 py-3.5 text-sm max-w-[180px] truncate" style="color:var(--text-secondary)" title="${b.nextAction}">${b.nextAction||'—'}</td>
+      <td class="px-4 py-3.5 text-sm">${followBadge(b.followUp)}</td>
+      <td class="px-4 py-3.5 text-sm text-right">
+        ${b.amount>0 ? `
+          <div>
+            <div class="text-[12px] font-medium" style="color:var(--text-primary)">₩${b.amount.toLocaleString()}</div>
+            ${b.kg>0 ? `<div class="text-[10px]" style="color:var(--text-faint)">${b.kg}kg</div>` : ''}
+            ${b.repeat>0 ? `<div class="text-[10px]" style="color:#3F6240">재구매 ${b.repeat}회</div>` : ''}
+          </div>` : '<span style="color:#C2BFB8">—</span>'
+        }
+      </td>
+      <td class="px-4 py-3.5">
+        <div class="flex items-center justify-center gap-1">
+          <button class="p-1.5 rounded hover:bg-[#EFECE7] transition-colors" style="color:var(--text-muted)" title="수정">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+          </button>
+          <button class="p-1.5 rounded hover:bg-[#EDD2CF]/40 transition-colors" style="color:var(--text-muted)" title="삭제">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          </button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function renderCards(){
+  document.getElementById('cardView').innerHTML = BUYERS.map(b=>{
+    const isOver = b.followUp < today, isToday = b.followUp === today;
+    const followCol = isOver ? '#7A3F37' : isToday ? '#9C4A2D' : '#7B7975';
+    return `
+      <div class="card-elevated p-5 cursor-pointer hover:shadow-[0_4px_14px_rgba(31,30,29,0.06)] transition-all">
+        <div class="flex items-start justify-between mb-3">
+          <div class="flex-1 min-w-0">
+            <h3 class="serif text-[15px] font-semibold truncate" style="color:var(--text-primary)">${b.company}</h3>
+            <div class="flex items-center gap-2 mt-1 text-[11px]" style="color:var(--text-muted)">
+              ${b.business ? `<span>${b.business}</span>` : ''}
+              ${b.region ? `<span class="flex items-center gap-0.5">📍 ${b.region}</span>` : ''}
+            </div>
+          </div>
+          ${levelPill(b.level)}
+        </div>
+        <div class="flex items-center gap-2 mb-3 flex-wrap">
+          ${statusPill(b.status)}
+          ${b.size ? `<span class="text-[11px] px-2 py-0.5 rounded-full" style="background:var(--bg-soft);color:var(--text-secondary)">${b.size}</span>` : ''}
+        </div>
+        ${b.items.length>0 ? `<div class="flex flex-wrap gap-1 mb-3">
+          ${b.items.map(i=>`<span class="text-[10px] px-1.5 py-0.5 rounded" style="background:#F5EBD3;color:#7A5B1F">${i}</span>`).join('')}
+        </div>` : ''}
+        <div class="space-y-1 text-[12px] mb-3" style="color:var(--text-secondary)">
+          ${b.person ? `<div class="flex items-center gap-1.5"><span style="color:var(--text-faint)">👤</span>${b.person}</div>` : ''}
+          ${b.phone ? `<div class="flex items-center gap-1.5"><span style="color:var(--text-faint)">📞</span>${b.phone}</div>` : ''}
+          ${b.email ? `<div class="flex items-center gap-1.5"><span style="color:var(--text-faint)">✉️</span><span class="truncate">${b.email}</span></div>` : ''}
+          ${b.kakao ? `<div class="flex items-center gap-1.5"><span style="color:#7A5B1F">💬</span>${b.kakao}</div>` : ''}
+          ${b.insta ? `<div class="flex items-center gap-1.5"><span style="color:#9C4A2D">📷</span>@${b.insta}</div>` : ''}
+        </div>
+        <div class="border-t pt-3 space-y-1" style="border-color:var(--border-soft)">
+          ${b.nextAction ? `<div class="text-[12px]" style="color:var(--text-secondary)"><span class="font-medium" style="color:var(--text-primary)">다음: </span>${b.nextAction}</div>` : ''}
+          ${b.followUp ? `<div class="text-[11px] flex items-center gap-1" style="color:${followCol};font-weight:${(isOver||isToday)?600:400}">📅 재연락 · ${b.followUp}${isOver?' (지연)':isToday?' (오늘)':''}</div>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function setView(mode){
+  const t = document.getElementById('tableView');
+  const c = document.getElementById('cardView');
+  const tb = document.getElementById('tableViewBtn');
+  const cb = document.getElementById('cardViewBtn');
+  if(mode==='table'){
+    t.classList.remove('hidden'); c.classList.add('hidden');
+    tb.classList.add('bg-white','shadow-[0_1px_2px_rgba(31,30,29,0.06)]'); tb.style.color='var(--text-primary)';
+    cb.classList.remove('bg-white','shadow-[0_1px_2px_rgba(31,30,29,0.06)]'); cb.style.color='var(--text-muted)';
+  } else {
+    t.classList.add('hidden'); c.classList.remove('hidden');
+    cb.classList.add('bg-white','shadow-[0_1px_2px_rgba(31,30,29,0.06)]'); cb.style.color='var(--text-primary)';
+    tb.classList.remove('bg-white','shadow-[0_1px_2px_rgba(31,30,29,0.06)]'); tb.style.color='var(--text-muted)';
+  }
+}
+function openModal(){ document.getElementById('buyerModal').classList.remove('hidden'); }
+function closeModal(){ document.getElementById('buyerModal').classList.add('hidden'); }
+
+function toggleChip(el){
+  const on = el.getAttribute('data-on') === 'true';
+  if(on){
+    el.setAttribute('data-on','false');
+    el.style.background = '#fff';
+    el.style.color = 'var(--text-secondary)';
+    el.style.borderColor = 'var(--border)';
+  } else {
+    el.setAttribute('data-on','true');
+    el.style.background = 'var(--accent)';
+    el.style.color = '#fff';
+    el.style.borderColor = 'var(--accent)';
+  }
+}
+
+renderTable();
+renderCards();
+</script>
+</body>
+</html>
