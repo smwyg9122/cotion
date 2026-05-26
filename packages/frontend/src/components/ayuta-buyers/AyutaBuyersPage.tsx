@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { Modal } from '../common/Modal';
-import {
+import type {
   AyutaBuyer,
   BuyerBusinessType,
   BuyerSize,
@@ -31,12 +31,17 @@ import {
   BuyerInterestItem,
   BuyerStatus,
   BuyerInterestLevel,
+} from '@cotion/shared';
+// Runtime constants live in a frontend-local file because vite/rollup's
+// CJS->ESM interop fails to statically extract named exports forwarded
+// via `export *` from the shared dist. See constants.ts for details.
+import {
   BUYER_BUSINESS_TYPES,
   BUYER_SIZES,
   BUYER_SOURCES,
   BUYER_INTEREST_ITEMS,
   BUYER_STATUSES,
-} from '@cotion/shared';
+} from './constants';
 
 interface AyutaBuyersPageProps {
   workspace: string;
