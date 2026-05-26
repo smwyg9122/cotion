@@ -421,9 +421,13 @@ async function testAyutaBuyers(token) {
     fail('6e stats incorrect', `body=${JSON.stringify(stats.data).slice(0, 150)}`);
   }
 
-  // 6f) workspace mismatch on update → 404
+  // 6f) workspace mismatch on update → 403 (caller has no access to 제이로텍)
+  // Note: this changed from 404 → 403 after the workspace ACL middleware
+  // was added. 403 is more correct because the user doesn't even have
+  // permission to query for that workspace, regardless of whether the row
+  // exists there.
   const wrong = await a.put(`/ayuta-buyers/${buyerId}?workspace=제이로텍`, { status: '종료' });
-  if (wrong.status === 404) pass('6f wrong workspace update → 404');
+  if (wrong.status === 403) pass('6f wrong workspace update → 403 (ACL)');
   else fail('6f wrong workspace update accepted (BUG)', `status=${wrong.status}`);
 
   // 6g) Missing workspace → 400
@@ -435,6 +439,147 @@ async function testAyutaBuyers(token) {
   const del = await a.delete(`/ayuta-buyers/${buyerId}?workspace=아유타`);
   if (del.status === 200) pass('6h delete buyer');
   else fail('6h delete failed', `status=${del.status}`);
+}
+
+// ─── TEST 8: Workspace ACL — user must be in allowed_workspaces ───
+async function testWorkspaceACL(tokenAyuta, tokenJrotek) {
+  section('TEST 8: Workspace ACL (regression for council CRITICAL finding)');
+  const ayuta = await withAuth(tokenAyuta);
+  const jrotek = await withAuth(tokenJrotek);
+
+  // Jrotek user tries to GET clients in 아유타 (workspace not in allowlist)
+  const r1 = await jrotek.get('/clients?workspace=아유타');
+  if (r1.status === 403) pass('8a Jrotek user → GET /clients?workspace=아유타 → 403');
+  else fail('8a workspace ACL bypassed', `status=${r1.status}`);
+
+  // Jrotek tries to CREATE in 아유타 (workspace in body)
+  const r2 = await jrotek.post('/clients', { name: '__TEST_hijack__', workspace: '아유타' });
+  if (r2.status === 403) pass('8b Jrotek user → POST /clients (workspace=아유타 body) → 403');
+  else fail('8b workspace ACL bypassed on create', `status=${r2.status}`);
+
+  // Jrotek tries ayuta-buyers — Ayuta-only feature
+  const r3 = await jrotek.get('/ayuta-buyers?workspace=아유타');
+  if (r3.status === 403) pass('8c Jrotek user → ayuta-buyers list → 403');
+  else fail('8c ayuta-buyers ACL bypassed', `status=${r3.status}`);
+
+  // Ayuta user still has access to their own workspace
+  const r4 = await ayuta.get('/clients?workspace=아유타');
+  if (r4.status === 200) pass('8d Ayuta user → own workspace → 200');
+  else fail('8d legitimate access broken', `status=${r4.status}`);
+
+  // Missing workspace → 400, not 403
+  const r5 = await ayuta.get('/clients');
+  if (r5.status === 400) pass('8e missing workspace param → 400 (not 403)');
+  else fail('8e wrong status', `status=${r5.status}`);
+}
+
+// ─── TEST 7: Clients enrichment (15 new fields) ────────────────
+async function testClientsEnrichment(token) {
+  section('TEST 7: Clients enrichment (15 new fields)');
+  const a = await withAuth(token);
+
+  // 7a) Create with all enriched fields
+  const create = await a.post('/clients', {
+    name: '__TEST_enriched_client__',
+    contactPerson: '김대표',
+    phone: '010-1111-2222',
+    email: 'client@test.local',
+    kakaoId: 'clientco',
+    instagram: 'clientco_kr',
+    region: '부산',
+    businessType: '카페',
+    status: '정기거래',
+    followUpDate: '2026-06-10',
+    firstOrderDate: '2024-03-01',
+    lastOrderDate: '2026-05-10',
+    totalOrderAmount: 3500000,
+    monthlyVolumeKg: 12.5,
+    preferredItems: ['에티오피아', '콜롬비아 디카페인'],
+    taxId: '123-45-67890',
+    invoiceEmail: 'acct@test.local',
+    paymentTerms: '월말정산',
+    shippingAddress: '부산 사상구 학장로 100',
+    workspace: '아유타',
+  });
+  if (create.status !== 201) {
+    fail('7a create enriched', `status=${create.status} body=${JSON.stringify(create.data).slice(0, 200)}`);
+    return;
+  }
+  const clientId = create.data.data.id;
+  const d = create.data.data;
+
+  // Verify all 15 new fields round-trip
+  const checks = [
+    ['kakaoId', 'clientco'],
+    ['instagram', 'clientco_kr'],
+    ['region', '부산'],
+    ['businessType', '카페'],
+    ['status', '정기거래'],
+    ['totalOrderAmount', 3500000],
+    ['monthlyVolumeKg', 12.5],
+    ['taxId', '123-45-67890'],
+    ['invoiceEmail', 'acct@test.local'],
+    ['paymentTerms', '월말정산'],
+    ['shippingAddress', '부산 사상구 학장로 100'],
+  ];
+  let mismatches = [];
+  for (const [field, expected] of checks) {
+    if (d[field] !== expected) mismatches.push(`${field}=${d[field]} (want ${expected})`);
+  }
+  if (Array.isArray(d.preferredItems) && d.preferredItems.length === 2) {
+    // good
+  } else {
+    mismatches.push(`preferredItems=${JSON.stringify(d.preferredItems)}`);
+  }
+  if (mismatches.length === 0) {
+    pass('7a create + round-trip all 15 enriched fields');
+  } else {
+    fail('7a field mismatch', mismatches.slice(0, 3).join(', '));
+  }
+
+  // 7b) Minimal payload (name + workspace only) — defaults applied
+  const minimal = await a.post('/clients', {
+    name: '__TEST_minimal_client__',
+    workspace: '아유타',
+  });
+  if (minimal.status === 201 && minimal.data.data.status === '신규') {
+    pass('7b minimal create uses default status=신규');
+  } else {
+    fail('7b minimal create', `status=${minimal.status} status_field=${minimal.data?.data?.status}`);
+  }
+
+  // 7c) Update status only (inline status change use case)
+  const statusUpdate = await a.put(`/clients/${clientId}?workspace=아유타`, { status: '휴면' });
+  if (statusUpdate.status === 200 && statusUpdate.data.data.status === '휴면') {
+    pass('7c inline status update → 휴면');
+  } else {
+    fail('7c status update', `status=${statusUpdate.status}`);
+  }
+
+  // 7d) Filter by status — should NOT include the 정기거래 client we just changed
+  const filtered = await a.get('/clients?workspace=아유타&status=정기거래');
+  const hasOldClient = filtered.data?.data?.some((c) => c.id === clientId);
+  if (filtered.status === 200 && !hasOldClient) {
+    pass('7d filter by status excludes changed client');
+  } else {
+    fail('7d filter', `hasOldClient=${hasOldClient}`);
+  }
+
+  // 7e) Validation: bad email "ㅇ" still rejected (regression check)
+  const badEmail = await a.post('/clients', { name: '__TEST_bad__', email: 'ㅇ', workspace: '아유타' });
+  if (badEmail.status === 400 && badEmail.data?.error?.details?.some((d) => d.path[0] === 'email')) {
+    pass('7e bad email still rejected with field detail');
+  } else {
+    fail('7e bad email accepted', `status=${badEmail.status}`);
+  }
+
+  // 7f) Empty email "" coerced to undefined (regression check)
+  const emptyEmail = await a.post('/clients', { name: '__TEST_empty__', email: '', assignedTo: '', workspace: '아유타' });
+  if (emptyEmail.status === 201 && emptyEmail.data.data.email === null) {
+    pass('7f empty email → null (coercion works)');
+  } else {
+    fail('7f empty email rejected', `status=${emptyEmail.status}`);
+  }
 }
 
 // ─── MAIN ─────────────────────────────────────────────────────
@@ -450,8 +595,10 @@ async function testAyutaBuyers(token) {
 
   // Run login-heavy tests BEFORE rate limit test (which trips the 10/min cap).
   await testWebSocketAuth(tokenAyuta);
+  await testWorkspaceACL(tokenAyuta, tokenJrotek); // NEW — council CRITICAL fix
   await testTenantIsolation(tokenAyuta, tokenJrotek);
   await testAyutaBuyers(tokenAyuta);
+  await testClientsEnrichment(tokenAyuta);
   await testRefreshRotation('__TEST_user_ayuta__', 'TestPass1234!');
   await testIsActiveEnforcement('__TEST_user_jrotek__', 'TestPass1234!');
   await testRateLimit(); // last — trips the per-IP login limiter

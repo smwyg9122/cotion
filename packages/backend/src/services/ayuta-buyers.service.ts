@@ -34,7 +34,14 @@ function toNumber(value: unknown): number {
 
 function toDateString(value: unknown): string | null {
   if (!value) return null;
-  if (value instanceof Date) return value.toISOString().slice(0, 10);
+  if (value instanceof Date) {
+    // See clients.service.ts toDateString for rationale: avoid UTC slice
+    // which shifts dates one day west of UTC.
+    const y = value.getFullYear();
+    const m = String(value.getMonth() + 1).padStart(2, '0');
+    const d = String(value.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
   return String(value);
 }
 

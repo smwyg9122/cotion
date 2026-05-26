@@ -47,6 +47,27 @@ export function invalidatePagesWorkspaceCache(userId: string) {
   workspaceCache.delete(userId);
 }
 
+/**
+ * Guard for any HTTP handler that takes a workspace from request input.
+ * The service layer alone enforces "the row's workspace matches the query
+ * workspace" — but without this check, an authenticated user who simply
+ * sends ?workspace=OtherCompany can read/mutate rows there as long as the
+ * row IDs match. This closes that gap by verifying the requested workspace
+ * is in the user's allowlist (or the user is superadmin).
+ *
+ * Throws 403 on mismatch so the controller's handler aborts immediately.
+ */
+export async function assertWorkspaceAccess(userId: string, workspace: string): Promise<void> {
+  if (!workspace) {
+    throw new AppError(400, API_ERRORS.VALIDATION_ERROR, 'workspace is required');
+  }
+  const allowed = await getUserAccessibleWorkspaces(userId);
+  if (allowed === null) return; // superadmin → unrestricted
+  if (!allowed.includes(workspace)) {
+    throw new AppError(403, API_ERRORS.FORBIDDEN, '해당 워크스페이스에 접근 권한이 없습니다');
+  }
+}
+
 export class PagesService {
   static async getAllPages(userId: string): Promise<PageTreeNode[]> {
     const accessible = await getUserAccessibleWorkspaces(userId);

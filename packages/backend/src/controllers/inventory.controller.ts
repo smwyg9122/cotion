@@ -1,137 +1,80 @@
 import { Response } from 'express';
 import { InventoryService } from '../services/inventory.service';
+import { assertWorkspaceAccess } from '../services/pages.service';
 import { asyncHandler } from '../middleware/error.middleware';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { inventoryCreateSchema, inventoryUpdateSchema, inventoryTransactionCreateSchema } from '@cotion/shared';
 
 export const inventoryController = {
   getAll: asyncHandler(async (req: AuthRequest, res: Response) => {
-    const workspace = req.query.workspace as string;
+    const workspace = (req.query.workspace as string) || '';
+    await assertWorkspaceAccess(req.user!.userId, workspace);
+
     const type = req.query.type as string;
     const origin = req.query.origin as string;
 
-    if (!workspace) {
-      return res.status(400).json({
-        success: false,
-        error: {
-          code: 'VALIDATION_ERROR',
-          message: 'workspace is required',
-        },
-      });
-    }
-
     const items = await InventoryService.getAll(workspace, { type, origin });
-
-    res.json({
-      success: true,
-      data: items,
-    });
+    res.json({ success: true, data: items });
   }),
 
   getById: asyncHandler(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     const workspace = (req.query.workspace as string) || '';
-    if (!workspace) {
-      return res.status(400).json({
-        success: false,
-        error: { code: 'VALIDATION_ERROR', message: 'workspace is required' },
-      });
-    }
-    const item = await InventoryService.getById(id, workspace);
+    await assertWorkspaceAccess(req.user!.userId, workspace);
 
+    const item = await InventoryService.getById(id, workspace);
     if (!item) {
       return res.status(404).json({
         success: false,
-        error: {
-          code: 'NOT_FOUND',
-          message: '재고 항목을 찾을 수 없습니다',
-        },
+        error: { code: 'NOT_FOUND', message: '재고 항목을 찾을 수 없습니다' },
       });
     }
-
-    res.json({
-      success: true,
-      data: item,
-    });
+    res.json({ success: true, data: item });
   }),
 
   create: asyncHandler(async (req: AuthRequest, res: Response) => {
     const input = inventoryCreateSchema.parse(req.body);
-    const item = await InventoryService.create(input, req.user!.userId);
+    await assertWorkspaceAccess(req.user!.userId, input.workspace);
 
-    res.status(201).json({
-      success: true,
-      data: item,
-    });
+    const item = await InventoryService.create(input, req.user!.userId);
+    res.status(201).json({ success: true, data: item });
   }),
 
   update: asyncHandler(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     const workspace = (req.query.workspace as string) || '';
-    if (!workspace) {
-      return res.status(400).json({
-        success: false,
-        error: { code: 'VALIDATION_ERROR', message: 'workspace is required' },
-      });
-    }
+    await assertWorkspaceAccess(req.user!.userId, workspace);
+
     const input = inventoryUpdateSchema.parse(req.body);
     const item = await InventoryService.update(id, input, workspace);
-
-    res.json({
-      success: true,
-      data: item,
-    });
+    res.json({ success: true, data: item });
   }),
 
   delete: asyncHandler(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     const workspace = (req.query.workspace as string) || '';
-    if (!workspace) {
-      return res.status(400).json({
-        success: false,
-        error: { code: 'VALIDATION_ERROR', message: 'workspace is required' },
-      });
-    }
-    await InventoryService.delete(id, workspace);
+    await assertWorkspaceAccess(req.user!.userId, workspace);
 
-    res.json({
-      success: true,
-      data: { message: '재고 항목이 삭제되었습니다' },
-    });
+    await InventoryService.delete(id, workspace);
+    res.json({ success: true, data: { message: '재고 항목이 삭제되었습니다' } });
   }),
 
   addTransaction: asyncHandler(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     const workspace = (req.query.workspace as string) || '';
-    if (!workspace) {
-      return res.status(400).json({
-        success: false,
-        error: { code: 'VALIDATION_ERROR', message: 'workspace is required' },
-      });
-    }
+    await assertWorkspaceAccess(req.user!.userId, workspace);
+
     const input = inventoryTransactionCreateSchema.parse(req.body);
     const transaction = await InventoryService.addTransaction(id, input, req.user!.userId, workspace);
-
-    res.status(201).json({
-      success: true,
-      data: transaction,
-    });
+    res.status(201).json({ success: true, data: transaction });
   }),
 
   getTransactions: asyncHandler(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     const workspace = (req.query.workspace as string) || '';
-    if (!workspace) {
-      return res.status(400).json({
-        success: false,
-        error: { code: 'VALIDATION_ERROR', message: 'workspace is required' },
-      });
-    }
-    const transactions = await InventoryService.getTransactions(id, workspace);
+    await assertWorkspaceAccess(req.user!.userId, workspace);
 
-    res.json({
-      success: true,
-      data: transactions,
-    });
+    const transactions = await InventoryService.getTransactions(id, workspace);
+    res.json({ success: true, data: transactions });
   }),
 };

@@ -34,7 +34,15 @@ function toNumber(value: unknown): number {
 
 function toDateString(value: unknown): string | null {
   if (!value) return null;
-  if (value instanceof Date) return value.toISOString().slice(0, 10);
+  if (value instanceof Date) {
+    // pg returns DATE columns as Date objects at 00:00:00 in the server's
+    // local TZ. Using toISOString shifts west of UTC into the prior day.
+    // Read local components instead so "2026-06-10" round-trips intact.
+    const y = value.getFullYear();
+    const m = String(value.getMonth() + 1).padStart(2, '0');
+    const d = String(value.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
   return String(value);
 }
 

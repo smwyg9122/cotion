@@ -1,5 +1,6 @@
 import { Response } from 'express';
 import { AyutaBuyersService } from '../services/ayuta-buyers.service';
+import { assertWorkspaceAccess } from '../services/pages.service';
 import { asyncHandler } from '../middleware/error.middleware';
 import { AuthRequest } from '../middleware/auth.middleware';
 import {
@@ -9,16 +10,8 @@ import {
 
 export const ayutaBuyersController = {
   getAll: asyncHandler(async (req: AuthRequest, res: Response) => {
-    const workspace = req.query.workspace as string;
-    if (!workspace) {
-      return res.status(400).json({
-        success: false,
-        error: {
-          code: 'VALIDATION_ERROR',
-          message: 'workspace is required',
-        },
-      });
-    }
+    const workspace = (req.query.workspace as string) || '';
+    await assertWorkspaceAccess(req.user!.userId, workspace);
 
     const buyers = await AyutaBuyersService.getAll(workspace, {
       status: (req.query.status as string) || undefined,
@@ -32,16 +25,9 @@ export const ayutaBuyersController = {
   }),
 
   getStats: asyncHandler(async (req: AuthRequest, res: Response) => {
-    const workspace = req.query.workspace as string;
-    if (!workspace) {
-      return res.status(400).json({
-        success: false,
-        error: {
-          code: 'VALIDATION_ERROR',
-          message: 'workspace is required',
-        },
-      });
-    }
+    const workspace = (req.query.workspace as string) || '';
+    await assertWorkspaceAccess(req.user!.userId, workspace);
+
     const stats = await AyutaBuyersService.getStats(workspace);
     res.json({ success: true, data: stats });
   }),
@@ -49,20 +35,13 @@ export const ayutaBuyersController = {
   getById: asyncHandler(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     const workspace = (req.query.workspace as string) || '';
-    if (!workspace) {
-      return res.status(400).json({
-        success: false,
-        error: { code: 'VALIDATION_ERROR', message: 'workspace is required' },
-      });
-    }
+    await assertWorkspaceAccess(req.user!.userId, workspace);
+
     const buyer = await AyutaBuyersService.getById(id, workspace);
     if (!buyer) {
       return res.status(404).json({
         success: false,
-        error: {
-          code: 'NOT_FOUND',
-          message: '구매처를 찾을 수 없습니다',
-        },
+        error: { code: 'NOT_FOUND', message: '구매처를 찾을 수 없습니다' },
       });
     }
     res.json({ success: true, data: buyer });
@@ -70,6 +49,8 @@ export const ayutaBuyersController = {
 
   create: asyncHandler(async (req: AuthRequest, res: Response) => {
     const input = ayutaBuyerCreateSchema.parse(req.body);
+    await assertWorkspaceAccess(req.user!.userId, input.workspace);
+
     const buyer = await AyutaBuyersService.create(input, req.user!.userId);
     res.status(201).json({ success: true, data: buyer });
   }),
@@ -77,12 +58,8 @@ export const ayutaBuyersController = {
   update: asyncHandler(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     const workspace = (req.query.workspace as string) || '';
-    if (!workspace) {
-      return res.status(400).json({
-        success: false,
-        error: { code: 'VALIDATION_ERROR', message: 'workspace is required' },
-      });
-    }
+    await assertWorkspaceAccess(req.user!.userId, workspace);
+
     const input = ayutaBuyerUpdateSchema.parse(req.body);
     const buyer = await AyutaBuyersService.update(id, input, workspace);
     res.json({ success: true, data: buyer });
@@ -91,12 +68,8 @@ export const ayutaBuyersController = {
   delete: asyncHandler(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     const workspace = (req.query.workspace as string) || '';
-    if (!workspace) {
-      return res.status(400).json({
-        success: false,
-        error: { code: 'VALIDATION_ERROR', message: 'workspace is required' },
-      });
-    }
+    await assertWorkspaceAccess(req.user!.userId, workspace);
+
     await AyutaBuyersService.delete(id, workspace);
     res.json({ success: true, data: { message: '구매처가 삭제되었습니다' } });
   }),
