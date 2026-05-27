@@ -2,6 +2,7 @@ import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import { authController } from '../controllers/auth.controller';
 import { authMiddleware } from '../middleware/auth.middleware';
+import { csrfGuard } from '../middleware/csrf.middleware';
 
 const router = Router();
 
@@ -65,8 +66,11 @@ const passwordChangeLimiter = rateLimit({
 
 router.post('/signup', signupLimiter, authController.signup);
 router.post('/login', loginLimiter, authController.login);
-router.post('/logout', authController.logout);
-router.post('/refresh', refreshLimiter, authController.refresh);
+// logout + refresh use the httpOnly refresh cookie, so they're the only
+// auth endpoints that need CSRF protection. login/signup take credentials
+// in the body so a hostile site can't replay them silently.
+router.post('/logout', csrfGuard, authController.logout);
+router.post('/refresh', csrfGuard, refreshLimiter, authController.refresh);
 router.get('/me', authMiddleware, authController.me);
 router.put('/me', authMiddleware, authController.updateMe);
 router.get('/users', authMiddleware, authController.getUsers);

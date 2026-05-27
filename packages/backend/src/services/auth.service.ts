@@ -76,6 +76,15 @@ export class AuthService {
     // Reject deactivated accounts. is_active is nullable for legacy rows;
     // explicit false blocks login, undefined/null is treated as active.
     if (user.is_active === false) {
+      // Audit so admins can spot abuse against deactivated accounts.
+      try {
+        const { ActivityLogService } = require('./activity-log.service');
+        ActivityLogService.security(user.id, 'deactivated_user_attempt', {
+          username: input.username,
+        });
+      } catch {
+        // best-effort
+      }
       throw new AppError(403, API_ERRORS.FORBIDDEN, '비활성화된 계정입니다. 관리자에게 문의하세요.');
     }
 

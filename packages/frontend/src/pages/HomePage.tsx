@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { usePages } from '../hooks/usePages';
 import { useNavigate } from 'react-router-dom';
@@ -15,17 +15,30 @@ import { CommentSection } from '../components/comments/CommentSection';
 import { Menu, X, Trash2, Plus, ChevronDown, ChevronRight, Check, Calendar, Users, Package, Kanban, Coffee, FolderOpen, Palette, Zap, MessageCircle, FileText, Settings, Shield } from 'lucide-react';
 import { api } from '../services/api';
 import { KakaoLinkButton } from '../components/settings/KakaoLinkButton';
-import { CalendarPage } from '../components/calendar/CalendarPage';
-import { ClientsPage } from '../components/clients/ClientsPage';
-import { AyutaBuyersPage } from '../components/ayuta-buyers/AyutaBuyersPage';
-import { InventoryPage } from '../components/inventory/InventoryPage';
-import { KanbanBoard } from '../components/projects/KanbanBoard';
-import { CuppingLogPage } from '../components/cupping/CuppingLogPage';
-import { DocumentLibrary } from '../components/documents/DocumentLibrary';
-import { DesignLibrary } from '../components/design/DesignLibrary';
-import { V2TestPage } from '../components/test/V2TestPage';
-import { AdminPage } from '../components/admin/AdminPage';
+// Heavy view components are lazy-loaded so the initial bundle stays small.
+// Routes that the user may never visit (admin, test, CRM, etc.) shouldn't
+// pay the cost upfront. Each chunk is downloaded on first navigation only.
+const CalendarPage = lazy(() => import('../components/calendar/CalendarPage').then((m) => ({ default: m.CalendarPage })));
+const ClientsPage = lazy(() => import('../components/clients/ClientsPage').then((m) => ({ default: m.ClientsPage })));
+const AyutaBuyersPage = lazy(() => import('../components/ayuta-buyers/AyutaBuyersPage').then((m) => ({ default: m.AyutaBuyersPage })));
+const InventoryPage = lazy(() => import('../components/inventory/InventoryPage').then((m) => ({ default: m.InventoryPage })));
+const KanbanBoard = lazy(() => import('../components/projects/KanbanBoard').then((m) => ({ default: m.KanbanBoard })));
+const CuppingLogPage = lazy(() => import('../components/cupping/CuppingLogPage').then((m) => ({ default: m.CuppingLogPage })));
+const DocumentLibrary = lazy(() => import('../components/documents/DocumentLibrary').then((m) => ({ default: m.DocumentLibrary })));
+const DesignLibrary = lazy(() => import('../components/design/DesignLibrary').then((m) => ({ default: m.DesignLibrary })));
+const V2TestPage = lazy(() => import('../components/test/V2TestPage').then((m) => ({ default: m.V2TestPage })));
+const AdminPage = lazy(() => import('../components/admin/AdminPage').then((m) => ({ default: m.AdminPage })));
 import { CategorySelect } from '../components/common';
+
+// Simple loading state for lazy chunks — kept minimal because chunks load
+// in < 200ms over typical broadband for ~50-300KB bundles.
+function ViewLoading() {
+  return (
+    <div className="flex items-center justify-center h-full text-gray-400 text-sm">
+      불러오는 중…
+    </div>
+  );
+}
 import type { Page } from '@cotion/shared';
 
 const ALL_WORKSPACES = [
@@ -711,28 +724,45 @@ export function HomePage() {
         {/* Content Area */}
         <div className="flex-1 overflow-y-auto">
           {currentView === 'calendar' ? (
-            <CalendarPage
-              workspace={selectedWorkspace.name}
-              onNavigateToPage={handlePageSelect}
-            />
+            <Suspense fallback={<ViewLoading />}>
+              <CalendarPage workspace={selectedWorkspace.name} onNavigateToPage={handlePageSelect} />
+            </Suspense>
           ) : currentView === 'clients' ? (
-            <ClientsPage workspace={selectedWorkspace.name} />
+            <Suspense fallback={<ViewLoading />}>
+              <ClientsPage workspace={selectedWorkspace.name} />
+            </Suspense>
           ) : currentView === 'ayuta-buyers' ? (
-            <AyutaBuyersPage workspace={selectedWorkspace.name} />
+            <Suspense fallback={<ViewLoading />}>
+              <AyutaBuyersPage workspace={selectedWorkspace.name} />
+            </Suspense>
           ) : currentView === 'inventory' ? (
-            <InventoryPage workspace={selectedWorkspace.name} />
+            <Suspense fallback={<ViewLoading />}>
+              <InventoryPage workspace={selectedWorkspace.name} />
+            </Suspense>
           ) : currentView === 'kanban' ? (
-            <KanbanBoard workspace={selectedWorkspace.name} initialProjectId={selectedKanbanProjectId} />
+            <Suspense fallback={<ViewLoading />}>
+              <KanbanBoard workspace={selectedWorkspace.name} initialProjectId={selectedKanbanProjectId} />
+            </Suspense>
           ) : currentView === 'cupping' ? (
-            <CuppingLogPage workspace={selectedWorkspace.name} />
+            <Suspense fallback={<ViewLoading />}>
+              <CuppingLogPage workspace={selectedWorkspace.name} />
+            </Suspense>
           ) : currentView === 'documents' ? (
-            <DocumentLibrary workspace={selectedWorkspace.name} />
+            <Suspense fallback={<ViewLoading />}>
+              <DocumentLibrary workspace={selectedWorkspace.name} />
+            </Suspense>
           ) : currentView === 'design' ? (
-            <DesignLibrary workspace={selectedWorkspace.name} />
+            <Suspense fallback={<ViewLoading />}>
+              <DesignLibrary workspace={selectedWorkspace.name} />
+            </Suspense>
           ) : currentView === 'v2test' ? (
-            <V2TestPage workspace={selectedWorkspace.name} />
+            <Suspense fallback={<ViewLoading />}>
+              <V2TestPage workspace={selectedWorkspace.name} />
+            </Suspense>
           ) : currentView === 'admin' ? (
-            <AdminPage />
+            <Suspense fallback={<ViewLoading />}>
+              <AdminPage />
+            </Suspense>
           ) : selectedPage ? (
             <div className="max-w-5xl mx-auto px-6 py-6 sm:px-12 sm:py-10">
               {/* Menu Button for Desktop when sidebar collapsed */}

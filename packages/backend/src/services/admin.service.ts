@@ -422,6 +422,14 @@ export class AdminService {
       // best-effort
     }
 
+    // Audit so admins can see who granted access when, for compliance.
+    try {
+      const { ActivityLogService } = require('./activity-log.service');
+      ActivityLogService.security(userId, 'workspace_member_added', { workspace: workspaceName });
+    } catch {
+      // best-effort
+    }
+
     return { userId, workspaceName, message: '워크스페이스 멤버가 추가되었습니다' };
   }
 
@@ -459,6 +467,13 @@ export class AdminService {
     try {
       const { invalidatePagesWorkspaceCache } = require('./pages.service');
       invalidatePagesWorkspaceCache(userId);
+    } catch {
+      // best-effort
+    }
+
+    try {
+      const { ActivityLogService } = require('./activity-log.service');
+      ActivityLogService.security(userId, 'workspace_member_removed', { workspace: workspaceName });
     } catch {
       // best-effort
     }

@@ -2,19 +2,19 @@ import { db } from '../database/connection';
 import { AppError } from '../middleware/error.middleware';
 import { API_ERRORS } from '@cotion/shared';
 import { Page, PageCreateInput, PageUpdateInput, PageMoveInput, PageTreeNode } from '@cotion/shared';
+import { getWorkspaceCacheBackend } from './workspace-cache';
 
 // ─── Workspace access helper ─────────────────────────────────────
 // Returns the list of workspaces the user can read/write to, or null for
-// superadmin (= unrestricted). Bounded TTL cache so we don't query
-// users-table on every page request.
+// superadmin (= unrestricted). The cache backend is pluggable (in-memory
+// today, Redis-ready) — see workspace-cache.ts.
 
-const workspaceCache = new Map<string, { workspaces: string[] | null; expiresAt: number }>();
 const WORKSPACE_CACHE_TTL_MS = 60 * 1000;
 
 export async function getUserAccessibleWorkspaces(userId: string): Promise<string[] | null> {
-  const now = Date.now();
-  const cached = workspaceCache.get(userId);
-  if (cached && cached.expiresAt > now) return cached.workspaces;
+  const cache = getWorkspaceCacheBackend();
+  const cached = await cache.get(userId);
+  if (cached !== undefined) return cached;
 
   const user = await db('users')
     .where({ id: userId })
@@ -39,12 +39,13 @@ export async function getUserAccessibleWorkspaces(userId: string): Promise<strin
     }
   }
 
-  workspaceCache.set(userId, { workspaces, expiresAt: now + WORKSPACE_CACHE_TTL_MS });
+  await cache.set(userId, workspaces, WORKSPACE_CACHE_TTL_MS);
   return workspaces;
 }
 
-export function invalidatePagesWorkspaceCache(userId: string) {
-  workspaceCache.delete(userId);
+export function invalidatePagesWorkspaceCache(userId: string): void {
+  // Fire-and-forget — invalidation must never block the response path.
+  getWorkspaceCacheBackend().delete(userId).catch(() => {});
 }
 
 /**
@@ -56,6 +57,7 @@ export function invalidatePagesWorkspaceCache(userId: string) {
  * is in the user's allowlist (or the user is superadmin).
  *
  * Throws 403 on mismatch so the controller's handler aborts immediately.
+ * Denials are audit-logged for security monitoring.
  */
 export async function assertWorkspaceAccess(userId: string, workspace: string): Promise<void> {
   if (!workspace) {
@@ -64,6 +66,17 @@ export async function assertWorkspaceAccess(userId: string, workspace: string): 
   const allowed = await getUserAccessibleWorkspaces(userId);
   if (allowed === null) return; // superadmin → unrestricted
   if (!allowed.includes(workspace)) {
+    // Fire-and-forget: log the deny attempt so admins can spot probing.
+    // Lazy-required to dodge a circular import (activity-log → pages).
+    try {
+      const { ActivityLogService } = require('./activity-log.service');
+      ActivityLogService.security(userId, 'acl_deny', {
+        attemptedWorkspace: workspace,
+        allowedCount: allowed.length,
+      });
+    } catch {
+      // best-effort
+    }
     throw new AppError(403, API_ERRORS.FORBIDDEN, '해당 워크스페이스에 접근 권한이 없습니다');
   }
 }

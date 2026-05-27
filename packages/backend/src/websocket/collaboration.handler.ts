@@ -5,6 +5,7 @@ import { setupWSConnection } from 'y-websocket/bin/utils';
 import { JWTService, JWTPayload } from '../services/jwt.service';
 import { db } from '../database/connection';
 import { getUserAccessibleWorkspaces } from '../services/pages.service';
+import { ActivityLogService } from '../services/activity-log.service';
 
 /**
  * Verify the JWT carried as `?token=` on the WebSocket upgrade URL.
@@ -91,6 +92,7 @@ export function initializeWebSocketServer(server: any) {
     // 1. Verify JWT
     const payload = verifyUpgradeToken(request);
     if (!payload) {
+      ActivityLogService.security(null, 'ws_unauthorized', { reason: 'no_or_bad_token' });
       rejectUpgrade(socket, 401, 'Unauthorized');
       return;
     }
@@ -100,6 +102,10 @@ export function initializeWebSocketServer(server: any) {
     const url = new URL(request.url || '', `http://${request.headers.host}`);
     const claimedUserId = url.searchParams.get('userId') || '';
     if (!claimedUserId || claimedUserId !== payload.userId) {
+      ActivityLogService.security(payload.userId, 'ws_unauthorized', {
+        reason: 'userId_mismatch',
+        claimed: claimedUserId,
+      });
       rejectUpgrade(socket, 403, 'Forbidden');
       return;
     }
@@ -111,6 +117,11 @@ export function initializeWebSocketServer(server: any) {
     try {
       const auth = await authorizeDocAccess(payload.userId, docName);
       if (!auth.ok) {
+        ActivityLogService.security(payload.userId, 'ws_unauthorized', {
+          reason: 'workspace_or_doc',
+          docName,
+          status: auth.status,
+        });
         rejectUpgrade(socket, auth.status, auth.reason);
         return;
       }
