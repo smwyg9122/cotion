@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { emptyToUndefined } from './helpers';
 
 const businessTypeEnum = z.enum([
   '카페',
@@ -88,9 +89,10 @@ export const ayutaBuyerCreateSchema = z.object({
   instagram: z.string().max(200).optional(),
   region: z.string().max(100).optional(),
   address: z.string().max(500).optional(),
-  businessType: businessTypeEnum.optional(),
-  size: sizeEnum.optional(),
-  source: sourceEnum.optional(),
+  // Wrap enums so unselected <select> → undefined (not "" which fails enum check).
+  businessType: emptyToUndefined(businessTypeEnum.optional()),
+  size: emptyToUndefined(sizeEnum.optional()),
+  source: emptyToUndefined(sourceEnum.optional()),
 
   interestItems: z.array(interestItemEnum).optional().default([]),
   interestProducts: z.string().max(500).optional(),
@@ -98,8 +100,8 @@ export const ayutaBuyerCreateSchema = z.object({
   sampleSent: z.boolean().optional().default(false),
   cuppingDone: z.boolean().optional().default(false),
 
-  status: statusEnum.optional().default('신규문의'),
-  interestLevel: interestLevelEnum.optional().default('medium'),
+  status: emptyToUndefined(statusEnum.optional().default('신규문의')),
+  interestLevel: emptyToUndefined(interestLevelEnum.optional().default('medium')),
   lastContactDate: dateLikeString.optional().nullable(),
   nextAction: z.string().max(500).optional(),
   followUpDate: dateLikeString.optional().nullable(),
@@ -126,9 +128,9 @@ export const ayutaBuyerUpdateSchema = z.object({
   instagram: z.string().max(200).optional().nullable(),
   region: z.string().max(100).optional().nullable(),
   address: z.string().max(500).optional().nullable(),
-  businessType: businessTypeEnum.optional().nullable(),
-  size: sizeEnum.optional().nullable(),
-  source: sourceEnum.optional().nullable(),
+  businessType: emptyToUndefined(businessTypeEnum.optional().nullable()),
+  size: emptyToUndefined(sizeEnum.optional().nullable()),
+  source: emptyToUndefined(sourceEnum.optional().nullable()),
 
   interestItems: z.array(interestItemEnum).optional(),
   interestProducts: z.string().max(500).optional().nullable(),
@@ -136,8 +138,8 @@ export const ayutaBuyerUpdateSchema = z.object({
   sampleSent: z.boolean().optional(),
   cuppingDone: z.boolean().optional(),
 
-  status: statusEnum.optional(),
-  interestLevel: interestLevelEnum.optional(),
+  status: emptyToUndefined(statusEnum.optional()),
+  interestLevel: emptyToUndefined(interestLevelEnum.optional()),
   lastContactDate: dateLikeString.optional().nullable(),
   nextAction: z.string().max(500).optional().nullable(),
   followUpDate: dateLikeString.optional().nullable(),

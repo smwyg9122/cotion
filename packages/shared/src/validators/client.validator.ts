@@ -21,6 +21,16 @@ const statusEnum = z.enum(['신규', '진행중', '정기거래', '휴면', '중
 
 const paymentTermsEnum = z.enum(['선불', '후불', '월말정산']);
 
+// Wrappers so an unselected <select> (empty string "") becomes undefined
+// before the strict enum check. Mirrors emptyToUndefined for strings.
+// Each variant exposes nullable for UPDATE schemas (where null = clear).
+const optionalBusinessType  = emptyToUndefined(businessTypeEnum.optional());
+const nullableBusinessType  = emptyToUndefined(businessTypeEnum.optional().nullable());
+const optionalStatus        = emptyToUndefined(statusEnum.optional().default('신규'));
+const updateStatus          = emptyToUndefined(statusEnum.optional());
+const optionalPaymentTerms  = emptyToUndefined(paymentTermsEnum.optional());
+const nullablePaymentTerms  = emptyToUndefined(paymentTermsEnum.optional().nullable());
+
 // Strict YYYY-MM-DD or ISO date; empty strings coerced to undefined.
 const optionalDate = emptyToUndefined(z.string().max(50).optional().nullable());
 
@@ -47,8 +57,8 @@ export const clientCreateSchema = z.object({
   kakaoId: z.string().max(100).optional(),
   instagram: z.string().max(200).optional(),
   region: z.string().max(100).optional(),
-  businessType: businessTypeEnum.optional(),
-  status: statusEnum.optional().default('신규'),
+  businessType: optionalBusinessType,
+  status: optionalStatus,
   followUpDate: optionalDate,
 
   // B. 거래 추적
@@ -61,7 +71,7 @@ export const clientCreateSchema = z.object({
   // C. B2B 세무·청구
   taxId: z.string().max(30).optional(),
   invoiceEmail: optionalInvoiceEmail,
-  paymentTerms: paymentTermsEnum.optional(),
+  paymentTerms: optionalPaymentTerms,
   shippingAddress: z.string().max(500).optional(),
 });
 
@@ -83,8 +93,8 @@ export const clientUpdateSchema = z.object({
   kakaoId: z.string().max(100).optional().nullable(),
   instagram: z.string().max(200).optional().nullable(),
   region: z.string().max(100).optional().nullable(),
-  businessType: businessTypeEnum.optional().nullable(),
-  status: statusEnum.optional(),
+  businessType: nullableBusinessType,
+  status: updateStatus,
   followUpDate: optionalDate,
 
   // B
@@ -97,6 +107,6 @@ export const clientUpdateSchema = z.object({
   // C
   taxId: z.string().max(30).optional().nullable(),
   invoiceEmail: optionalInvoiceEmail,
-  paymentTerms: paymentTermsEnum.optional().nullable(),
+  paymentTerms: nullablePaymentTerms,
   shippingAddress: z.string().max(500).optional().nullable(),
 });

@@ -541,6 +541,75 @@ async function testWorkspaceACL(tokenAyuta, tokenJrotek) {
   else fail('8e wrong status', `status=${r5.status}`);
 }
 
+// ─── TEST 10: Empty enum coercion (council CRITICAL regression) ───
+async function testEmptyEnumCoercion(token) {
+  section('TEST 10: Empty enum coercion (HTML <select> 미선택 케이스)');
+  const a = await withAuth(token);
+
+  // 10a) Clients: empty businessType, paymentTerms, status → 201 + defaults
+  const c1 = await a.post('/clients', {
+    name: '__TEST_enum_a__',
+    businessType: '', paymentTerms: '', status: '',
+    workspace: '아유타',
+  });
+  if (c1.status === 201 && c1.data.data.status === '신규') {
+    pass('10a clients POST with empty enums → 201 + status default');
+  } else {
+    fail('10a clients POST empty enums failed', `status=${c1.status} body=${JSON.stringify(c1.data).slice(0,200)}`);
+  }
+
+  // 10b) Clients UPDATE empty enums
+  const id1 = c1.data.data?.id;
+  if (id1) {
+    const u1 = await a.put(`/clients/${id1}`, {
+      businessType: '', paymentTerms: '',
+    }, { params: { workspace: '아유타' } });
+    if (u1.status === 200) pass('10b clients PUT empty enums → 200');
+    else fail('10b clients PUT empty enums failed', `status=${u1.status}`);
+  }
+
+  // 10c) Ayuta-buyers: 5 enum fields all empty
+  const c2 = await a.post('/ayuta-buyers', {
+    companyName: '__TEST_enum_buyer__',
+    businessType: '', size: '', source: '', status: '', interestLevel: '',
+    workspace: '아유타',
+  });
+  if (c2.status === 201 && c2.data.data.status === '신규문의') {
+    pass('10c ayuta-buyers POST with 5 empty enums → 201 + defaults');
+  } else {
+    fail('10c ayuta-buyers POST empty enums failed', `status=${c2.status} body=${JSON.stringify(c2.data).slice(0,200)}`);
+  }
+
+  // 10d) Project task: status, priority empty
+  // Need a project first
+  const proj = await a.post('/projects', { title: '__TEST_enum_proj__', workspace: '아유타' });
+  if (proj.status === 201) {
+    const t1 = await a.post(`/projects/${proj.data.data.id}/tasks`, {
+      title: '__TEST_enum_task__',
+      status: '', priority: '',
+    }, { params: { workspace: '아유타' } });
+    if (t1.status === 201 && t1.data.data.status === 'todo') {
+      pass('10d task POST with empty status/priority → 201 + defaults');
+    } else {
+      fail('10d task POST empty enums failed', `status=${t1.status} body=${JSON.stringify(t1.data).slice(0,200)}`);
+    }
+    // cleanup project
+    await a.delete(`/projects/${proj.data.data.id}`, { params: { workspace: '아유타' } });
+  }
+
+  // 10e) Verify INVALID enum still rejected (regression: don't make schemas too loose)
+  const bad = await a.post('/clients', {
+    name: '__TEST_enum_bad__',
+    businessType: 'NotARealType',
+    workspace: '아유타',
+  });
+  if (bad.status === 400 && bad.data?.error?.details?.some((d) => d.path[0] === 'businessType')) {
+    pass('10e invalid enum value still rejected (defensive)');
+  } else {
+    fail('10e invalid enum was accepted (BUG)', `status=${bad.status}`);
+  }
+}
+
 // ─── TEST 7: Clients enrichment (15 new fields) ────────────────
 async function testClientsEnrichment(token) {
   section('TEST 7: Clients enrichment (15 new fields)');
@@ -663,8 +732,9 @@ async function testClientsEnrichment(token) {
 
   // Run login-heavy tests BEFORE rate limit test (which trips the 10/min cap).
   await testWebSocketAuth(tokenAyuta);
-  await testWebSocketDocWorkspace(tokenAyuta, tokenJrotek); // NEW — council HIGH fix
+  await testWebSocketDocWorkspace(tokenAyuta, tokenJrotek);
   await testWorkspaceACL(tokenAyuta, tokenJrotek);
+  await testEmptyEnumCoercion(tokenAyuta); // NEW — council CRITICAL prevention
   await testTenantIsolation(tokenAyuta, tokenJrotek);
   await testAyutaBuyers(tokenAyuta);
   await testClientsEnrichment(tokenAyuta);

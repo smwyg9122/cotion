@@ -53,3 +53,24 @@ export const optionalUuid = emptyToUndefined(z.string().uuid().optional());
 export const optionalNullableUuid = emptyToUndefined(
   z.string().uuid().optional().nullable()
 );
+
+/**
+ * Wrap a Zod enum (typically `z.enum([...])`) so an unselected `<select>`
+ * (which submits `""`) is treated as "not provided" instead of an invalid
+ * enum value. Use for every optional/defaulted enum field that sources
+ * from a `<select>` element.
+ *
+ * Example:
+ *   businessType: optionalEnum(z.enum(['카페','로스터리','도매']))
+ */
+export function optionalEnum<T extends z.ZodEnum<any>>(schema: T) {
+  return emptyToUndefined(schema.optional());
+}
+
+/**
+ * Same as {@link optionalEnum} but accepts `null` as a "clear this value"
+ * signal (for PATCH/UPDATE schemas).
+ */
+export function optionalNullableEnum<T extends z.ZodEnum<any>>(schema: T) {
+  return emptyToUndefined(schema.optional().nullable());
+}
