@@ -122,13 +122,8 @@ async function testWebSocketAuth(token) {
     setTimeout(() => { try { ws.close(); } catch {} resolve(); }, 2000);
   });
 
-  // 1c) Valid token but mismatched userId → reject
+  // 1c) Valid token but mismatched userId → reject (don't even reach workspace check)
   await new Promise(async (resolve) => {
-    // We need real user id matching the token. Get from /auth/me.
-    const me = await axios.get(`${BASE}/auth/me`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const realUserId = me.data.data.id;
     const wrongId = '00000000-0000-0000-0000-000000000000';
     const ws = new WebSocket(`${WS_BASE}?doc=page-test&userId=${wrongId}&userName=anon&token=${token}`);
     let opened = false;
@@ -140,19 +135,8 @@ async function testWebSocketAuth(token) {
     });
     ws.on('error', () => {});
     setTimeout(() => { try { ws.close(); } catch {} resolve(); }, 2000);
-
-    // 1d) Valid token + matching userId → accept
-    setTimeout(() => {
-      const ws2 = new WebSocket(`${WS_BASE}?doc=page-test&userId=${realUserId}&userName=anon&token=${token}`);
-      let opened2 = false;
-      ws2.on('open', () => { opened2 = true; pass('1d valid token+userId accepted'); ws2.close(); });
-      ws2.on('close', () => {
-        if (!opened2) fail('1d valid token rejected (BUG)');
-      });
-      ws2.on('error', () => {});
-      setTimeout(() => { try { ws2.close(); } catch {} }, 2000);
-    }, 500);
   });
+  // NOTE: positive case (valid token + real page) is covered by TEST 9c.
 }
 
 // ─── TEST 2: Rate limit on login ───────────────────────────────
@@ -441,6 +425,90 @@ async function testAyutaBuyers(token) {
   else fail('6h delete failed', `status=${del.status}`);
 }
 
+// ─── TEST 9: WebSocket doc workspace scope ─────────────────────────
+async function testWebSocketDocWorkspace(tokenAyuta, tokenJrotek) {
+  section('TEST 9: WebSocket doc workspace scope (council HIGH fix)');
+
+  // Look up the actual userId for the Jrotek token and create a page in
+  // 아유타 via the Ayuta user, then have the Jrotek user try to join its
+  // collab session.
+  const ayutaMe = await axios.get(`${BASE}/auth/me`, {
+    headers: { Authorization: `Bearer ${tokenAyuta}` },
+  });
+  const ayutaUserId = ayutaMe.data.data.id;
+
+  const jrotekMe = await axios.get(`${BASE}/auth/me`, {
+    headers: { Authorization: `Bearer ${tokenJrotek}` },
+  });
+  const jrotekUserId = jrotekMe.data.data.id;
+
+  // Ayuta user creates a page in 아유타 workspace
+  const pageCreate = await axios.post(
+    `${BASE}/pages`,
+    { title: '__TEST_ws_page__', workspace: '아유타' },
+    { headers: { Authorization: `Bearer ${tokenAyuta}` }, validateStatus: () => true }
+  );
+  if (pageCreate.status !== 201) {
+    fail('9a setup: page create', `status=${pageCreate.status}`);
+    return;
+  }
+  const pageId = pageCreate.data.data.id;
+  pass('9a setup: page created in 아유타', `id=${pageId.slice(0, 8)}`);
+
+  // 9b) Jrotek user tries to join this Ayuta page's collab session → reject
+  await new Promise((resolve) => {
+    const ws = new WebSocket(
+      `${WS_BASE}?doc=page-${pageId}&userId=${jrotekUserId}&userName=jrotek&token=${tokenJrotek}`
+    );
+    let opened = false;
+    ws.on('open', () => { opened = true; ws.close(); });
+    ws.on('close', () => {
+      if (!opened) pass('9b cross-workspace WS join rejected');
+      else fail('9b cross-workspace WS join allowed (BUG)');
+      resolve();
+    });
+    ws.on('error', () => {});
+    setTimeout(() => { try { ws.close(); } catch {} resolve(); }, 2500);
+  });
+
+  // 9c) Ayuta user joining their own page works
+  await new Promise((resolve) => {
+    const ws = new WebSocket(
+      `${WS_BASE}?doc=page-${pageId}&userId=${ayutaUserId}&userName=ayuta&token=${tokenAyuta}`
+    );
+    let opened = false;
+    ws.on('open', () => { opened = true; pass('9c legit workspace WS join allowed'); ws.close(); });
+    ws.on('close', () => {
+      if (!opened) fail('9c legit WS join rejected (BUG)');
+      resolve();
+    });
+    ws.on('error', () => {});
+    setTimeout(() => { try { ws.close(); } catch {} resolve(); }, 2500);
+  });
+
+  // 9d) Bogus doc shape (not page-UUID) → reject
+  await new Promise((resolve) => {
+    const ws = new WebSocket(
+      `${WS_BASE}?doc=garbage-shape&userId=${ayutaUserId}&userName=ayuta&token=${tokenAyuta}`
+    );
+    let opened = false;
+    ws.on('open', () => { opened = true; ws.close(); });
+    ws.on('close', () => {
+      if (!opened) pass('9d unknown doc shape rejected');
+      else fail('9d unknown doc shape allowed (BUG)');
+      resolve();
+    });
+    ws.on('error', () => {});
+    setTimeout(() => { try { ws.close(); } catch {} resolve(); }, 2500);
+  });
+
+  // cleanup: delete the test page
+  await axios.delete(`${BASE}/pages/${pageId}`, {
+    headers: { Authorization: `Bearer ${tokenAyuta}` },
+    validateStatus: () => true,
+  });
+}
+
 // ─── TEST 8: Workspace ACL — user must be in allowed_workspaces ───
 async function testWorkspaceACL(tokenAyuta, tokenJrotek) {
   section('TEST 8: Workspace ACL (regression for council CRITICAL finding)');
@@ -595,7 +663,8 @@ async function testClientsEnrichment(token) {
 
   // Run login-heavy tests BEFORE rate limit test (which trips the 10/min cap).
   await testWebSocketAuth(tokenAyuta);
-  await testWorkspaceACL(tokenAyuta, tokenJrotek); // NEW — council CRITICAL fix
+  await testWebSocketDocWorkspace(tokenAyuta, tokenJrotek); // NEW — council HIGH fix
+  await testWorkspaceACL(tokenAyuta, tokenJrotek);
   await testTenantIsolation(tokenAyuta, tokenJrotek);
   await testAyutaBuyers(tokenAyuta);
   await testClientsEnrichment(tokenAyuta);

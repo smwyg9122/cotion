@@ -3,6 +3,8 @@ import { WebSocketServer, WebSocket } from 'ws';
 // @ts-ignore - y-websocket doesn't have type definitions
 import { setupWSConnection } from 'y-websocket/bin/utils';
 import { JWTService, JWTPayload } from '../services/jwt.service';
+import { db } from '../database/connection';
+import { getUserAccessibleWorkspaces } from '../services/pages.service';
 
 /**
  * Verify the JWT carried as `?token=` on the WebSocket upgrade URL.
@@ -33,13 +35,52 @@ function rejectUpgrade(socket: any, statusCode: number, reason: string) {
   socket.destroy();
 }
 
+/**
+ * The FE sends `doc=page-<uuid>` for page collaboration sessions. Extract
+ * the UUID so we can look up `pages.workspace` and verify the connecting
+ * user has access to that workspace. Returns null for invalid shapes.
+ */
+function extractPageIdFromDocName(docName: string): string | null {
+  const m = /^page-([0-9a-f-]+)$/i.exec(docName);
+  return m ? m[1] : null;
+}
+
+/**
+ * Resolve the page-scoped collab session's workspace and verify the user
+ * is allowed in. Returns:
+ *   - { ok: true }                 → session allowed
+ *   - { ok: false, status, reason } → reject with that HTTP status
+ */
+async function authorizeDocAccess(
+  userId: string,
+  docName: string
+): Promise<{ ok: true } | { ok: false; status: number; reason: string }> {
+  const pageId = extractPageIdFromDocName(docName);
+  if (!pageId) {
+    // Unknown doc shape — reject rather than fail open. If a non-page doc
+    // shape is ever needed, allowlist it explicitly here.
+    return { ok: false, status: 403, reason: 'Forbidden' };
+  }
+
+  const page = await db('pages').where({ id: pageId }).select('workspace', 'is_deleted').first();
+  if (!page) return { ok: false, status: 404, reason: 'Not Found' };
+  if (page.is_deleted) return { ok: false, status: 404, reason: 'Not Found' };
+
+  const allowed = await getUserAccessibleWorkspaces(userId);
+  if (allowed === null) return { ok: true }; // superadmin
+  if (!allowed.includes(page.workspace)) {
+    return { ok: false, status: 403, reason: 'Forbidden' };
+  }
+  return { ok: true };
+}
+
 export function initializeWebSocketServer(server: any) {
   const wss = new WebSocketServer({
     noServer: true,
   });
 
-  // Handle WebSocket upgrade with auth
-  server.on('upgrade', (request: IncomingMessage, socket: any, head: Buffer) => {
+  // Handle WebSocket upgrade with auth + page→workspace authorization
+  server.on('upgrade', async (request: IncomingMessage, socket: any, head: Buffer) => {
     const pathname = new URL(request.url || '', `http://${request.headers.host}`).pathname;
 
     if (pathname !== '/collaboration') {
@@ -63,6 +104,22 @@ export function initializeWebSocketServer(server: any) {
       return;
     }
 
+    // 3. Verify the page (`doc=page-UUID`) belongs to a workspace the user
+    //    can access. Without this, an authenticated user could join the
+    //    collab session for any page if they know its UUID.
+    const docName = url.searchParams.get('doc') || '';
+    try {
+      const auth = await authorizeDocAccess(payload.userId, docName);
+      if (!auth.ok) {
+        rejectUpgrade(socket, auth.status, auth.reason);
+        return;
+      }
+    } catch (err) {
+      console.error('WS doc authorize failed:', err);
+      rejectUpgrade(socket, 500, 'Internal Server Error');
+      return;
+    }
+
     wss.handleUpgrade(request, socket, head, (ws: WebSocket) => {
       // Stash verified user for downstream logging/audit.
       (ws as any).user = payload;
@@ -78,7 +135,7 @@ export function initializeWebSocketServer(server: any) {
 
     console.log(`📡 User "${userName}" (${userId}) connected to document: ${docName}`);
 
-    // y-websocket handles CRDT sync. Auth was enforced in the upgrade handler.
+    // y-websocket handles CRDT sync. Auth + workspace access enforced above.
     setupWSConnection(conn, req, { docName, gc: true });
 
     conn.on('close', () => {
@@ -86,6 +143,6 @@ export function initializeWebSocketServer(server: any) {
     });
   });
 
-  console.log(`🔄 Yjs WebSocket collaboration server initialized (JWT-protected)`);
+  console.log(`🔄 Yjs WebSocket collaboration server initialized (JWT + workspace-protected)`);
   return wss;
 }

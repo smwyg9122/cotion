@@ -413,6 +413,15 @@ export class AdminService {
       allowed_workspaces: JSON.stringify(workspaces),
     });
 
+    // Invalidate the per-user workspace cache so assertWorkspaceAccess
+    // sees the new membership on the user's next request, not after TTL.
+    try {
+      const { invalidatePagesWorkspaceCache } = require('./pages.service');
+      invalidatePagesWorkspaceCache(userId);
+    } catch {
+      // best-effort
+    }
+
     return { userId, workspaceName, message: '워크스페이스 멤버가 추가되었습니다' };
   }
 
@@ -444,6 +453,15 @@ export class AdminService {
     await db('users').where({ id: userId }).update({
       allowed_workspaces: JSON.stringify(workspaces),
     });
+
+    // CRITICAL: invalidate cache immediately so revoked access takes effect
+    // on the user's next request (not 60s later).
+    try {
+      const { invalidatePagesWorkspaceCache } = require('./pages.service');
+      invalidatePagesWorkspaceCache(userId);
+    } catch {
+      // best-effort
+    }
 
     return { userId, workspaceName, message: '워크스페이스 멤버가 제거되었습니다' };
   }
