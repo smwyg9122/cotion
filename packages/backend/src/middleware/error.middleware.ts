@@ -85,13 +85,16 @@ export function errorHandler(
   const isDev = process.env.NODE_ENV !== 'production';
 
   if (pgCode === '42703' || /column .* does not exist/i.test(pgMessage)) {
+    // pg 42703 most commonly means "code references a column the DB
+    // doesn't have" — usually missed migrations after deploy, but also
+    // possible for a coding bug (typo'd column name). Phrase the user
+    // message generically; ops can read devMessage / server log to
+    // distinguish.
     return res.status(503).json({
       success: false,
       error: {
         code: 'SCHEMA_OUT_OF_SYNC',
-        message:
-          '데이터베이스 스키마가 최신 코드와 일치하지 않습니다. ' +
-          '관리자에게 알려주세요(배포 직후 마이그레이션이 누락된 경우입니다).',
+        message: '코드와 DB 스키마가 일치하지 않습니다. 관리자에게 알려주세요.',
         ...(isDev ? { devMessage: error.message } : {}),
       },
     });

@@ -44,23 +44,43 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Schema health — lists key columns the latest code expects so we can
-// confirm production migrations ran. Returns { ok: true, missing: [] }
-// when fresh, or { ok: false, missing: [...] } when stale.
+// Schema health — lists every column the latest code reads or writes so
+// we can confirm production migrations are caught up. Returns
+// { ok: true, missing: [] } when fresh, or { ok, missing: [...] } when
+// stale (HTTP 503 so a smoke test can fail loudly).
+//
+// Coverage is exhaustive for the recently-enriched tables (clients,
+// ayuta_buyers) plus the auth fields the rest of the app depends on.
+// When a new column is added in a migration, append it here too.
 app.get('/health/schema', async (req, res) => {
   try {
     const { db } = await import('./database/connection');
-    // Spot-check the most recently added columns (latest migration batches).
-    // If these exist, prior migrations almost certainly did too.
     const expected: Array<[string, string]> = [
+      // ─── clients (every column current code writes — see clients.service.create) ───
       ['clients', 'kakao_id'],
+      ['clients', 'instagram'],
+      ['clients', 'region'],
+      ['clients', 'business_type'],
       ['clients', 'status'],
+      ['clients', 'follow_up_date'],
+      ['clients', 'first_order_date'],
+      ['clients', 'last_order_date'],
       ['clients', 'total_order_amount'],
+      ['clients', 'monthly_volume_kg'],
+      ['clients', 'preferred_items'],
       ['clients', 'tax_id'],
+      ['clients', 'invoice_email'],
+      ['clients', 'payment_terms'],
+      ['clients', 'shipping_address'],
+      // ─── ayuta_buyers ───
       ['ayuta_buyers', 'company_name'],
       ['ayuta_buyers', 'interest_items'],
+      ['ayuta_buyers', 'follow_up_date'],
+      ['ayuta_buyers', 'interest_level'],
+      // ─── auth-related ───
       ['users', 'is_active'],
       ['users', 'allowed_workspaces'],
+      ['sessions', 'refresh_token'],
     ];
     const missing: string[] = [];
     for (const [table, column] of expected) {
@@ -70,10 +90,14 @@ app.get('/health/schema', async (req, res) => {
     res.status(missing.length ? 503 : 200).json({
       ok: missing.length === 0,
       missing,
+      checkedColumns: expected.length,
       checkedAt: new Date().toISOString(),
     });
   } catch (e) {
-    res.status(500).json({ ok: false, error: (e as Error).message });
+    // Don't leak DB internals (connection strings, library stack); a
+    // sanitized message is enough for ops to know the check itself broke.
+    console.error('/health/schema failed:', e);
+    res.status(500).json({ ok: false, error: 'schema check failed' });
   }
 });
 
@@ -108,6 +132,11 @@ async function startServer() {
     // Run pending migrations. If they fail, EXIT — a silent server with
     // stale schema produces mysterious 500s on every write attempt. Better
     // to fail loudly so the deploy is marked broken and gets attention.
+    //
+    // Break-glass: set SKIP_MIGRATIONS=1 to start the server even on
+    // migration failure. Only for emergencies (e.g. rolling back code
+    // while a forward migration is buggy); the server will run with stale
+    // schema and writes will still 500 until fixed.
     try {
       const { db } = await import('./database/connection');
       const [batch, migrations] = await db.migrate.latest();
@@ -118,13 +147,17 @@ async function startServer() {
       }
     } catch (migrationError) {
       const err = migrationError as Error;
-      console.error('❌ Migration failed — aborting startup:');
+      console.error('❌ Migration failed:');
       console.error('   message:', err.message);
       console.error('   stack:', err.stack);
-      console.error('');
-      console.error('   The server will NOT start. Fix the migration and redeploy.');
-      console.error('   Running the app with stale schema causes silent 500s on writes.');
-      process.exit(1);
+      if (process.env.SKIP_MIGRATIONS === '1') {
+        console.error('   SKIP_MIGRATIONS=1 set — starting anyway (writes may 500).');
+      } else {
+        console.error('');
+        console.error('   The server will NOT start. Fix the migration and redeploy.');
+        console.error('   Set SKIP_MIGRATIONS=1 to override (emergencies only).');
+        process.exit(1);
+      }
     }
 
     // Initialize scheduled jobs (meeting templates, followup notifications)
