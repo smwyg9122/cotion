@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { formatApiError } from '../../utils/apiError';
+import { formatPhoneNumber } from '../../utils/phone';
 import { Modal } from '../common/Modal';
 
 interface ClientsPageProps {
@@ -679,8 +680,9 @@ function ClientForm({ formData, setFormData, teamUsers, onSave, onCancel, isEdit
               onChange={(e) => update('contactPerson', e.target.value)} placeholder="담당자 이름" />
           </Field>
           <Field label="연락처">
-            <input className={input} type="text" value={formData.phone}
-              onChange={(e) => update('phone', e.target.value)} placeholder="010-0000-0000" />
+            <input className={input} type="tel" inputMode="numeric" value={formData.phone}
+              onChange={(e) => update('phone', formatPhoneNumber(e.target.value))}
+              placeholder="010-0000-0000" maxLength={13} />
           </Field>
           <Field label="이메일">
             <input className={input} type="email" value={formData.email}

@@ -44,6 +44,39 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// Schema health — lists key columns the latest code expects so we can
+// confirm production migrations ran. Returns { ok: true, missing: [] }
+// when fresh, or { ok: false, missing: [...] } when stale.
+app.get('/health/schema', async (req, res) => {
+  try {
+    const { db } = await import('./database/connection');
+    // Spot-check the most recently added columns (latest migration batches).
+    // If these exist, prior migrations almost certainly did too.
+    const expected: Array<[string, string]> = [
+      ['clients', 'kakao_id'],
+      ['clients', 'status'],
+      ['clients', 'total_order_amount'],
+      ['clients', 'tax_id'],
+      ['ayuta_buyers', 'company_name'],
+      ['ayuta_buyers', 'interest_items'],
+      ['users', 'is_active'],
+      ['users', 'allowed_workspaces'],
+    ];
+    const missing: string[] = [];
+    for (const [table, column] of expected) {
+      const ok = await db.schema.hasColumn(table, column);
+      if (!ok) missing.push(`${table}.${column}`);
+    }
+    res.status(missing.length ? 503 : 200).json({
+      ok: missing.length === 0,
+      missing,
+      checkedAt: new Date().toISOString(),
+    });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: (e as Error).message });
+  }
+});
+
 // API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/pages', pagesRoutes);
@@ -72,7 +105,9 @@ async function startServer() {
       process.exit(1);
     }
 
-    // Run pending migrations
+    // Run pending migrations. If they fail, EXIT — a silent server with
+    // stale schema produces mysterious 500s on every write attempt. Better
+    // to fail loudly so the deploy is marked broken and gets attention.
     try {
       const { db } = await import('./database/connection');
       const [batch, migrations] = await db.migrate.latest();
@@ -82,7 +117,14 @@ async function startServer() {
         console.log('✅ Database migrations up to date');
       }
     } catch (migrationError) {
-      console.error('⚠️ Migration failed (server will continue):', (migrationError as Error).message, (migrationError as Error).stack);
+      const err = migrationError as Error;
+      console.error('❌ Migration failed — aborting startup:');
+      console.error('   message:', err.message);
+      console.error('   stack:', err.stack);
+      console.error('');
+      console.error('   The server will NOT start. Fix the migration and redeploy.');
+      console.error('   Running the app with stale schema causes silent 500s on writes.');
+      process.exit(1);
     }
 
     // Initialize scheduled jobs (meeting templates, followup notifications)

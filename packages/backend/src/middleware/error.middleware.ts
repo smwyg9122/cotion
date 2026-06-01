@@ -77,9 +77,50 @@ export function errorHandler(
     stack: error.stack?.split('\n').slice(0, 5).join('\n'),
   });
 
+  // ─── Friendly translations for common pg errors ────────────────
+  // The user shouldn't see "column "kakao_id" of relation "clients" does
+  // not exist". Catch known patterns and surface actionable text.
+  const pgCode = (error as any).code as string | undefined;
+  const pgMessage = String(error.message || '');
+  const isDev = process.env.NODE_ENV !== 'production';
+
+  if (pgCode === '42703' || /column .* does not exist/i.test(pgMessage)) {
+    return res.status(503).json({
+      success: false,
+      error: {
+        code: 'SCHEMA_OUT_OF_SYNC',
+        message:
+          '데이터베이스 스키마가 최신 코드와 일치하지 않습니다. ' +
+          '관리자에게 알려주세요(배포 직후 마이그레이션이 누락된 경우입니다).',
+        ...(isDev ? { devMessage: error.message } : {}),
+      },
+    });
+  }
+
+  if (pgCode === '23505') {
+    return res.status(409).json({
+      success: false,
+      error: {
+        code: 'CONFLICT',
+        message: '이미 같은 값이 존재합니다.',
+        ...(isDev ? { devMessage: error.message } : {}),
+      },
+    });
+  }
+
+  if (pgCode === '23503') {
+    return res.status(409).json({
+      success: false,
+      error: {
+        code: 'FK_VIOLATION',
+        message: '연결된 데이터가 없거나 이미 삭제됐습니다.',
+        ...(isDev ? { devMessage: error.message } : {}),
+      },
+    });
+  }
+
   // Never echo raw error.message to clients — it can leak DB column names,
   // file paths, library internals, etc. Detailed info stays in server logs.
-  const isDev = process.env.NODE_ENV !== 'production';
   return res.status(500).json({
     success: false,
     error: {

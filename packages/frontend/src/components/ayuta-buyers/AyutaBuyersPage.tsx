@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { formatApiError } from '../../utils/apiError';
+import { formatPhoneNumber } from '../../utils/phone';
 import { Modal } from '../common/Modal';
 import type {
   AyutaBuyer,
@@ -924,7 +925,7 @@ function BuyerForm({ formData, setFormData, onSave, onCancel, isEdit, toggleInte
             <input type="text" value={formData.contactPerson} onChange={(e) => update('contactPerson', e.target.value)} className="claude-input w-full px-3 py-2 text-sm" placeholder="담당자 이름" />
           </Field>
           <Field label="연락처">
-            <input type="text" value={formData.phone} onChange={(e) => update('phone', e.target.value)} className="claude-input w-full px-3 py-2 text-sm" placeholder="010-0000-0000" />
+            <input type="tel" inputMode="numeric" value={formData.phone} onChange={(e) => update('phone', formatPhoneNumber(e.target.value))} className="claude-input w-full px-3 py-2 text-sm" placeholder="010-0000-0000" maxLength={13} />
           </Field>
           <Field label="이메일">
             <input type="email" value={formData.email} onChange={(e) => update('email', e.target.value)} className="claude-input w-full px-3 py-2 text-sm" placeholder="example@email.com" />
