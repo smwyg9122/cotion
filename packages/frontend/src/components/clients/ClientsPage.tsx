@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { formatApiError } from '../../utils/apiError';
-import { formatPhoneNumber } from '../../utils/phone';
+import { formatPhoneNumber, formatBusinessNumber } from '../../utils/phone';
 import { Modal } from '../common/Modal';
 
 interface ClientsPageProps {
@@ -38,7 +38,6 @@ const STATUS_STYLES: Record<ClientStatus, { bg: string; text: string; dot: strin
 interface Client {
   id: string;
   name: string;
-  contactPerson: string;
   phone: string;
   email: string;
   address: string;
@@ -73,7 +72,6 @@ interface Client {
 
 interface ClientFormData {
   name: string;
-  contactPerson: string;
   phone: string;
   email: string;
   address: string;
@@ -101,7 +99,6 @@ interface ClientFormData {
 
 const INITIAL_FORM: ClientFormData = {
   name: '',
-  contactPerson: '',
   phone: '',
   email: '',
   address: '',
@@ -208,7 +205,6 @@ export function ClientsPage({ workspace }: ClientsPageProps) {
     setSelectedClient(client);
     setFormData({
       name: client.name || '',
-      contactPerson: client.contactPerson || '',
       phone: client.phone || '',
       email: client.email || '',
       address: client.address || '',
@@ -255,7 +251,6 @@ export function ClientsPage({ workspace }: ClientsPageProps) {
 
     return {
       name: formData.name.trim(),
-      contactPerson: strOpt(formData.contactPerson),
       phone: strOpt(formData.phone),
       email: strOpt(formData.email),
       address: strOpt(formData.address),
@@ -398,7 +393,6 @@ export function ClientsPage({ workspace }: ClientsPageProps) {
                 <thead>
                   <tr className="bg-gray-50 border-b border-gray-200">
                     <th className="text-left px-4 py-3 text-xs font-semibold text-gray-700 uppercase tracking-wide">이름</th>
-                    <th className="text-left px-3 py-3 text-xs font-semibold text-gray-700 uppercase tracking-wide">담당자</th>
                     <th className="text-left px-3 py-3 text-xs font-semibold text-gray-700 uppercase tracking-wide">연락처</th>
                     <th className="text-left px-3 py-3 text-xs font-semibold text-gray-700 uppercase tracking-wide">업종/지역</th>
                     <th className="text-left px-3 py-3 text-xs font-semibold text-gray-700 uppercase tracking-wide">거래 상태</th>
@@ -414,7 +408,6 @@ export function ClientsPage({ workspace }: ClientsPageProps) {
                       className="border-b border-gray-100 hover:bg-emerald-50/30 transition-colors"
                     >
                       <td className="px-4 py-3 text-sm font-medium text-gray-900">{client.name}</td>
-                      <td className="px-3 py-3 text-sm text-gray-700">{client.contactPerson || '—'}</td>
                       <td className="px-3 py-3 text-sm text-gray-700">
                         <div className="space-y-0.5">
                           {client.phone && <div>{client.phone}</div>}
@@ -586,10 +579,6 @@ function ClientForm({ formData, setFormData, teamUsers, onSave, onCancel, isEdit
             <input className={input} type="text" value={formData.name}
               onChange={(e) => update('name', e.target.value)} placeholder="거래처명" />
           </Field>
-          <Field label="담당자">
-            <input className={input} type="text" value={formData.contactPerson}
-              onChange={(e) => update('contactPerson', e.target.value)} placeholder="담당자 이름" />
-          </Field>
           <Field label="연락처">
             <input className={input} type="tel" inputMode="numeric" value={formData.phone}
               onChange={(e) => update('phone', formatPhoneNumber(e.target.value))}
@@ -683,8 +672,9 @@ function ClientForm({ formData, setFormData, teamUsers, onSave, onCancel, isEdit
       <Section title="청구 정보 (B2B)">
         <Grid>
           <Field label="사업자등록번호">
-            <input className={input} type="text" value={formData.taxId}
-              onChange={(e) => update('taxId', e.target.value)} placeholder="000-00-00000" />
+            <input className={input} type="text" inputMode="numeric" value={formData.taxId}
+              onChange={(e) => update('taxId', formatBusinessNumber(e.target.value))}
+              placeholder="000-00-00000" maxLength={12} />
           </Field>
           <Field label="세금계산서 이메일">
             <input className={input} type="email" value={formData.invoiceEmail}

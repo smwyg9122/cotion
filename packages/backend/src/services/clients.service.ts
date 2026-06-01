@@ -51,7 +51,6 @@ function mapClientToResponse(row: any): Client {
   return {
     id: row.id,
     name: row.name,
-    contactPerson: row.contact_person,
     phone: row.phone,
     email: row.email,
     address: row.address,
@@ -141,7 +140,6 @@ export class ClientsService {
     const [row] = await db('clients')
       .insert({
         name: input.name,
-        contact_person: input.contactPerson || null,
         phone: input.phone || null,
         email: input.email || null,
         address: input.address || null,
@@ -203,7 +201,6 @@ export class ClientsService {
 
     const updateFields: any = { updated_at: db.fn.now() };
     if (input.name !== undefined) updateFields.name = input.name;
-    if (input.contactPerson !== undefined) updateFields.contact_person = input.contactPerson;
     if (input.phone !== undefined) updateFields.phone = input.phone;
     if (input.email !== undefined) updateFields.email = input.email;
     if (input.address !== undefined) updateFields.address = input.address;

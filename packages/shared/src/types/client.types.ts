@@ -27,7 +27,6 @@ export interface Client {
 
   // 기본 정보
   name: string;
-  contactPerson: string | null;
   phone: string | null;
   email: string | null;
   address: string | null;
@@ -68,7 +67,6 @@ export interface Client {
 
 export interface ClientCreateInput {
   name: string;
-  contactPerson?: string;
   phone?: string;
   email?: string;
   address?: string;
@@ -100,7 +98,6 @@ export interface ClientCreateInput {
 
 export interface ClientUpdateInput {
   name?: string;
-  contactPerson?: string | null;
   phone?: string | null;
   email?: string | null;
   address?: string | null;

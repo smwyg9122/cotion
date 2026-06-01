@@ -35,3 +35,17 @@ export function formatPhoneNumber(raw: string | undefined | null): string {
   if (digits.length <= 10) return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
   return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`;
 }
+
+/**
+ * Korean business registration number (사업자등록번호) formatter.
+ * Format is fixed 3-2-5 → "000-00-00000" (10 digits total).
+ * Strips non-digits, caps at 10, inserts hyphens as the user types.
+ */
+export function formatBusinessNumber(raw: string | undefined | null): string {
+  if (!raw) return '';
+  const d = String(raw).replace(/\D/g, '').slice(0, 10);
+  if (d.length === 0) return '';
+  if (d.length <= 3) return d;
+  if (d.length <= 5) return `${d.slice(0, 3)}-${d.slice(3)}`;
+  return `${d.slice(0, 3)}-${d.slice(3, 5)}-${d.slice(5)}`;
+}

@@ -42,7 +42,6 @@ const optionalInvoiceEmail = optionalEmail;
 
 export const clientCreateSchema = z.object({
   name: z.string().min(1, '이름을 입력하세요').max(200),
-  contactPerson: z.string().max(200).optional(),
   phone: z.string().max(50).optional(),
   email: optionalEmail,
   address: z.string().max(500).optional(),
@@ -76,7 +75,6 @@ export const clientCreateSchema = z.object({
 
 export const clientUpdateSchema = z.object({
   name: z.string().min(1).max(200).optional(),
-  contactPerson: z.string().max(200).optional().nullable(),
   phone: z.string().max(50).optional().nullable(),
   email: optionalEmail,
   address: z.string().max(500).optional().nullable(),

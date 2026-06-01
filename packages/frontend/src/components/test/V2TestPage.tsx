@@ -172,7 +172,6 @@ export function V2TestPage({ workspace }: { workspace: string }) {
       await runTest(g0, 1, async () => {
         const res = await api.post('/clients', {
           name: '__TEST_거래처__',
-          contactPerson: '테스트담당자',
           phone: '010-0000-0000',
           email: 'test@test.com',
           address: '서울시 테스트구',
