@@ -24,6 +24,9 @@ const config: { [key: string]: Knex.Config } = {
       directory: path.join(__dirname, 'src/database/migrations'),
       extension: 'ts',
       loadExtensions: ['.ts'],
+      // See connection.ts — tolerate already-applied migrations whose files
+      // were renamed/removed (the create_superadmin timestamp-collision fix).
+      disableMigrationsListValidation: true,
     },
     seeds: {
       directory: path.join(__dirname, 'src/database/seeds'),
@@ -44,6 +47,7 @@ const config: { [key: string]: Knex.Config } = {
       directory: path.join(__dirname, 'database/migrations'),
       extension: isProduction ? 'js' : 'ts',
       loadExtensions: isProduction ? ['.js'] : ['.ts'],
+      disableMigrationsListValidation: true,
     },
   },
 };
