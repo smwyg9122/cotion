@@ -10,18 +10,12 @@ export const clientsController = {
     const workspace = (req.query.workspace as string) || '';
     await assertWorkspaceAccess(req.user!.userId, workspace);
 
-    const visited = req.query.visited as string;
-    const cuppingDone = req.query.cuppingDone as string;
-    const purchased = req.query.purchased as string;
     const assignedTo = req.query.assignedTo as string;
     const status = req.query.status as string;
     const businessType = req.query.businessType as string;
     const region = req.query.region as string;
 
     const clients = await ClientsService.getAll(workspace, {
-      visited: visited ? visited === 'true' : undefined,
-      cuppingDone: cuppingDone ? cuppingDone === 'true' : undefined,
-      purchased: purchased ? purchased === 'true' : undefined,
       assignedTo,
       status: status || undefined,
       businessType: businessType || undefined,

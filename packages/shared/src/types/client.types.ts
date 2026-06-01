@@ -32,11 +32,6 @@ export interface Client {
   email: string | null;
   address: string | null;
 
-  // 진행 체크 (in-place toggle)
-  visited: boolean;
-  cuppingDone: boolean;
-  purchased: boolean;
-
   // 담당자
   assignedTo: string | null;
   assignedToName?: string;
@@ -77,9 +72,6 @@ export interface ClientCreateInput {
   phone?: string;
   email?: string;
   address?: string;
-  visited?: boolean;
-  cuppingDone?: boolean;
-  purchased?: boolean;
   assignedTo?: string;
   notes?: string;
   workspace: string;
@@ -112,9 +104,6 @@ export interface ClientUpdateInput {
   phone?: string | null;
   email?: string | null;
   address?: string | null;
-  visited?: boolean;
-  cuppingDone?: boolean;
-  purchased?: boolean;
   assignedTo?: string | null;
   notes?: string | null;
 

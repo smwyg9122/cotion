@@ -42,9 +42,6 @@ interface Client {
   phone: string;
   email: string;
   address: string;
-  visited: boolean;
-  cuppingDone: boolean;
-  purchased: boolean;
   assignedTo: string;
   notes: string;
   workspace: string;
@@ -80,9 +77,6 @@ interface ClientFormData {
   phone: string;
   email: string;
   address: string;
-  visited: boolean;
-  cuppingDone: boolean;
-  purchased: boolean;
   assignedTo: string;
   notes: string;
 
@@ -111,9 +105,6 @@ const INITIAL_FORM: ClientFormData = {
   phone: '',
   email: '',
   address: '',
-  visited: false,
-  cuppingDone: false,
-  purchased: false,
   assignedTo: '',
   notes: '',
 
@@ -136,8 +127,6 @@ const INITIAL_FORM: ClientFormData = {
   shippingAddress: '',
 };
 
-type FilterType = 'all' | 'visited' | 'cupping' | 'purchased';
-
 interface TeamUser {
   id: string;
   name: string;
@@ -150,7 +139,6 @@ export function ClientsPage({ workspace }: ClientsPageProps) {
   const [teamUsers, setTeamUsers] = useState<TeamUser[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [filter, setFilter] = useState<FilterType>('all');
   const [statusFilter, setStatusFilter] = useState<ClientStatus | ''>('');
   const [businessFilter, setBusinessFilter] = useState<ClientBusinessType | ''>('');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -204,14 +192,11 @@ export function ClientsPage({ workspace }: ClientsPageProps) {
 
   const filteredClients = useMemo(() => {
     return clients.filter((client) => {
-      if (filter === 'visited' && !client.visited) return false;
-      if (filter === 'cupping' && !client.cuppingDone) return false;
-      if (filter === 'purchased' && !client.purchased) return false;
       if (statusFilter && client.status !== statusFilter) return false;
       if (businessFilter && client.businessType !== businessFilter) return false;
       return true;
     });
-  }, [clients, filter, statusFilter, businessFilter]);
+  }, [clients, statusFilter, businessFilter]);
 
   const handleOpenAdd = () => {
     setSelectedClient(null);
@@ -227,9 +212,6 @@ export function ClientsPage({ workspace }: ClientsPageProps) {
       phone: client.phone || '',
       email: client.email || '',
       address: client.address || '',
-      visited: client.visited,
-      cuppingDone: client.cuppingDone,
-      purchased: client.purchased,
       assignedTo: client.assignedTo || '',
       notes: client.notes || '',
 
@@ -277,9 +259,6 @@ export function ClientsPage({ workspace }: ClientsPageProps) {
       phone: strOpt(formData.phone),
       email: strOpt(formData.email),
       address: strOpt(formData.address),
-      visited: formData.visited,
-      cuppingDone: formData.cuppingDone,
-      purchased: formData.purchased,
       assignedTo: strOpt(formData.assignedTo),
       notes: strOpt(formData.notes),
 
@@ -338,16 +317,6 @@ export function ClientsPage({ workspace }: ClientsPageProps) {
     }
   };
 
-  const handleToggleField = async (client: Client, field: 'visited' | 'cuppingDone' | 'purchased') => {
-    try {
-      await api.put(`/clients/${client.id}`, { [field]: !client[field] }, { params: { workspace } });
-      setClients((prev) => prev.map((c) => (c.id === client.id ? { ...c, [field]: !c[field] } : c)));
-    } catch (err: any) {
-      console.error('Failed to update client:', err);
-      alert(formatApiError(err, '상태 변경에 실패했습니다.'));
-    }
-  };
-
   const handleQuickStatusChange = async (client: Client, status: ClientStatus) => {
     try {
       await api.put(`/clients/${client.id}`, { status }, { params: { workspace } });
@@ -357,13 +326,6 @@ export function ClientsPage({ workspace }: ClientsPageProps) {
       alert(formatApiError(err, '상태 변경에 실패했습니다.'));
     }
   };
-
-  const FILTERS: { key: FilterType; label: string }[] = [
-    { key: 'all', label: '전체' },
-    { key: 'visited', label: '방문완료' },
-    { key: 'cupping', label: '커핑완료' },
-    { key: 'purchased', label: '구매완료' },
-  ];
 
   return (
     <div className="h-full flex flex-col bg-gray-50">
@@ -386,43 +348,28 @@ export function ClientsPage({ workspace }: ClientsPageProps) {
             </button>
           </div>
 
-          {/* Filter tabs + dropdowns */}
+          {/* Filter dropdowns */}
           <div className="flex flex-wrap items-center gap-2">
-            {FILTERS.map((f) => (
+            <FilterSelect
+              value={statusFilter}
+              onChange={(v) => setStatusFilter(v as ClientStatus | '')}
+              placeholder="거래 상태"
+              options={STATUSES.map((s) => ({ value: s, label: s }))}
+            />
+            <FilterSelect
+              value={businessFilter}
+              onChange={(v) => setBusinessFilter(v as ClientBusinessType | '')}
+              placeholder="업종"
+              options={BUSINESS_TYPES.map((b) => ({ value: b, label: b }))}
+            />
+            {(statusFilter || businessFilter) && (
               <button
-                key={f.key}
-                onClick={() => setFilter(f.key)}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  filter === f.key
-                    ? 'bg-emerald-600 text-white'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                }`}
+                onClick={() => { setStatusFilter(''); setBusinessFilter(''); }}
+                className="px-2 py-1 text-xs text-gray-500 hover:text-gray-800"
               >
-                {f.label}
+                필터 초기화
               </button>
-            ))}
-            <div className="ml-3 flex items-center gap-2">
-              <FilterSelect
-                value={statusFilter}
-                onChange={(v) => setStatusFilter(v as ClientStatus | '')}
-                placeholder="거래 상태"
-                options={STATUSES.map((s) => ({ value: s, label: s }))}
-              />
-              <FilterSelect
-                value={businessFilter}
-                onChange={(v) => setBusinessFilter(v as ClientBusinessType | '')}
-                placeholder="업종"
-                options={BUSINESS_TYPES.map((b) => ({ value: b, label: b }))}
-              />
-              {(statusFilter || businessFilter) && (
-                <button
-                  onClick={() => { setStatusFilter(''); setBusinessFilter(''); }}
-                  className="px-2 py-1 text-xs text-gray-500 hover:text-gray-800"
-                >
-                  필터 초기화
-                </button>
-              )}
-            </div>
+            )}
           </div>
         </div>
       </div>
@@ -455,9 +402,6 @@ export function ClientsPage({ workspace }: ClientsPageProps) {
                     <th className="text-left px-3 py-3 text-xs font-semibold text-gray-700 uppercase tracking-wide">연락처</th>
                     <th className="text-left px-3 py-3 text-xs font-semibold text-gray-700 uppercase tracking-wide">업종/지역</th>
                     <th className="text-left px-3 py-3 text-xs font-semibold text-gray-700 uppercase tracking-wide">거래 상태</th>
-                    <th className="text-center px-3 py-3 text-xs font-semibold text-gray-700 uppercase tracking-wide">방문</th>
-                    <th className="text-center px-3 py-3 text-xs font-semibold text-gray-700 uppercase tracking-wide">커핑</th>
-                    <th className="text-center px-3 py-3 text-xs font-semibold text-gray-700 uppercase tracking-wide">구매</th>
                     <th className="text-right px-3 py-3 text-xs font-semibold text-gray-700 uppercase tracking-wide">누적 거래액</th>
                     <th className="text-left px-3 py-3 text-xs font-semibold text-gray-700 uppercase tracking-wide">배정</th>
                     <th className="text-center px-3 py-3 text-xs font-semibold text-gray-700 uppercase tracking-wide">작업</th>
@@ -486,24 +430,6 @@ export function ClientsPage({ workspace }: ClientsPageProps) {
                         <QuickStatusSelect
                           current={client.status}
                           onChange={(s) => handleQuickStatusChange(client, s)}
-                        />
-                      </td>
-                      <td className="px-3 py-3 text-center">
-                        <ToggleCheckbox
-                          checked={client.visited}
-                          onClick={() => handleToggleField(client, 'visited')}
-                        />
-                      </td>
-                      <td className="px-3 py-3 text-center">
-                        <ToggleCheckbox
-                          checked={client.cuppingDone}
-                          onClick={() => handleToggleField(client, 'cuppingDone')}
-                        />
-                      </td>
-                      <td className="px-3 py-3 text-center">
-                        <ToggleCheckbox
-                          checked={client.purchased}
-                          onClick={() => handleToggleField(client, 'purchased')}
                         />
                       </td>
                       <td className="px-3 py-3 text-sm text-right">
@@ -592,21 +518,6 @@ export function ClientsPage({ workspace }: ClientsPageProps) {
 }
 
 // ─── Sub-components ────────────────────────────────────────────────
-
-function ToggleCheckbox({ checked, onClick }: { checked: boolean; onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`w-6 h-6 rounded border-2 flex items-center justify-center mx-auto transition-colors ${
-        checked
-          ? 'bg-emerald-500 border-emerald-500 text-white'
-          : 'border-gray-300 hover:border-emerald-400'
-      }`}
-    >
-      {checked && <Check size={14} />}
-    </button>
-  );
-}
 
 function QuickStatusSelect({ current, onChange }: { current: ClientStatus; onChange: (s: ClientStatus) => void }) {
   const s = STATUS_STYLES[current];
@@ -793,32 +704,13 @@ function ClientForm({ formData, setFormData, teamUsers, onSave, onCancel, isEdit
         </Field>
       </Section>
 
-      {/* 진행 체크 + 메모 */}
-      <Section title="메모 & 진행 체크">
-        <Field label="메모">
-          <textarea className={`${input} resize-vertical`} rows={3} value={formData.notes}
-            onChange={(e) => update('notes', e.target.value)} placeholder="메모" />
+      {/* 메모 */}
+      <Section title="메모">
+        <Field label="">
+          <textarea className={`${input} resize-vertical`} rows={4} value={formData.notes}
+            onChange={(e) => update('notes', e.target.value)}
+            placeholder="예: 방문일 5/29, 커핑 5/30, 산미 약한 원두 선호, 가격 민감" />
         </Field>
-        <div className="flex flex-wrap gap-6 pt-1">
-          <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-700">
-            <input type="checkbox" checked={formData.visited}
-              onChange={(e) => update('visited', e.target.checked)}
-              className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500" />
-            방문여부
-          </label>
-          <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-700">
-            <input type="checkbox" checked={formData.cuppingDone}
-              onChange={(e) => update('cuppingDone', e.target.checked)}
-              className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500" />
-            커핑진행
-          </label>
-          <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-700">
-            <input type="checkbox" checked={formData.purchased}
-              onChange={(e) => update('purchased', e.target.checked)}
-              className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500" />
-            구매여부
-          </label>
-        </div>
       </Section>
 
       <div className="flex gap-2 justify-end pt-2 border-t border-gray-100">

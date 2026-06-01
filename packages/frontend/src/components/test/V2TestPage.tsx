@@ -176,9 +176,6 @@ export function V2TestPage({ workspace }: { workspace: string }) {
           phone: '010-0000-0000',
           email: 'test@test.com',
           address: '서울시 테스트구',
-          visited: false,
-          cuppingDone: false,
-          purchased: false,
           notes: 'V2 테스트 자동 생성',
           workspace,
         });
@@ -196,7 +193,7 @@ export function V2TestPage({ workspace }: { workspace: string }) {
         await runTest(g0, 2, async () => {
           await api.put(`/clients/${clientId}`, {
             name: '__TEST_거래처_수정__',
-            visited: true,
+            status: '진행중',
           }, { params: { workspace } });
           return '수정 성공';
         })
