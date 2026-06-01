@@ -7,61 +7,93 @@ import { Knex } from 'knex';
  *     user does not nuke every buyer record they ever created.
  *
  *  2. Add a CHECK constraint that pins workspace to the single value
- *     '아유타' for this Ayuta-only CRM. Prevents typo-driven orphan rows
- *     and accidental cross-tenant inserts.
+ *     '아유타' for this Ayuta-only CRM.
  *
- * Both changes are idempotent. They only apply to the ayuta_buyers table —
- * fixing the same patterns in legacy tables (clients, inventory, etc.) is
- * tracked separately because it's higher-blast-radius.
+ * IMPORTANT — bulletproof against production data:
+ * knex runs migrations sequentially and ABORTS the whole chain on the
+ * first failure. If this migration throws on real data (e.g. a workspace
+ * value that violates the CHECK constraint), every LATER migration
+ * (including enrich_clients) never runs, leaving the clients table without
+ * its new columns → every client write 500s. So every risky step here is
+ * individually guarded: a failure logs and continues instead of aborting.
  */
 
 const FK_NAME = 'ayuta_buyers_created_by_foreign';
 const CHECK_NAME = 'ayuta_buyers_workspace_check';
 
+async function safe(label: string, fn: () => Promise<void>): Promise<void> {
+  try {
+    await fn();
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.warn(`[harden_ayuta_buyers] step "${label}" skipped:`, (err as Error).message);
+  }
+}
+
 export async function up(knex: Knex): Promise<void> {
   const hasTable = await knex.schema.hasTable('ayuta_buyers');
   if (!hasTable) return; // nothing to alter
 
-  // --- (1) created_by: CASCADE → SET NULL ---------------------------------
-  // Drop existing FK (if it exists) and recreate with SET NULL.
-  // Make column nullable first because SET NULL requires NULLable target.
-  await knex.schema.alterTable('ayuta_buyers', (table) => {
-    table.uuid('created_by').nullable().alter();
+  // --- (1) created_by: CASCADE → SET NULL --------------------------------
+  await safe('created_by nullable', async () => {
+    await knex.schema.alterTable('ayuta_buyers', (table) => {
+      table.uuid('created_by').nullable().alter();
+    });
   });
 
-  // Drop the auto-named FK if present, then re-add. Use raw to be tolerant
-  // of historical naming differences.
-  await knex.raw(`ALTER TABLE ayuta_buyers DROP CONSTRAINT IF EXISTS ${FK_NAME}`);
-  await knex.schema.alterTable('ayuta_buyers', (table) => {
-    table
-      .foreign('created_by', FK_NAME)
-      .references('id')
-      .inTable('users')
-      .onDelete('SET NULL');
+  await safe('drop old FK', async () => {
+    await knex.raw(`ALTER TABLE ayuta_buyers DROP CONSTRAINT IF EXISTS ${FK_NAME}`);
   });
 
-  // --- (2) workspace CHECK constraint -------------------------------------
-  await knex.raw(`ALTER TABLE ayuta_buyers DROP CONSTRAINT IF EXISTS ${CHECK_NAME}`);
-  await knex.raw(`ALTER TABLE ayuta_buyers ADD CONSTRAINT ${CHECK_NAME} CHECK (workspace = '아유타')`);
+  await safe('add SET NULL FK', async () => {
+    await knex.schema.alterTable('ayuta_buyers', (table) => {
+      table
+        .foreign('created_by', FK_NAME)
+        .references('id')
+        .inTable('users')
+        .onDelete('SET NULL');
+    });
+  });
+
+  // --- (2) workspace CHECK constraint ------------------------------------
+  // Only add the constraint when NO existing row would violate it. If any
+  // row has a different workspace, skip (the app-layer workspace ACL still
+  // protects access). Never let this abort the migration chain.
+  await safe('workspace CHECK', async () => {
+    await knex.raw(`ALTER TABLE ayuta_buyers DROP CONSTRAINT IF EXISTS ${CHECK_NAME}`);
+    const [{ count }] = await knex('ayuta_buyers')
+      .whereNot('workspace', '아유타')
+      .count<{ count: string }[]>('id as count');
+    const violating = parseInt(String(count), 10) || 0;
+    if (violating === 0) {
+      await knex.raw(
+        `ALTER TABLE ayuta_buyers ADD CONSTRAINT ${CHECK_NAME} CHECK (workspace = '아유타')`
+      );
+    } else {
+      // eslint-disable-next-line no-console
+      console.warn(
+        `[harden_ayuta_buyers] ${violating} rows violate workspace='아유타'; CHECK skipped.`
+      );
+    }
+  });
 }
 
 export async function down(knex: Knex): Promise<void> {
   const hasTable = await knex.schema.hasTable('ayuta_buyers');
   if (!hasTable) return;
 
-  // Remove CHECK
-  await knex.raw(`ALTER TABLE ayuta_buyers DROP CONSTRAINT IF EXISTS ${CHECK_NAME}`);
+  await safe('drop CHECK', async () => {
+    await knex.raw(`ALTER TABLE ayuta_buyers DROP CONSTRAINT IF EXISTS ${CHECK_NAME}`);
+  });
 
-  // Revert created_by FK to CASCADE + notNullable. NOTE: any rows whose
-  // created_by is NULL at this point would block the alter — accept that
-  // risk on rollback (knex will surface the error).
-  await knex.raw(`ALTER TABLE ayuta_buyers DROP CONSTRAINT IF EXISTS ${FK_NAME}`);
-  await knex.schema.alterTable('ayuta_buyers', (table) => {
-    table.uuid('created_by').notNullable().alter();
-    table
-      .foreign('created_by', FK_NAME)
-      .references('id')
-      .inTable('users')
-      .onDelete('CASCADE');
+  await safe('revert FK', async () => {
+    await knex.raw(`ALTER TABLE ayuta_buyers DROP CONSTRAINT IF EXISTS ${FK_NAME}`);
+    await knex.schema.alterTable('ayuta_buyers', (table) => {
+      table
+        .foreign('created_by', FK_NAME)
+        .references('id')
+        .inTable('users')
+        .onDelete('CASCADE');
+    });
   });
 }

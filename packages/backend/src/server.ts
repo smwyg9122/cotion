@@ -25,6 +25,10 @@ import { SchedulerService } from './services/scheduler.service';
 
 const app = express();
 
+// Captures the most recent migration failure (if any) so /health/schema
+// can report WHY the schema is stale, not just that it is.
+let lastMigrationError: string | null = null;
+
 // Trust proxy (Railway, Heroku, etc.)
 app.set('trust proxy', 1);
 
@@ -91,6 +95,7 @@ app.get('/health/schema', async (req, res) => {
       ok: missing.length === 0,
       missing,
       checkedColumns: expected.length,
+      lastMigrationError,
       checkedAt: new Date().toISOString(),
     });
   } catch (e) {
@@ -129,14 +134,18 @@ async function startServer() {
       process.exit(1);
     }
 
-    // Run pending migrations. If they fail, EXIT — a silent server with
-    // stale schema produces mysterious 500s on every write attempt. Better
-    // to fail loudly so the deploy is marked broken and gets attention.
+    // Run pending migrations.
     //
-    // Break-glass: set SKIP_MIGRATIONS=1 to start the server even on
-    // migration failure. Only for emergencies (e.g. rolling back code
-    // while a forward migration is buggy); the server will run with stale
-    // schema and writes will still 500 until fixed.
+    // Default behavior: log the failure but KEEP BOOTING. A migration that
+    // throws must NOT take the whole app offline — that turns a "writes
+    // 500" problem into a "nothing works + Railway healthcheck fails +
+    // can't even deploy the fix" deadlock (which is exactly what happened
+    // once we made it fatal). Reads still work; the failed migration is
+    // recorded and surfaced via /health/schema and the startup log.
+    //
+    // Opt-in strict mode: set MIGRATIONS_FATAL=1 to exit on failure. Only
+    // use in environments where a broken schema should block the rollout
+    // AND you have a way to recover (manual migrate, rollback).
     try {
       const { db } = await import('./database/connection');
       const [batch, migrations] = await db.migrate.latest();
@@ -147,15 +156,13 @@ async function startServer() {
       }
     } catch (migrationError) {
       const err = migrationError as Error;
-      console.error('❌ Migration failed:');
+      lastMigrationError = err.message;
+      console.error('❌ Migration failed (server will still start):');
       console.error('   message:', err.message);
       console.error('   stack:', err.stack);
-      if (process.env.SKIP_MIGRATIONS === '1') {
-        console.error('   SKIP_MIGRATIONS=1 set — starting anyway (writes may 500).');
-      } else {
-        console.error('');
-        console.error('   The server will NOT start. Fix the migration and redeploy.');
-        console.error('   Set SKIP_MIGRATIONS=1 to override (emergencies only).');
+      console.error('   → Check GET /health/schema to see which columns are missing.');
+      if (process.env.MIGRATIONS_FATAL === '1') {
+        console.error('   MIGRATIONS_FATAL=1 set — exiting.');
         process.exit(1);
       }
     }

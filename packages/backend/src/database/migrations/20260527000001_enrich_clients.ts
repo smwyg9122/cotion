@@ -60,7 +60,14 @@ export async function up(knex: Knex): Promise<void> {
   for (const col of COLUMNS) {
     const exists = await knex.schema.hasColumn('clients', col.name);
     if (!exists) {
-      await knex.schema.alterTable('clients', (table) => col.add(table));
+      // Guard each column add so a single failure can't abort the whole
+      // migration chain (which would block any LATER migration too).
+      try {
+        await knex.schema.alterTable('clients', (table) => col.add(table));
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.warn(`[enrich_clients] add column ${col.name} failed:`, (err as Error).message);
+      }
     }
   }
 
