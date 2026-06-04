@@ -20,6 +20,7 @@ import type {
   BuyerInterestItem,
   BuyerStatus,
   BuyerInterestLevel,
+  BuyerPaymentTerms,
 } from '@cotion/shared';
 
 export const BUYER_BUSINESS_TYPES: BuyerBusinessType[] = [
@@ -67,3 +68,6 @@ export const BUYER_STATUSES: BuyerStatus[] = [
 ];
 
 export const BUYER_INTEREST_LEVELS: BuyerInterestLevel[] = ['high', 'medium', 'low'];
+
+// 결제 조건 (거래처 통합으로 흡수)
+export const BUYER_PAYMENT_TERMS: BuyerPaymentTerms[] = ['선불', '후불', '월말정산'];

@@ -11,6 +11,7 @@ import {
   BuyerBusinessType,
   BuyerSize,
   BuyerSource,
+  BuyerPaymentTerms,
 } from '@cotion/shared';
 
 function parseInterestItems(value: unknown): BuyerInterestItem[] {
@@ -74,6 +75,14 @@ function mapRowToBuyer(row: any): AyutaBuyer {
     totalPurchaseAmount: toNumber(row.total_purchase_amount),
     totalPurchaseKg: toNumber(row.total_purchase_kg),
     repeatCount: row.repeat_count ?? 0,
+    // 거래처/정산 (B2B) — 거래처 통합으로 흡수
+    assignedTo: row.assigned_to ?? null,
+    assignedToName: row.assigned_to_name ?? undefined,
+    monthlyVolumeKg: toNumber(row.monthly_volume_kg),
+    taxId: row.tax_id ?? null,
+    invoiceEmail: row.invoice_email ?? null,
+    paymentTerms: (row.payment_terms ?? null) as BuyerPaymentTerms | null,
+    shippingAddress: row.shipping_address ?? null,
     notes: row.notes,
     workspace: row.workspace,
     createdBy: row.created_by,
@@ -106,28 +115,31 @@ export class AyutaBuyersService {
     workspace: string,
     filters?: BuyerFilters
   ): Promise<AyutaBuyer[]> {
+    // leftJoin users → populate assignedToName (담당자 배정, 거래처 통합으로 흡수).
+    // Columns are prefixed because updated_at/id/created_at exist on both tables.
     const query = db('ayuta_buyers')
-      .where('workspace', workspace)
-      .orderBy('updated_at', 'desc');
+      .leftJoin('users', 'ayuta_buyers.assigned_to', 'users.id')
+      .where('ayuta_buyers.workspace', workspace)
+      .orderBy('ayuta_buyers.updated_at', 'desc');
 
-    if (filters?.status) query.where('status', filters.status);
-    if (filters?.region) query.where('region', filters.region);
-    if (filters?.businessType) query.where('business_type', filters.businessType);
-    if (filters?.interestLevel) query.where('interest_level', filters.interestLevel);
+    if (filters?.status) query.where('ayuta_buyers.status', filters.status);
+    if (filters?.region) query.where('ayuta_buyers.region', filters.region);
+    if (filters?.businessType) query.where('ayuta_buyers.business_type', filters.businessType);
+    if (filters?.interestLevel) query.where('ayuta_buyers.interest_level', filters.interestLevel);
 
     if (filters?.search) {
       const raw = filters.search.slice(0, SEARCH_MAX_LEN);
       const term = `%${escapeLike(raw)}%`;
       query.where((qb) => {
-        qb.where('company_name', 'ilike', term)
-          .orWhere('contact_person', 'ilike', term)
-          .orWhere('phone', 'ilike', term)
-          .orWhere('instagram', 'ilike', term)
-          .orWhere('notes', 'ilike', term);
+        qb.where('ayuta_buyers.company_name', 'ilike', term)
+          .orWhere('ayuta_buyers.contact_person', 'ilike', term)
+          .orWhere('ayuta_buyers.phone', 'ilike', term)
+          .orWhere('ayuta_buyers.instagram', 'ilike', term)
+          .orWhere('ayuta_buyers.notes', 'ilike', term);
       });
     }
 
-    const rows = await query.select('*');
+    const rows = await query.select('ayuta_buyers.*', 'users.name as assigned_to_name');
     return mapRowsToBuyers(rows);
   }
 
@@ -135,9 +147,11 @@ export class AyutaBuyersService {
   // mutation) may pass undefined, but every external entry point (controller)
   // must provide it — see ayuta-buyers.controller.ts.
   static async getById(id: string, workspace?: string): Promise<AyutaBuyer | null> {
-    const q = db('ayuta_buyers').where({ id });
-    if (workspace) q.andWhere({ workspace });
-    const row = await q.first();
+    const q = db('ayuta_buyers')
+      .leftJoin('users', 'ayuta_buyers.assigned_to', 'users.id')
+      .where('ayuta_buyers.id', id);
+    if (workspace) q.andWhere('ayuta_buyers.workspace', workspace);
+    const row = await q.select('ayuta_buyers.*', 'users.name as assigned_to_name').first();
     return row ? mapRowToBuyer(row) : null;
   }
 
@@ -173,6 +187,13 @@ export class AyutaBuyersService {
         total_purchase_amount: input.totalPurchaseAmount ?? 0,
         total_purchase_kg: input.totalPurchaseKg ?? 0,
         repeat_count: input.repeatCount ?? 0,
+        // 거래처/정산 (B2B) — 거래처 통합으로 흡수
+        assigned_to: input.assignedTo || null,
+        monthly_volume_kg: input.monthlyVolumeKg ?? 0,
+        tax_id: input.taxId || null,
+        invoice_email: input.invoiceEmail || null,
+        payment_terms: input.paymentTerms || null,
+        shipping_address: input.shippingAddress || null,
         notes: input.notes || null,
         workspace: input.workspace,
         created_by: userId,
@@ -229,6 +250,14 @@ export class AyutaBuyersService {
       update.total_purchase_amount = input.totalPurchaseAmount;
     if (input.totalPurchaseKg !== undefined) update.total_purchase_kg = input.totalPurchaseKg;
     if (input.repeatCount !== undefined) update.repeat_count = input.repeatCount;
+
+    // 거래처/정산 (B2B)
+    if (input.assignedTo !== undefined) update.assigned_to = input.assignedTo;
+    if (input.monthlyVolumeKg !== undefined) update.monthly_volume_kg = input.monthlyVolumeKg;
+    if (input.taxId !== undefined) update.tax_id = input.taxId;
+    if (input.invoiceEmail !== undefined) update.invoice_email = input.invoiceEmail;
+    if (input.paymentTerms !== undefined) update.payment_terms = input.paymentTerms;
+    if (input.shippingAddress !== undefined) update.shipping_address = input.shippingAddress;
 
     if (input.notes !== undefined) update.notes = input.notes;
 

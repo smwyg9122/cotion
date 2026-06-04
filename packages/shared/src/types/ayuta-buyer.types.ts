@@ -40,6 +40,9 @@ export type BuyerStatus =
 
 export type BuyerInterestLevel = 'high' | 'medium' | 'low';
 
+// 결제 조건 (거래처 통합으로 흡수) — 선불 / 후불 / 월말정산
+export type BuyerPaymentTerms = '선불' | '후불' | '월말정산';
+
 export interface AyutaBuyer {
   id: string;
 
@@ -76,6 +79,15 @@ export interface AyutaBuyer {
   totalPurchaseAmount: number;
   totalPurchaseKg: number;
   repeatCount: number;
+
+  // 거래처/정산 (B2B) — 거래처 관리 통합으로 흡수
+  assignedTo: string | null;
+  assignedToName?: string; // 담당 사용자명 (조회 시 join으로 채워짐)
+  monthlyVolumeKg: number;
+  taxId: string | null;
+  invoiceEmail: string | null;
+  paymentTerms: BuyerPaymentTerms | null;
+  shippingAddress: string | null;
 
   // 메모
   notes: string | null;
@@ -117,6 +129,14 @@ export interface AyutaBuyerCreateInput {
   totalPurchaseKg?: number;
   repeatCount?: number;
 
+  // 거래처/정산 (B2B)
+  assignedTo?: string | null;
+  monthlyVolumeKg?: number;
+  taxId?: string;
+  invoiceEmail?: string;
+  paymentTerms?: BuyerPaymentTerms;
+  shippingAddress?: string;
+
   notes?: string;
 
   workspace: string;
@@ -152,6 +172,14 @@ export interface AyutaBuyerUpdateInput {
   totalPurchaseAmount?: number;
   totalPurchaseKg?: number;
   repeatCount?: number;
+
+  // 거래처/정산 (B2B)
+  assignedTo?: string | null;
+  monthlyVolumeKg?: number;
+  taxId?: string | null;
+  invoiceEmail?: string | null;
+  paymentTerms?: BuyerPaymentTerms | null;
+  shippingAddress?: string | null;
 
   notes?: string | null;
 }
@@ -201,3 +229,5 @@ export const BUYER_STATUSES: BuyerStatus[] = [
 ];
 
 export const BUYER_INTEREST_LEVELS: BuyerInterestLevel[] = ['high', 'medium', 'low'];
+
+export const BUYER_PAYMENT_TERMS: BuyerPaymentTerms[] = ['선불', '후불', '월말정산'];

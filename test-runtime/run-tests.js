@@ -420,6 +420,37 @@ async function testAyutaBuyers(token) {
   if (missing.status === 400) pass('6g missing workspace → 400');
   else fail('6g missing workspace accepted', `status=${missing.status}`);
 
+  // 6i) 거래처 통합 — B2B 정산 필드 round-trip (taxId/invoiceEmail/paymentTerms/shippingAddress/monthlyVolumeKg)
+  const merged = await a.post('/ayuta-buyers', {
+    companyName: '__TEST_merged_b2b__',
+    taxId: '123-45-67890',
+    invoiceEmail: 'tax@test.local',
+    paymentTerms: '월말정산',
+    shippingAddress: '부산 사상구 학장로 100',
+    monthlyVolumeKg: 12.5,
+    workspace: '아유타',
+  });
+  if (
+    merged.status === 201 &&
+    merged.data.data.taxId === '123-45-67890' &&
+    merged.data.data.invoiceEmail === 'tax@test.local' &&
+    merged.data.data.paymentTerms === '월말정산' &&
+    merged.data.data.shippingAddress === '부산 사상구 학장로 100' &&
+    merged.data.data.monthlyVolumeKg === 12.5
+  ) {
+    pass('6i merged B2B fields round-trip (거래처 통합)');
+  } else {
+    fail('6i merged B2B fields', `status=${merged.status} body=${JSON.stringify(merged.data).slice(0, 220)}`);
+  }
+  // 6i-2) invalid paymentTerms enum → 400
+  const badTerms = await a.post('/ayuta-buyers', {
+    companyName: '__TEST_badterms__',
+    paymentTerms: '존재하지않는조건',
+    workspace: '아유타',
+  });
+  if (badTerms.status === 400) pass('6i-2 invalid paymentTerms enum → 400');
+  else fail('6i-2 invalid paymentTerms accepted (BUG)', `status=${badTerms.status}`);
+
   // 6h) Delete
   const del = await a.delete(`/ayuta-buyers/${buyerId}?workspace=아유타`);
   if (del.status === 200) pass('6h delete buyer');

@@ -47,6 +47,9 @@ const statusEnum = z.enum([
 
 const interestLevelEnum = z.enum(['high', 'medium', 'low']);
 
+// 결제 조건 (거래처 통합으로 흡수)
+const paymentTermsEnum = z.enum(['선불', '후불', '월말정산']);
+
 // YYYY-MM-DD or ISO date-time. Reject loose Date.parse-accepted garbage
 // (e.g. "2020-13-45", "Jan 99 1999") by doing a strict shape + real-date check.
 const YMD_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -112,6 +115,14 @@ export const ayutaBuyerCreateSchema = z.object({
   totalPurchaseKg: z.number().nonnegative().optional().default(0),
   repeatCount: z.number().int().nonnegative().optional().default(0),
 
+  // 거래처/정산 (B2B) — 거래처 통합으로 흡수
+  assignedTo: emptyToUndefined(z.string().uuid().optional()),
+  monthlyVolumeKg: z.number().nonnegative().optional().default(0),
+  taxId: z.string().max(30).optional(),
+  invoiceEmail: optionalEmail,
+  paymentTerms: emptyToUndefined(paymentTermsEnum.optional()),
+  shippingAddress: z.string().max(500).optional(),
+
   notes: z.string().max(5000).optional(),
 
   workspace: z.string().max(100),
@@ -149,6 +160,16 @@ export const ayutaBuyerUpdateSchema = z.object({
   totalPurchaseAmount: z.number().nonnegative().optional(),
   totalPurchaseKg: z.number().nonnegative().optional(),
   repeatCount: z.number().int().nonnegative().optional(),
+
+  // 거래처/정산 (B2B)
+  assignedTo: emptyToUndefined(z.string().uuid().optional().nullable()),
+  monthlyVolumeKg: z.number().nonnegative().optional(),
+  taxId: z.string().max(30).optional().nullable(),
+  invoiceEmail: z
+    .union([z.string().email().max(200), z.literal(''), z.null()])
+    .optional(),
+  paymentTerms: emptyToUndefined(paymentTermsEnum.optional().nullable()),
+  shippingAddress: z.string().max(500).optional().nullable(),
 
   notes: z.string().max(5000).optional().nullable(),
 });

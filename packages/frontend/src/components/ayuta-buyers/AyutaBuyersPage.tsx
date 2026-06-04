@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { formatApiError } from '../../utils/apiError';
-import { formatPhoneNumber } from '../../utils/phone';
+import { formatPhoneNumber, formatBusinessNumber } from '../../utils/phone';
 import { Modal } from '../common/Modal';
 import type {
   AyutaBuyer,
@@ -33,6 +33,7 @@ import type {
   BuyerInterestItem,
   BuyerStatus,
   BuyerInterestLevel,
+  BuyerPaymentTerms,
 } from '@cotion/shared';
 // Runtime constants live in a frontend-local file because vite/rollup's
 // CJS->ESM interop fails to statically extract named exports forwarded
@@ -43,6 +44,7 @@ import {
   BUYER_SOURCES,
   BUYER_INTEREST_ITEMS,
   BUYER_STATUSES,
+  BUYER_PAYMENT_TERMS,
 } from './constants';
 
 interface AyutaBuyersPageProps {
@@ -50,6 +52,14 @@ interface AyutaBuyersPageProps {
 }
 
 type ViewMode = 'table' | 'card';
+
+// 담당자 배정 드롭다운용 (거래처 통합으로 흡수)
+interface TeamUser {
+  id: string;
+  name: string;
+  title: string | null;
+  username: string;
+}
 
 interface BuyerFormData {
   companyName: string;
@@ -78,6 +88,13 @@ interface BuyerFormData {
   totalPurchaseAmount: string;
   totalPurchaseKg: string;
   repeatCount: string;
+  // 거래처/정산 (B2B) — 거래처 통합으로 흡수
+  assignedTo: string;
+  monthlyVolumeKg: string;
+  taxId: string;
+  invoiceEmail: string;
+  paymentTerms: BuyerPaymentTerms | '';
+  shippingAddress: string;
   notes: string;
 }
 
@@ -108,6 +125,12 @@ const INITIAL_FORM: BuyerFormData = {
   totalPurchaseAmount: '',
   totalPurchaseKg: '',
   repeatCount: '',
+  assignedTo: '',
+  monthlyVolumeKg: '',
+  taxId: '',
+  invoiceEmail: '',
+  paymentTerms: '',
+  shippingAddress: '',
   notes: '',
 };
 
@@ -165,6 +188,29 @@ export function AyutaBuyersPage({ workspace }: AyutaBuyersPageProps) {
   const [formData, setFormData] = useState<BuyerFormData>(INITIAL_FORM);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  // 담당자 배정 드롭다운용 워크스페이스 사용자 (거래처 통합으로 흡수)
+  const [teamUsers, setTeamUsers] = useState<TeamUser[]>([]);
+
+  const fetchUsers = useCallback(async () => {
+    try {
+      const response = await api.get('/auth/users', { params: { workspace } });
+      const userList = response.data.data || response.data || [];
+      setTeamUsers(
+        userList.map((u: any) => ({
+          id: u.id,
+          name: u.name,
+          title: u.title || null,
+          username: u.username,
+        }))
+      );
+    } catch (err: any) {
+      console.error('Failed to fetch users:', err);
+    }
+  }, [workspace]);
+
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
 
   const today = todayDateString();
 
@@ -181,7 +227,7 @@ export function AyutaBuyersPage({ workspace }: AyutaBuyersPageProps) {
       setBuyers(res.data.data || []);
     } catch (err: any) {
       console.error('Failed to fetch buyers:', err);
-      setError('구매처 목록을 불러오는데 실패했습니다.');
+      setError('거래처 목록을 불러오는데 실패했습니다.');
     } finally {
       setIsLoading(false);
     }
@@ -245,6 +291,12 @@ export function AyutaBuyersPage({ workspace }: AyutaBuyersPageProps) {
       totalPurchaseAmount: buyer.totalPurchaseAmount ? String(buyer.totalPurchaseAmount) : '',
       totalPurchaseKg: buyer.totalPurchaseKg ? String(buyer.totalPurchaseKg) : '',
       repeatCount: buyer.repeatCount ? String(buyer.repeatCount) : '',
+      assignedTo: buyer.assignedTo || '',
+      monthlyVolumeKg: buyer.monthlyVolumeKg ? String(buyer.monthlyVolumeKg) : '',
+      taxId: buyer.taxId || '',
+      invoiceEmail: buyer.invoiceEmail || '',
+      paymentTerms: buyer.paymentTerms || '',
+      shippingAddress: buyer.shippingAddress || '',
       notes: buyer.notes || '',
     });
     setIsModalOpen(true);
@@ -289,6 +341,13 @@ export function AyutaBuyersPage({ workspace }: AyutaBuyersPageProps) {
       totalPurchaseAmount: formData.totalPurchaseAmount ? Number(formData.totalPurchaseAmount) : 0,
       totalPurchaseKg: formData.totalPurchaseKg ? Number(formData.totalPurchaseKg) : 0,
       repeatCount: formData.repeatCount ? Number(formData.repeatCount) : 0,
+      // 거래처/정산 (B2B) — 거래처 통합으로 흡수
+      assignedTo: dropdownOpt(formData.assignedTo),
+      monthlyVolumeKg: formData.monthlyVolumeKg ? Number(formData.monthlyVolumeKg) : 0,
+      taxId: strOpt(formData.taxId),
+      invoiceEmail: strOpt(formData.invoiceEmail),
+      paymentTerms: dropdownOpt(formData.paymentTerms),
+      shippingAddress: strOpt(formData.shippingAddress),
       notes: strOpt(formData.notes),
     };
   };
@@ -311,7 +370,7 @@ export function AyutaBuyersPage({ workspace }: AyutaBuyersPageProps) {
       await Promise.all([fetchBuyers(), fetchStats()]);
     } catch (err: any) {
       console.error('Failed to save buyer:', err);
-      alert(formatApiError(err, '구매처 저장에 실패했습니다.'));
+      alert(formatApiError(err, '거래처 저장에 실패했습니다.'));
     } finally {
       setSaving(false);
     }
@@ -325,7 +384,7 @@ export function AyutaBuyersPage({ workspace }: AyutaBuyersPageProps) {
       fetchStats();
     } catch (err) {
       console.error('Failed to delete buyer:', err);
-      alert(formatApiError(err, '구매처 삭제에 실패했습니다.'));
+      alert(formatApiError(err, '거래처 삭제에 실패했습니다.'));
     }
   };
 
@@ -377,16 +436,16 @@ export function AyutaBuyersPage({ workspace }: AyutaBuyersPageProps) {
             <div>
               <p className="text-xs font-medium text-[#9C9A93] uppercase tracking-[0.12em] mb-2">Ayuta · CRM</p>
               <h1 className="claude-heading text-[28px] leading-tight font-semibold text-[#1F1E1D]">
-                구매처 관리
+                거래처 관리
               </h1>
-              <p className="text-sm text-[#5B5B5A] mt-1.5">아유타 커피의 구매처를 한곳에서 추적하고 영업 파이프라인을 관리하세요.</p>
+              <p className="text-sm text-[#5B5B5A] mt-1.5">아유타 커피의 거래처를 한곳에서 추적하고 영업 파이프라인을 관리하세요.</p>
             </div>
             <button
               onClick={handleOpenAdd}
               className="claude-btn-primary inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium"
             >
               <Plus size={16} strokeWidth={2.2} />
-              <span>신규 구매처</span>
+              <span>신규 거래처</span>
             </button>
           </div>
 
@@ -527,7 +586,7 @@ export function AyutaBuyersPage({ workspace }: AyutaBuyersPageProps) {
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={selectedBuyer ? '구매처 수정' : '신규 구매처 등록'}
+        title={selectedBuyer ? '거래처 수정' : '신규 거래처 등록'}
         size="xl"
       >
         <BuyerForm
@@ -538,6 +597,7 @@ export function AyutaBuyersPage({ workspace }: AyutaBuyersPageProps) {
           isEdit={!!selectedBuyer}
           toggleInterestItem={toggleInterestItem}
           saving={saving}
+          teamUsers={teamUsers}
         />
       </Modal>
 
@@ -623,10 +683,10 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
       <div className="w-12 h-12 rounded-full bg-[#FAEAE4] flex items-center justify-center mb-4">
         <Sparkles className="text-[#9C4A2D]" size={20} strokeWidth={1.8} />
       </div>
-      <h3 className="claude-heading text-xl text-[#1F1E1D] font-semibold mb-1.5">아직 구매처가 없습니다</h3>
-      <p className="text-sm text-[#7B7975] mb-5">첫 구매처를 등록하여 CRM을 시작해보세요.</p>
+      <h3 className="claude-heading text-xl text-[#1F1E1D] font-semibold mb-1.5">아직 거래처가 없습니다</h3>
+      <p className="text-sm text-[#7B7975] mb-5">첫 거래처를 등록하여 CRM을 시작해보세요.</p>
       <button onClick={onAdd} className="claude-btn-primary inline-flex items-center gap-2 px-4 py-2 text-sm font-medium">
-        <Plus size={14} /> 신규 구매처 등록
+        <Plus size={14} /> 신규 거래처 등록
       </button>
     </div>
   );
@@ -909,8 +969,9 @@ interface BuyerFormProps {
   isEdit: boolean;
   toggleInterestItem: (item: BuyerInterestItem) => void;
   saving: boolean;
+  teamUsers: TeamUser[];
 }
-function BuyerForm({ formData, setFormData, onSave, onCancel, isEdit, toggleInterestItem, saving }: BuyerFormProps) {
+function BuyerForm({ formData, setFormData, onSave, onCancel, isEdit, toggleInterestItem, saving, teamUsers }: BuyerFormProps) {
   const update = <K extends keyof BuyerFormData>(key: K, value: BuyerFormData[K]) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
   };
@@ -1047,6 +1108,41 @@ function BuyerForm({ formData, setFormData, onSave, onCancel, isEdit, toggleInte
           </Field>
           <Field label="재구매 횟수">
             <input type="number" value={formData.repeatCount} onChange={(e) => update('repeatCount', e.target.value)} className="claude-input w-full px-3 py-2 text-sm" min="0" step="1" />
+          </Field>
+        </Grid>
+      </Section>
+
+      <Section title="거래처 · 정산 (B2B)">
+        <Grid cols={2}>
+          <Field label="담당자 배정">
+            <select value={formData.assignedTo} onChange={(e) => update('assignedTo', e.target.value)} className="claude-input w-full px-3 py-2 text-sm">
+              <option value="">선택 안 함</option>
+              {teamUsers.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.title ? `${u.name} ${u.title}` : u.name}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label="월 평균 발주량 (KG)">
+            <input type="number" value={formData.monthlyVolumeKg} onChange={(e) => update('monthlyVolumeKg', e.target.value)} className="claude-input w-full px-3 py-2 text-sm" min="0" step="0.1" />
+          </Field>
+          <Field label="사업자등록번호">
+            <input type="text" value={formData.taxId} onChange={(e) => update('taxId', formatBusinessNumber(e.target.value))} className="claude-input w-full px-3 py-2 text-sm" placeholder="000-00-00000" inputMode="numeric" maxLength={12} />
+          </Field>
+          <Field label="세금계산서 이메일">
+            <input type="email" value={formData.invoiceEmail} onChange={(e) => update('invoiceEmail', e.target.value)} className="claude-input w-full px-3 py-2 text-sm" placeholder="tax@example.com" />
+          </Field>
+          <Field label="결제 조건">
+            <select value={formData.paymentTerms} onChange={(e) => update('paymentTerms', e.target.value as BuyerPaymentTerms | '')} className="claude-input w-full px-3 py-2 text-sm">
+              <option value="">선택 안 함</option>
+              {BUYER_PAYMENT_TERMS.map((t) => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+          </Field>
+          <Field label="배송지 주소">
+            <input type="text" value={formData.shippingAddress} onChange={(e) => update('shippingAddress', e.target.value)} className="claude-input w-full px-3 py-2 text-sm" placeholder="회사 주소와 다를 경우" />
           </Field>
         </Grid>
       </Section>

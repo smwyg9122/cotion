@@ -77,11 +77,16 @@ app.get('/health/schema', async (req, res) => {
       ['clients', 'invoice_email'],
       ['clients', 'payment_terms'],
       ['clients', 'shipping_address'],
-      // ─── ayuta_buyers ───
+      // ─── ayuta_buyers (거래처 통합 흡수 필드 포함) ───
       ['ayuta_buyers', 'company_name'],
       ['ayuta_buyers', 'interest_items'],
       ['ayuta_buyers', 'follow_up_date'],
       ['ayuta_buyers', 'interest_level'],
+      ['ayuta_buyers', 'assigned_to'],
+      ['ayuta_buyers', 'tax_id'],
+      ['ayuta_buyers', 'payment_terms'],
+      ['ayuta_buyers', 'monthly_volume_kg'],
+      ['cupping_logs', 'buyer_id'],
       // ─── price_items ───
       ['price_items', 'product_name'],
       ['price_items', 'channel'],

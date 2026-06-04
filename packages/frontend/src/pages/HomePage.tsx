@@ -12,14 +12,13 @@ import { SearchBar } from '../components/pages/SearchBar';
 import { NotificationBell } from '../components/notifications/NotificationBell';
 import { TiptapEditor } from '../components/editor/TiptapEditor';
 import { CommentSection } from '../components/comments/CommentSection';
-import { Menu, X, Trash2, Plus, ChevronDown, ChevronRight, Check, Calendar, Users, Package, Kanban, Coffee, FolderOpen, Palette, Zap, MessageCircle, FileText, Settings, Shield, Tag } from 'lucide-react';
+import { Menu, X, Trash2, Plus, ChevronDown, ChevronRight, Check, Calendar, Package, Kanban, Coffee, FolderOpen, Palette, Zap, MessageCircle, FileText, Settings, Shield, Tag } from 'lucide-react';
 import { api } from '../services/api';
 import { KakaoLinkButton } from '../components/settings/KakaoLinkButton';
 // Heavy view components are lazy-loaded so the initial bundle stays small.
 // Routes that the user may never visit (admin, test, CRM, etc.) shouldn't
 // pay the cost upfront. Each chunk is downloaded on first navigation only.
 const CalendarPage = lazy(() => import('../components/calendar/CalendarPage').then((m) => ({ default: m.CalendarPage })));
-const ClientsPage = lazy(() => import('../components/clients/ClientsPage').then((m) => ({ default: m.ClientsPage })));
 const AyutaBuyersPage = lazy(() => import('../components/ayuta-buyers/AyutaBuyersPage').then((m) => ({ default: m.AyutaBuyersPage })));
 const PriceListPage = lazy(() => import('../components/price-list/PriceListPage').then((m) => ({ default: m.PriceListPage })));
 const InventoryPage = lazy(() => import('../components/inventory/InventoryPage').then((m) => ({ default: m.InventoryPage })));
@@ -98,7 +97,7 @@ export function HomePage() {
   const [editedCategory, setEditedCategory] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [showNicknameModal, setShowNicknameModal] = useState(false);
-  const [currentView, setCurrentView] = useState<'pages' | 'calendar' | 'clients' | 'ayuta-buyers' | 'price-list' | 'inventory' | 'kanban' | 'cupping' | 'documents' | 'design' | 'v2test' | 'admin'>('pages');
+  const [currentView, setCurrentView] = useState<'pages' | 'calendar' | 'ayuta-buyers' | 'price-list' | 'inventory' | 'kanban' | 'cupping' | 'documents' | 'design' | 'v2test' | 'admin'>('pages');
   const [selectedKanbanProjectId, setSelectedKanbanProjectId] = useState<string | null>(null);
   const [sidebarTab, setSidebarTab] = useState<'pages' | 'business' | 'admin'>('pages');
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
@@ -326,7 +325,7 @@ export function HomePage() {
                         // 제이로텍으로 전환 시 아유타 전용 뷰이면 pages로 리셋 (admin은 유지)
                         if (ws.name !== '아유타') {
                           if (sidebarTab !== 'admin') setSidebarTab('pages');
-                          if (['clients', 'ayuta-buyers', 'price-list', 'inventory', 'kanban', 'cupping', 'documents', 'v2test'].includes(currentView)) {
+                          if (['ayuta-buyers', 'price-list', 'inventory', 'kanban', 'cupping', 'documents', 'v2test'].includes(currentView)) {
                             setCurrentView('pages');
                           }
                         }
@@ -474,23 +473,7 @@ export function HomePage() {
           </>
         ) : (
           <div className="flex-1 overflow-y-auto px-3 py-3 space-y-1">
-            <div className="px-2 py-1.5 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">거래처 & 재고</div>
-            <button
-              onClick={() => {
-                setCurrentView('clients');
-                setSelectedPageId(null);
-                setSelectedPage(null);
-                if (isMobile) setIsSidebarOpen(false);
-              }}
-              className={`w-full px-3 py-2.5 text-sm rounded-lg text-left transition-all flex items-center gap-2.5 ${
-                currentView === 'clients'
-                  ? 'bg-blue-50 text-blue-700 font-medium border border-blue-200/60'
-                  : 'text-gray-700 hover:bg-gray-200/60 border border-transparent'
-              }`}
-            >
-              <Users size={16} />
-              거래처 DB
-            </button>
+            <div className="px-2 py-1.5 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">재고</div>
             <button
               onClick={() => {
                 setCurrentView('inventory');
@@ -677,7 +660,7 @@ export function HomePage() {
               }`}
             >
               <Coffee size={16} />
-              구매처 관리
+              거래처 관리
             </button>
           )}
           {selectedWorkspace.name === '아유타' && (
@@ -745,10 +728,6 @@ export function HomePage() {
           {currentView === 'calendar' ? (
             <Suspense fallback={<ViewLoading />}>
               <CalendarPage workspace={selectedWorkspace.name} onNavigateToPage={handlePageSelect} />
-            </Suspense>
-          ) : currentView === 'clients' ? (
-            <Suspense fallback={<ViewLoading />}>
-              <ClientsPage workspace={selectedWorkspace.name} />
             </Suspense>
           ) : currentView === 'ayuta-buyers' ? (
             <Suspense fallback={<ViewLoading />}>
