@@ -18,6 +18,7 @@ import projectsRoutes from './routes/projects.routes';
 import cuppingRoutes from './routes/cupping.routes';
 import documentsRoutes from './routes/documents.routes';
 import ayutaBuyersRoutes from './routes/ayuta-buyers.routes';
+import priceItemsRoutes from './routes/price-items.routes';
 import kakaoRoutes from './routes/kakao.routes';
 import adminRoutes from './routes/admin.routes';
 import { initializeWebSocketServer } from './websocket/collaboration.handler';
@@ -81,6 +82,10 @@ app.get('/health/schema', async (req, res) => {
       ['ayuta_buyers', 'interest_items'],
       ['ayuta_buyers', 'follow_up_date'],
       ['ayuta_buyers', 'interest_level'],
+      // ─── price_items ───
+      ['price_items', 'product_name'],
+      ['price_items', 'channel'],
+      ['price_items', 'price'],
       // ─── auth-related ───
       ['users', 'is_active'],
       ['users', 'allowed_workspaces'],
@@ -119,6 +124,7 @@ app.use('/api/projects', projectsRoutes);
 app.use('/api/cupping-logs', cuppingRoutes);
 app.use('/api/documents', documentsRoutes);
 app.use('/api/ayuta-buyers', ayutaBuyersRoutes);
+app.use('/api/price-items', priceItemsRoutes);
 app.use('/api/kakao', kakaoRoutes);
 app.use('/api/admin', adminRoutes);
 

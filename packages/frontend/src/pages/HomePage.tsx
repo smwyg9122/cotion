@@ -12,7 +12,7 @@ import { SearchBar } from '../components/pages/SearchBar';
 import { NotificationBell } from '../components/notifications/NotificationBell';
 import { TiptapEditor } from '../components/editor/TiptapEditor';
 import { CommentSection } from '../components/comments/CommentSection';
-import { Menu, X, Trash2, Plus, ChevronDown, ChevronRight, Check, Calendar, Users, Package, Kanban, Coffee, FolderOpen, Palette, Zap, MessageCircle, FileText, Settings, Shield } from 'lucide-react';
+import { Menu, X, Trash2, Plus, ChevronDown, ChevronRight, Check, Calendar, Users, Package, Kanban, Coffee, FolderOpen, Palette, Zap, MessageCircle, FileText, Settings, Shield, Tag } from 'lucide-react';
 import { api } from '../services/api';
 import { KakaoLinkButton } from '../components/settings/KakaoLinkButton';
 // Heavy view components are lazy-loaded so the initial bundle stays small.
@@ -21,6 +21,7 @@ import { KakaoLinkButton } from '../components/settings/KakaoLinkButton';
 const CalendarPage = lazy(() => import('../components/calendar/CalendarPage').then((m) => ({ default: m.CalendarPage })));
 const ClientsPage = lazy(() => import('../components/clients/ClientsPage').then((m) => ({ default: m.ClientsPage })));
 const AyutaBuyersPage = lazy(() => import('../components/ayuta-buyers/AyutaBuyersPage').then((m) => ({ default: m.AyutaBuyersPage })));
+const PriceListPage = lazy(() => import('../components/price-list/PriceListPage').then((m) => ({ default: m.PriceListPage })));
 const InventoryPage = lazy(() => import('../components/inventory/InventoryPage').then((m) => ({ default: m.InventoryPage })));
 const KanbanBoard = lazy(() => import('../components/projects/KanbanBoard').then((m) => ({ default: m.KanbanBoard })));
 const CuppingLogPage = lazy(() => import('../components/cupping/CuppingLogPage').then((m) => ({ default: m.CuppingLogPage })));
@@ -97,7 +98,7 @@ export function HomePage() {
   const [editedCategory, setEditedCategory] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [showNicknameModal, setShowNicknameModal] = useState(false);
-  const [currentView, setCurrentView] = useState<'pages' | 'calendar' | 'clients' | 'ayuta-buyers' | 'inventory' | 'kanban' | 'cupping' | 'documents' | 'design' | 'v2test' | 'admin'>('pages');
+  const [currentView, setCurrentView] = useState<'pages' | 'calendar' | 'clients' | 'ayuta-buyers' | 'price-list' | 'inventory' | 'kanban' | 'cupping' | 'documents' | 'design' | 'v2test' | 'admin'>('pages');
   const [selectedKanbanProjectId, setSelectedKanbanProjectId] = useState<string | null>(null);
   const [sidebarTab, setSidebarTab] = useState<'pages' | 'business' | 'admin'>('pages');
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
@@ -325,7 +326,7 @@ export function HomePage() {
                         // 제이로텍으로 전환 시 아유타 전용 뷰이면 pages로 리셋 (admin은 유지)
                         if (ws.name !== '아유타') {
                           if (sidebarTab !== 'admin') setSidebarTab('pages');
-                          if (['clients', 'ayuta-buyers', 'inventory', 'kanban', 'cupping', 'documents', 'v2test'].includes(currentView)) {
+                          if (['clients', 'ayuta-buyers', 'price-list', 'inventory', 'kanban', 'cupping', 'documents', 'v2test'].includes(currentView)) {
                             setCurrentView('pages');
                           }
                         }
@@ -679,6 +680,24 @@ export function HomePage() {
               구매처 관리
             </button>
           )}
+          {selectedWorkspace.name === '아유타' && (
+            <button
+              onClick={() => {
+                setCurrentView('price-list');
+                setSelectedPageId(null);
+                setSelectedPage(null);
+                if (isMobile) setIsSidebarOpen(false);
+              }}
+              className={`w-full px-3 py-2.5 text-sm rounded-md text-left transition-colors flex items-center gap-2 ${
+                currentView === 'price-list'
+                  ? 'bg-[#FAEAE4] text-[#9C4A2D] font-medium'
+                  : 'text-gray-700 hover:bg-gray-200/70'
+              }`}
+            >
+              <Tag size={16} />
+              단가표
+            </button>
+          )}
           <button
             onClick={() => setIsTrashViewOpen(true)}
             className="w-full px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-200/70 rounded-md text-left transition-colors flex items-center gap-2"
@@ -734,6 +753,10 @@ export function HomePage() {
           ) : currentView === 'ayuta-buyers' ? (
             <Suspense fallback={<ViewLoading />}>
               <AyutaBuyersPage workspace={selectedWorkspace.name} />
+            </Suspense>
+          ) : currentView === 'price-list' ? (
+            <Suspense fallback={<ViewLoading />}>
+              <PriceListPage workspace={selectedWorkspace.name} />
             </Suspense>
           ) : currentView === 'inventory' ? (
             <Suspense fallback={<ViewLoading />}>

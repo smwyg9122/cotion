@@ -49,3 +49,6 @@ Thumbs.db
 # Integration test runtime artifacts (the test script itself IS committed)
 test-runtime/backend.log
 test-runtime/backend.pid
+
+# Local backups (bundles/snapshots) — never commit
+.backups/

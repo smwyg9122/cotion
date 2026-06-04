@@ -55,6 +55,7 @@ async function cleanup() {
     `);
     await pgClient.query(`DELETE FROM clients WHERE name LIKE '\\_\\_TEST\\_%'`);
     await pgClient.query(`DELETE FROM ayuta_buyers WHERE company_name LIKE '\\_\\_TEST\\_%'`);
+    await pgClient.query(`DELETE FROM price_items WHERE product_name LIKE '\\_\\_TEST\\_%'`);
     await pgClient.query(`DELETE FROM users WHERE username LIKE '\\_\\_TEST\\_%'`);
   } catch (e) {
     console.warn('cleanup warning:', e.message);
@@ -719,6 +720,94 @@ async function testClientsEnrichment(token) {
   }
 }
 
+// ─── TEST 11: price-items CRUD + ACL + validation ───────────────
+async function testPriceItems(token) {
+  section('TEST 11: price-items CRUD + ACL + validation');
+  const a = await withAuth(token);
+
+  // 11a) Create → 201, round-trip + createdBy set
+  const create = await a.post('/price-items', {
+    productName: '__TEST_price_product__',
+    channel: '소매',
+    unitLabel: '200g',
+    price: 7000,
+    note: '테스트 단가',
+    sortOrder: 1,
+    workspace: '아유타',
+  });
+  if (create.status !== 201) {
+    fail('11a create', `status=${create.status} body=${JSON.stringify(create.data).slice(0, 200)}`);
+    return;
+  }
+  const itemId = create.data.data.id;
+  const c = create.data.data;
+  if (c.productName === '__TEST_price_product__' && c.channel === '소매' && c.price === 7000 && c.createdBy) {
+    pass('11a create + round-trip (price/channel/createdBy)', `id=${itemId.slice(0, 8)}`);
+  } else {
+    fail('11a round-trip mismatch', JSON.stringify(c).slice(0, 200));
+  }
+
+  // 11b) List contains new item AND seed rows present (≥13 for 아유타)
+  const list = await a.get('/price-items?workspace=아유타');
+  const hasItem = list.data?.data?.some((i) => i.id === itemId);
+  const seedCount = list.data?.data?.filter((i) => !i.productName.startsWith('__TEST_')).length || 0;
+  if (list.status === 200 && hasItem && seedCount >= 13) {
+    pass('11b list contains new item + 13 seed rows', `total=${list.data.data.length}`);
+  } else {
+    fail('11b list', `status=${list.status} hasItem=${hasItem} seedCount=${seedCount}`);
+  }
+
+  // 11c) Update price + clear note to null
+  const update = await a.put(`/price-items/${itemId}?workspace=아유타`, {
+    price: 8500,
+    note: null,
+  });
+  if (update.status === 200 && update.data.data.price === 8500 && update.data.data.note === null) {
+    pass('11c update price=8500 + clear note→null');
+  } else {
+    fail('11c update', `status=${update.status} price=${update.data?.data?.price} note=${JSON.stringify(update.data?.data?.note)}`);
+  }
+
+  // 11d) Wrong workspace update → 403 (no access to 제이로텍)
+  const wrong = await a.put(`/price-items/${itemId}?workspace=제이로텍`, { price: 9999 });
+  if (wrong.status === 403) pass('11d wrong workspace update → 403 (ACL)');
+  else fail('11d wrong workspace accepted (BUG)', `status=${wrong.status}`);
+
+  // 11e) Missing workspace → 400
+  const missing = await a.put(`/price-items/${itemId}`, { price: 1 });
+  if (missing.status === 400) pass('11e missing workspace → 400');
+  else fail('11e missing workspace accepted', `status=${missing.status}`);
+
+  // 11f) Validation: negative price → 400
+  const negPrice = await a.post('/price-items', {
+    productName: '__TEST_neg__',
+    channel: '소매',
+    unitLabel: '1kg',
+    price: -100,
+    workspace: '아유타',
+  });
+  if (negPrice.status === 400) pass('11f negative price rejected → 400');
+  else fail('11f negative price accepted (BUG)', `status=${negPrice.status}`);
+
+  // 11g) Validation: invalid channel enum → 400
+  const badChannel = await a.post('/price-items', {
+    productName: '__TEST_badchan__',
+    channel: '존재하지않는채널',
+    unitLabel: '1kg',
+    price: 1000,
+    workspace: '아유타',
+  });
+  if (badChannel.status === 400) pass('11g invalid channel enum rejected → 400');
+  else fail('11g invalid channel accepted (BUG)', `status=${badChannel.status}`);
+
+  // 11h) Delete → 200, then list no longer contains it
+  const del = await a.delete(`/price-items/${itemId}?workspace=아유타`);
+  const after = await a.get('/price-items?workspace=아유타');
+  const stillThere = after.data?.data?.some((i) => i.id === itemId);
+  if (del.status === 200 && !stillThere) pass('11h delete + gone from list');
+  else fail('11h delete', `status=${del.status} stillThere=${stillThere}`);
+}
+
 // ─── MAIN ─────────────────────────────────────────────────────
 (async () => {
   console.log('Connecting to Postgres for cleanup access...');
@@ -738,6 +827,7 @@ async function testClientsEnrichment(token) {
   await testTenantIsolation(tokenAyuta, tokenJrotek);
   await testAyutaBuyers(tokenAyuta);
   await testClientsEnrichment(tokenAyuta);
+  await testPriceItems(tokenAyuta);
   await testRefreshRotation('__TEST_user_ayuta__', 'TestPass1234!');
   await testIsActiveEnforcement('__TEST_user_jrotek__', 'TestPass1234!');
   await testRateLimit(); // last — trips the per-IP login limiter

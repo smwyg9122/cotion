@@ -9,6 +9,7 @@ export * from './types/project.types';
 export * from './types/cupping.types';
 export * from './types/document.types';
 export * from './types/ayuta-buyer.types';
+export * from './types/price-item.types';
 
 // Validators
 export * from './validators/helpers';
@@ -21,6 +22,7 @@ export * from './validators/project.validator';
 export * from './validators/cupping.validator';
 export * from './validators/document.validator';
 export * from './validators/ayuta-buyer.validator';
+export * from './validators/price-item.validator';
 
 // Constants
 export * from './constants';
