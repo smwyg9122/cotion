@@ -148,10 +148,11 @@ const STATUS_STYLES: Record<BuyerStatus, { bg: string; text: string; dot: string
   종료:     { bg: 'bg-[#EDD2CF]', text: 'text-[#7A3F37]', dot: 'bg-[#A35A50]', label: '종료' },
 };
 
-const INTEREST_LEVEL_STYLES: Record<BuyerInterestLevel, { icon: string; bg: string; text: string; label: string }> = {
-  high:   { icon: '🔥', bg: 'bg-[#FAEAE4]', text: 'text-[#9C4A2D]', label: '높음' },
-  medium: { icon: '🟡', bg: 'bg-[#F5EBD3]', text: 'text-[#7A5B1F]', label: '중간' },
-  low:    { icon: '⚪', bg: 'bg-[#EDEAE4]', text: 'text-[#7B7975]', label: '낮음' },
+// 이모지 대신 컬러 점으로 관심도를 표현(깔끔한 디자인 가이드: no-emoji-icons)
+const INTEREST_LEVEL_STYLES: Record<BuyerInterestLevel, { dot: string; bg: string; text: string; label: string }> = {
+  high:   { dot: 'bg-[#C2410C]', bg: 'bg-[#FBEAE3]', text: 'text-[#9C4A2D]', label: '높음' },
+  medium: { dot: 'bg-[#B58A3E]', bg: 'bg-[#F5EBD3]', text: 'text-[#7A5B1F]', label: '중간' },
+  low:    { dot: 'bg-[#A8A6A0]', bg: 'bg-[#EDEAE4]', text: 'text-[#7B7975]', label: '낮음' },
 };
 
 interface BuyerStats {
@@ -420,8 +421,8 @@ export function AyutaBuyersPage({ workspace }: AyutaBuyersPageProps) {
   const renderInterestLevel = (level: BuyerInterestLevel) => {
     const s = INTEREST_LEVEL_STYLES[level];
     return (
-      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium ${s.bg} ${s.text}`} title={`관심도: ${s.label}`}>
-        <span className="text-[10px]">{s.icon}</span>
+      <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium ${s.bg} ${s.text}`} title={`관심도: ${s.label}`}>
+        <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
         <span>{s.label}</span>
       </span>
     );
@@ -637,17 +638,13 @@ export function AyutaBuyersPage({ workspace }: AyutaBuyersPageProps) {
 // ---------- StatCard ----------
 function StatCard({ icon, label, value, accent }: { icon: React.ReactNode; label: string; value: number; accent?: boolean }) {
   return (
-    <div
-      className={`claude-card-elevated px-5 py-4 transition-colors ${
-        accent ? 'ring-1 ring-[#F0D2C5] bg-[#FBF3EE]' : ''
-      }`}
-    >
-      <div className="flex items-start justify-between">
+    <div className="claude-card-elevated px-5 py-4">
+      <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-[11px] font-medium text-[#7B7975] uppercase tracking-[0.08em]">{label}</p>
-          <p className="claude-heading text-[26px] leading-none font-semibold text-[#1F1E1D] mt-2">{value}</p>
+          <p className={`claude-heading text-[26px] leading-none font-semibold mt-2 ${accent ? 'text-[#9C4A2D]' : 'text-[#1F1E1D]'}`}>{value}</p>
         </div>
-        <div className={`p-1.5 rounded-lg ${accent ? 'text-[#9C4A2D] bg-[#FAEAE4]' : 'text-[#7B7975] bg-[#EFECE7]'}`}>
+        <div className={`p-1.5 rounded-lg ${accent ? 'text-[#9C4A2D] bg-[#FAEAE4]' : 'text-[#9C9A93] bg-[#EFECE7]'}`}>
           {icon}
         </div>
       </div>
@@ -711,17 +708,26 @@ function BuyerTable({
   return (
     <div className="claude-card-elevated overflow-hidden">
       <div className="overflow-x-auto">
-        <table className="w-full">
+        <table className="w-full min-w-[900px]">
           <thead>
             <tr className="bg-[#F5F2EE] border-b border-[#E8E4DC]">
-              {['업체', '담당자', '연락', '업종 · 지역', '관심 품목', '상태', '관심도', '다음 액션', '재연락일', '누적', ''].map((h, i) => (
+              {[
+                { label: '거래처', align: 'left' },
+                { label: '담당자', align: 'left' },
+                { label: '연락처', align: 'left' },
+                { label: '상태', align: 'left' },
+                { label: '관심도', align: 'left' },
+                { label: '재연락', align: 'left' },
+                { label: '누적 거래', align: 'right' },
+                { label: '', align: 'center' },
+              ].map((h, i) => (
                 <th
                   key={i}
-                  className={`text-[11px] font-semibold text-[#7B7975] uppercase tracking-[0.08em] px-4 py-3.5 ${
-                    h === '' ? 'text-center' : h === '누적' ? 'text-right' : 'text-left'
+                  className={`text-[11px] font-semibold text-[#7B7975] uppercase tracking-[0.08em] px-4 py-3 ${
+                    h.align === 'right' ? 'text-right' : h.align === 'center' ? 'text-center' : 'text-left'
                   }`}
                 >
-                  {h}
+                  {h.label}
                 </th>
               ))}
             </tr>
@@ -730,44 +736,27 @@ function BuyerTable({
             {buyers.map((b) => {
               const isOverdue = b.followUpDate && b.followUpDate < today;
               const isToday = b.followUpDate === today;
+              const meta = [b.businessType, b.region, b.size].filter(Boolean).join(' · ');
               return (
                 <tr key={b.id} className="border-b border-[#EFECE7] last:border-0 hover:bg-[#FBF8F4] transition-colors">
-                  <td className="px-4 py-3.5">
+                  <td className="px-4 py-3 min-w-[200px]">
                     <div className="font-semibold text-[#1F1E1D] text-sm">{b.companyName}</div>
-                    {b.size && <div className="text-[11px] text-[#9C9A93] mt-0.5">{b.size}</div>}
+                    <div className="text-[11px] text-[#9C9A93] mt-0.5">{meta || '—'}</div>
                   </td>
-                  <td className="px-4 py-3.5 text-sm text-[#3F3E3D]">{b.contactPerson || '—'}</td>
-                  <td className="px-4 py-3.5 text-sm">
+                  <td className="px-4 py-3 text-sm text-[#3F3E3D] whitespace-nowrap">{b.contactPerson || '—'}</td>
+                  <td className="px-4 py-3 text-sm whitespace-nowrap">
                     <div className="space-y-0.5">
                       {b.phone && <div className="text-[12px] text-[#3F3E3D]">{b.phone}</div>}
                       {b.kakaoId && <div className="text-[11px] text-[#7A5B1F]">카 · {b.kakaoId}</div>}
                       {b.instagram && <div className="text-[11px] text-[#9C4A2D]">@{b.instagram.replace(/^@/, '')}</div>}
+                      {!b.phone && !b.kakaoId && !b.instagram && <span className="text-[#C2BFB8]">—</span>}
                     </div>
                   </td>
-                  <td className="px-4 py-3.5 text-sm">
-                    <div className="text-[#3F3E3D]">{b.businessType || '—'}</div>
-                    {b.region && <div className="text-[11px] text-[#9C9A93]">{b.region}</div>}
-                  </td>
-                  <td className="px-4 py-3.5">
-                    <div className="flex flex-wrap gap-1 max-w-[160px]">
-                      {b.interestItems.slice(0, 3).map((it) => (
-                        <span key={it} className="text-[10px] px-1.5 py-0.5 bg-[#F5EBD3] text-[#7A5B1F] rounded">
-                          {it}
-                        </span>
-                      ))}
-                      {b.interestItems.length > 3 && (
-                        <span className="text-[10px] text-[#9C9A93]">+{b.interestItems.length - 3}</span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3.5">
+                  <td className="px-4 py-3 whitespace-nowrap">
                     <QuickStatusSelect current={b.status} onChange={(s) => onQuickStatusChange(b, s)} />
                   </td>
-                  <td className="px-4 py-3.5">{renderInterestLevel(b.interestLevel)}</td>
-                  <td className="px-4 py-3.5 text-sm text-[#3F3E3D] max-w-[180px] truncate" title={b.nextAction || ''}>
-                    {b.nextAction || '—'}
-                  </td>
-                  <td className="px-4 py-3.5 text-sm">
+                  <td className="px-4 py-3 whitespace-nowrap">{renderInterestLevel(b.interestLevel)}</td>
+                  <td className="px-4 py-3 text-sm whitespace-nowrap">
                     {b.followUpDate ? (
                       <span
                         className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${
@@ -778,13 +767,13 @@ function BuyerTable({
                             : 'text-[#5B5B5A]'
                         }`}
                       >
-                        {b.followUpDate}
+                        {b.followUpDate}{isOverdue && ' · 지연'}{isToday && ' · 오늘'}
                       </span>
                     ) : (
                       <span className="text-[#C2BFB8]">—</span>
                     )}
                   </td>
-                  <td className="px-4 py-3.5 text-sm text-right">
+                  <td className="px-4 py-3 text-sm text-right whitespace-nowrap">
                     {b.totalPurchaseAmount > 0 ? (
                       <div>
                         <div className="text-[12px] text-[#1F1E1D] font-medium">₩{b.totalPurchaseAmount.toLocaleString()}</div>
@@ -795,7 +784,7 @@ function BuyerTable({
                       <span className="text-[#C2BFB8]">—</span>
                     )}
                   </td>
-                  <td className="px-4 py-3.5">
+                  <td className="px-4 py-3">
                     <div className="flex items-center justify-center gap-1">
                       <button
                         onClick={() => onEdit(b)}
