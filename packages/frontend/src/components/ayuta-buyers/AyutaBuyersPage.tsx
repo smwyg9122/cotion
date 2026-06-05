@@ -1064,9 +1064,9 @@ function BuyerForm({ formData, setFormData, onSave, onCancel, isEdit, toggleInte
           </Field>
           <Field label="관심도">
             <select value={formData.interestLevel} onChange={(e) => update('interestLevel', e.target.value as BuyerInterestLevel)} className="claude-input w-full px-3 py-2 text-sm">
-              <option value="high">🔥 높음</option>
-              <option value="medium">🟡 중간</option>
-              <option value="low">⚪ 낮음</option>
+              <option value="high">높음</option>
+              <option value="medium">중간</option>
+              <option value="low">낮음</option>
             </select>
           </Field>
           <Field label="마지막 연락일">
@@ -1165,23 +1165,23 @@ function BuyerForm({ formData, setFormData, onSave, onCancel, isEdit, toggleInte
 // ---------- Layout helpers ----------
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="space-y-3">
-      <h3 className="claude-heading text-[15px] font-semibold text-[#1F1E1D] pb-1.5 border-b border-[#EFECE7]">
+    <section className="space-y-4">
+      <h3 className="text-[12px] font-semibold text-[#9C4A2D] uppercase tracking-[0.1em] pb-2 border-b border-[#EFECE7]">
         {title}
       </h3>
-      <div className="space-y-3">{children}</div>
+      <div className="space-y-4">{children}</div>
     </section>
   );
 }
 function Grid({ cols, children }: { cols: number; children: React.ReactNode }) {
-  const cls = cols === 2 ? 'grid grid-cols-1 md:grid-cols-2 gap-3' : 'grid grid-cols-1 gap-3';
+  const cls = cols === 2 ? 'grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-4' : 'grid grid-cols-1 gap-4';
   return <div className={cls}>{children}</div>;
 }
 function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
   return (
     <div>
       {label && (
-        <label className="block text-[11px] font-medium text-[#5B5B5A] mb-1.5 uppercase tracking-[0.06em]">
+        <label className="block text-xs font-medium text-[#6B6A66] mb-1.5">
           {label}
           {required && <span className="text-[#C96442] ml-0.5">*</span>}
         </label>
