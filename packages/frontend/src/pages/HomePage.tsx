@@ -34,7 +34,7 @@ import { CategorySelect } from '../components/common';
 // in < 200ms over typical broadband for ~50-300KB bundles.
 function ViewLoading() {
   return (
-    <div className="flex items-center justify-center h-full text-gray-400 text-sm">
+    <div className="flex items-center justify-center h-full text-[#86868B] text-sm">
       불러오는 중…
     </div>
   );
@@ -262,7 +262,7 @@ export function HomePage() {
   }, [selectedPageId, editedTitle, editedContent, editedCategory]);
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-[#F5F5F7]">
       {/* Mobile overlay backdrop */}
       {isMobile && isSidebarOpen && (
         <div
@@ -279,22 +279,22 @@ export function HomePage() {
                 isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
               }`
             : `${isSidebarOpen ? 'w-64' : 'w-0'} transition-all duration-200`
-        } bg-[#f7f6f3] border-r border-gray-200 overflow-hidden flex flex-col`}
+        } bg-[#FBFBFD] border-r border-[#E5E5EA] overflow-hidden flex flex-col`}
       >
-        <div className="p-4 border-b border-gray-200">
+        <div className="p-4 border-b border-[#E5E5EA]">
           <div className="flex items-center justify-between mb-3">
             <button
               onClick={() => { setSelectedPageId(null); setSelectedPage(null); }}
               className="flex items-center gap-2 hover:opacity-80 transition-opacity"
             >
               <img src="/logo.png" alt="Cotion" className="h-7 w-7 object-contain" />
-              <span className="text-xl font-bold text-gray-900">Cotion</span>
+              <span className="text-xl font-bold text-[#1D1D1F]">Cotion</span>
             </button>
             <div className="flex items-center gap-1">
               <NotificationBell onPageSelect={handlePageSelect} />
               <button
                 onClick={() => setIsSidebarOpen(false)}
-                className="p-1 text-gray-500 hover:bg-gray-200 rounded"
+                className="p-1 text-gray-500 hover:bg-[#ECECEF] rounded"
               >
                 <X size={18} />
               </button>
@@ -304,7 +304,7 @@ export function HomePage() {
           <div className="relative">
             <button
               onClick={() => setIsWorkspaceSwitcherOpen(!isWorkspaceSwitcherOpen)}
-              className="flex items-center gap-1.5 px-2 py-1.5 -mx-2 rounded-md hover:bg-gray-200/70 transition-colors w-full"
+              className="flex items-center gap-1.5 px-2 py-1.5 -mx-2 rounded-md hover:bg-[#ECECEF] transition-colors w-full"
             >
               <span className="text-base">{selectedWorkspace.icon}</span>
               <span className="text-sm font-semibold text-gray-800">{selectedWorkspace.label}</span>
@@ -313,7 +313,7 @@ export function HomePage() {
             {isWorkspaceSwitcherOpen && (
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setIsWorkspaceSwitcherOpen(false)} />
-                <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg border border-[#E5E5EA] py-1 z-50">
                   {allowedWorkspaces.map((ws) => (
                     <button
                       key={ws.name}
@@ -330,12 +330,12 @@ export function HomePage() {
                           }
                         }
                       }}
-                      className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-gray-100 transition-colors"
+                      className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-[#F2F2F7] transition-colors"
                     >
                       <span className="text-base">{ws.icon}</span>
                       <span className="font-medium text-gray-700">{ws.label}</span>
                       {selectedWorkspace.name === ws.name && (
-                        <Check size={14} className="text-blue-600 ml-auto" />
+                        <Check size={14} className="text-[#C56A3E] ml-auto" />
                       )}
                     </button>
                   ))}
@@ -347,13 +347,13 @@ export function HomePage() {
 
         {/* Tab Bar — 아유타에서만 탭 표시, 제이로텍은 페이지만 */}
         {selectedWorkspace.name === '아유타' ? (
-          <div className="flex border-b border-gray-200 bg-[#f0efec]">
+          <div className="flex border-b border-[#E5E5EA] bg-[#f0efec]">
             <button
               onClick={() => setSidebarTab('pages')}
               className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-semibold transition-colors ${
                 sidebarTab === 'pages'
-                  ? 'text-blue-700 border-b-2 border-blue-600 bg-[#f7f6f3]'
-                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200/40'
+                  ? 'text-[#9C4A2D] border-b-2 border-[#C56A3E] bg-[#FAF7F4]'
+                  : 'text-gray-500 hover:text-gray-700 hover:bg-[#ECECEF]'
               }`}
             >
               <FileText size={14} />
@@ -363,8 +363,8 @@ export function HomePage() {
               onClick={() => setSidebarTab('business')}
               className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-semibold transition-colors ${
                 sidebarTab === 'business'
-                  ? 'text-blue-700 border-b-2 border-blue-600 bg-[#f7f6f3]'
-                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200/40'
+                  ? 'text-[#9C4A2D] border-b-2 border-[#C56A3E] bg-[#FAF7F4]'
+                  : 'text-gray-500 hover:text-gray-700 hover:bg-[#ECECEF]'
               }`}
             >
               <Settings size={14} />
@@ -376,7 +376,7 @@ export function HomePage() {
                 className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-semibold transition-colors ${
                   sidebarTab === 'admin'
                     ? 'text-purple-700 border-b-2 border-purple-600 bg-purple-50'
-                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200/40'
+                    : 'text-gray-500 hover:text-gray-700 hover:bg-[#ECECEF]'
                 }`}
               >
                 <Shield size={14} />
@@ -385,13 +385,13 @@ export function HomePage() {
             )}
           </div>
         ) : (user as any)?.role === 'superadmin' ? (
-          <div className="flex border-b border-gray-200 bg-[#f0efec]">
+          <div className="flex border-b border-[#E5E5EA] bg-[#f0efec]">
             <button
               onClick={() => setSidebarTab('pages')}
               className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-semibold transition-colors ${
                 sidebarTab === 'pages'
-                  ? 'text-blue-700 border-b-2 border-blue-600 bg-[#f7f6f3]'
-                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200/40'
+                  ? 'text-[#9C4A2D] border-b-2 border-[#C56A3E] bg-[#FAF7F4]'
+                  : 'text-gray-500 hover:text-gray-700 hover:bg-[#ECECEF]'
               }`}
             >
               <FileText size={14} />
@@ -402,7 +402,7 @@ export function HomePage() {
               className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-semibold transition-colors ${
                 sidebarTab === 'admin'
                   ? 'text-purple-700 border-b-2 border-purple-600 bg-purple-50'
-                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200/40'
+                  : 'text-gray-500 hover:text-gray-700 hover:bg-[#ECECEF]'
               }`}
             >
               <Shield size={14} />
@@ -425,7 +425,7 @@ export function HomePage() {
             <div className="px-3 pt-3 pb-1">
               <button
                 onClick={() => openNewPageModal(undefined, undefined)}
-                className="w-full px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-medium transition-colors flex items-center justify-center gap-1.5"
+                className="w-full px-3 py-2 bg-[#C56A3E] text-white rounded-md hover:bg-[#B45C33] text-sm font-medium transition-colors flex items-center justify-center gap-1.5"
               >
                 <Plus size={16} />
                 새 페이지
@@ -434,7 +434,7 @@ export function HomePage() {
             <SearchBar onSearch={searchPages} onPageSelect={handlePageSelect} />
             <div className="flex-1 overflow-y-auto px-3 py-2">
               {isLoading ? (
-                <div className="text-center py-8 text-gray-400 text-sm">로딩 중...</div>
+                <div className="text-center py-8 text-[#86868B] text-sm">로딩 중...</div>
               ) : (
                 <PageTree
                   pages={filteredPages}
@@ -483,8 +483,8 @@ export function HomePage() {
               }}
               className={`w-full px-3 py-2.5 text-sm rounded-lg text-left transition-all flex items-center gap-2.5 ${
                 currentView === 'inventory'
-                  ? 'bg-blue-50 text-blue-700 font-medium border border-blue-200/60'
-                  : 'text-gray-700 hover:bg-gray-200/60 border border-transparent'
+                  ? 'bg-[#F4E7E0] text-[#9C4A2D] font-medium border border-transparent'
+                  : 'text-gray-700 hover:bg-[#ECECEF] border border-transparent'
               }`}
             >
               <Package size={16} />
@@ -501,8 +501,8 @@ export function HomePage() {
               }}
               className={`w-full px-3 py-2.5 text-sm rounded-lg text-left transition-all flex items-center gap-2.5 ${
                 currentView === 'kanban'
-                  ? 'bg-blue-50 text-blue-700 font-medium border border-blue-200/60'
-                  : 'text-gray-700 hover:bg-gray-200/60 border border-transparent'
+                  ? 'bg-[#F4E7E0] text-[#9C4A2D] font-medium border border-transparent'
+                  : 'text-gray-700 hover:bg-[#ECECEF] border border-transparent'
               }`}
             >
               <Kanban size={16} />
@@ -531,9 +531,9 @@ export function HomePage() {
                           setSelectedPage(null);
                           if (isMobile) setIsSidebarOpen(false);
                         }}
-                        className="flex items-center gap-1.5 pl-4 pr-1 py-1.5 rounded-md hover:bg-gray-200/50 group transition-colors cursor-pointer"
+                        className="flex items-center gap-1.5 pl-4 pr-1 py-1.5 rounded-md hover:bg-[#ECECEF]/50 group transition-colors cursor-pointer"
                       >
-                        <div className="w-1.5 h-1.5 rounded-full bg-blue-400 flex-shrink-0" />
+                        <div className="w-1.5 h-1.5 rounded-full bg-[#C56A3E] flex-shrink-0" />
                         <span className="text-xs text-gray-600 truncate flex-1">{project.title}</span>
                         <button
                           onClick={(e) => {
@@ -560,8 +560,8 @@ export function HomePage() {
               }}
               className={`w-full px-3 py-2.5 text-sm rounded-lg text-left transition-all flex items-center gap-2.5 ${
                 currentView === 'cupping'
-                  ? 'bg-blue-50 text-blue-700 font-medium border border-blue-200/60'
-                  : 'text-gray-700 hover:bg-gray-200/60 border border-transparent'
+                  ? 'bg-[#F4E7E0] text-[#9C4A2D] font-medium border border-transparent'
+                  : 'text-gray-700 hover:bg-[#ECECEF] border border-transparent'
               }`}
             >
               <Coffee size={16} />
@@ -578,8 +578,8 @@ export function HomePage() {
               }}
               className={`w-full px-3 py-2.5 text-sm rounded-lg text-left transition-all flex items-center gap-2.5 ${
                 currentView === 'documents'
-                  ? 'bg-blue-50 text-blue-700 font-medium border border-blue-200/60'
-                  : 'text-gray-700 hover:bg-gray-200/60 border border-transparent'
+                  ? 'bg-[#F4E7E0] text-[#9C4A2D] font-medium border border-transparent'
+                  : 'text-gray-700 hover:bg-[#ECECEF] border border-transparent'
               }`}
             >
               <FolderOpen size={16} />
@@ -596,7 +596,7 @@ export function HomePage() {
               className={`w-full px-3 py-2.5 text-sm rounded-lg text-left transition-all flex items-center gap-2.5 ${
                 currentView === 'design'
                   ? 'bg-violet-50 text-violet-700 font-medium border border-violet-200/60'
-                  : 'text-gray-700 hover:bg-gray-200/60 border border-transparent'
+                  : 'text-gray-700 hover:bg-[#ECECEF] border border-transparent'
               }`}
             >
               <Palette size={16} />
@@ -628,7 +628,7 @@ export function HomePage() {
         )}
 
         {/* Bottom — 공통 영역 */}
-        <div className="p-3 border-t border-gray-200 space-y-1">
+        <div className="p-3 border-t border-[#E5E5EA] space-y-1">
           <button
             onClick={() => {
               setCurrentView('calendar');
@@ -638,8 +638,8 @@ export function HomePage() {
             }}
             className={`w-full px-3 py-2.5 text-sm rounded-md text-left transition-colors flex items-center gap-2 ${
               currentView === 'calendar'
-                ? 'bg-blue-50 text-blue-700 font-medium'
-                : 'text-gray-700 hover:bg-gray-200/70'
+                ? 'bg-[#F4E7E0] text-[#9C4A2D] font-medium'
+                : 'text-gray-700 hover:bg-[#ECECEF]'
             }`}
           >
             <Calendar size={16} />
@@ -656,7 +656,7 @@ export function HomePage() {
               className={`w-full px-3 py-2.5 text-sm rounded-md text-left transition-colors flex items-center gap-2 ${
                 currentView === 'ayuta-buyers'
                   ? 'bg-[#FAEAE4] text-[#9C4A2D] font-medium'
-                  : 'text-gray-700 hover:bg-gray-200/70'
+                  : 'text-gray-700 hover:bg-[#ECECEF]'
               }`}
             >
               <Coffee size={16} />
@@ -674,7 +674,7 @@ export function HomePage() {
               className={`w-full px-3 py-2.5 text-sm rounded-md text-left transition-colors flex items-center gap-2 ${
                 currentView === 'price-list'
                   ? 'bg-[#FAEAE4] text-[#9C4A2D] font-medium'
-                  : 'text-gray-700 hover:bg-gray-200/70'
+                  : 'text-gray-700 hover:bg-[#ECECEF]'
               }`}
             >
               <Tag size={16} />
@@ -683,7 +683,7 @@ export function HomePage() {
           )}
           <button
             onClick={() => setIsTrashViewOpen(true)}
-            className="w-full px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-200/70 rounded-md text-left transition-colors flex items-center gap-2"
+            className="w-full px-3 py-2.5 text-sm text-gray-700 hover:bg-[#ECECEF] rounded-md text-left transition-colors flex items-center gap-2"
           >
             <Trash2 size={16} />
             휴지통
@@ -693,13 +693,13 @@ export function HomePage() {
           </div>
           <button
             onClick={() => setIsPasswordChangeModalOpen(true)}
-            className="w-full px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-200/70 rounded-md text-left transition-colors"
+            className="w-full px-3 py-2.5 text-sm text-gray-700 hover:bg-[#ECECEF] rounded-md text-left transition-colors"
           >
             비밀번호 변경
           </button>
           <button
             onClick={handleLogout}
-            className="w-full px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-200/70 rounded-md text-left transition-colors"
+            className="w-full px-3 py-2.5 text-sm text-gray-700 hover:bg-[#ECECEF] rounded-md text-left transition-colors"
           >
             로그아웃
           </button>
@@ -707,13 +707,13 @@ export function HomePage() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden bg-gray-50 min-w-0">
+      <div className="flex-1 flex flex-col overflow-hidden bg-[#F5F5F7] min-w-0">
         {/* Mobile top bar */}
         {isMobile && (
-          <div className="sticky top-0 z-20 bg-white border-b border-gray-100 px-3 py-2 flex items-center gap-2 flex-shrink-0">
+          <div className="sticky top-0 z-20 bg-white border-b border-[#E5E5EA] px-3 py-2 flex items-center gap-2 flex-shrink-0">
             <button
               onClick={() => setIsSidebarOpen(true)}
-              className="p-2 text-gray-500 hover:bg-gray-100 rounded-md"
+              className="p-2 text-gray-500 hover:bg-[#F2F2F7] rounded-md"
             >
               <Menu size={20} />
             </button>
@@ -771,26 +771,26 @@ export function HomePage() {
               {!isMobile && !isSidebarOpen && (
                 <button
                   onClick={() => setIsSidebarOpen(true)}
-                  className="mb-4 p-2 text-gray-500 hover:bg-gray-100 rounded-md"
+                  className="mb-4 p-2 text-gray-500 hover:bg-[#F2F2F7] rounded-md"
                 >
                   <Menu size={20} />
                 </button>
               )}
 
               {/* Page Header Card */}
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 sm:p-8 mb-6">
+              <div className="bg-white rounded-2xl border border-[#E5E5EA] shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-6 sm:p-8 mb-6">
                 {/* Page Title */}
                 <input
                   type="text"
                   value={editedTitle}
                   onChange={(e) => setEditedTitle(e.target.value)}
                   onBlur={handleSave}
-                  className="text-2xl sm:text-3xl font-bold border-none outline-none focus:ring-0 w-full mb-4 text-gray-900 placeholder-gray-300"
+                  className="text-2xl sm:text-3xl font-bold border-none outline-none focus:ring-0 w-full mb-4 text-[#1D1D1F] placeholder-gray-300"
                   placeholder="제목 없음"
                 />
 
                 {/* Category + Save bar */}
-                <div className="flex items-center gap-3 text-sm text-gray-400 flex-wrap border-t border-gray-100 pt-4">
+                <div className="flex items-center gap-3 text-sm text-gray-400 flex-wrap border-t border-[#E5E5EA] pt-4">
                   <div className="w-48 sm:w-56">
                     <CategorySelect
                       value={editedCategory}
@@ -810,7 +810,7 @@ export function HomePage() {
                   <button
                     onClick={handleSave}
                     disabled={isSaving}
-                    className="ml-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium transition-colors"
+                    className="ml-auto px-4 py-2 bg-[#C56A3E] text-white rounded-lg hover:bg-[#B45C33] disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium transition-colors"
                   >
                     {isSaving ? '저장 중...' : '저장'}
                   </button>
@@ -818,7 +818,7 @@ export function HomePage() {
               </div>
 
               {/* Editor Card */}
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 sm:p-8">
+              <div className="bg-white rounded-2xl border border-[#E5E5EA] shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-6 sm:p-8">
                 <TiptapEditor
                   key={selectedPageId}
                   content={editedContent}
@@ -831,7 +831,7 @@ export function HomePage() {
               </div>
 
               {/* Comments Card */}
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 sm:p-8 mt-6">
+              <div className="bg-white rounded-2xl border border-[#E5E5EA] shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-6 sm:p-8 mt-6">
                 <CommentSection
                   pageId={selectedPageId!}
                   userId={user?.id || ''}
@@ -842,7 +842,7 @@ export function HomePage() {
           ) : (
             <div className="flex items-center justify-center h-full relative px-4">
               {/* Content */}
-              <div className="text-center relative z-10 bg-white rounded-2xl border border-gray-200 shadow-sm px-10 py-12 sm:px-16 sm:py-16 max-w-lg">
+              <div className="text-center relative z-10 bg-white rounded-2xl border border-[#E5E5EA] shadow-[0_1px_3px_rgba(0,0,0,0.04)] px-10 py-12 sm:px-16 sm:py-16 max-w-lg">
                 <div className="mb-6">
                   <img
                     src="/logo.png"
@@ -850,7 +850,7 @@ export function HomePage() {
                     className="h-16 sm:h-24 w-auto object-contain mx-auto mb-4"
                   />
                 </div>
-                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Cotion</h2>
+                <h2 className="text-2xl sm:text-3xl font-bold text-[#1D1D1F] mb-2">Cotion</h2>
                 <p className="text-base sm:text-lg font-semibold text-gray-700 mb-4">우리만의 워크스페이스</p>
                 <p className="text-sm text-gray-400">페이지를 선택하거나 새로 만들어보세요</p>
               </div>

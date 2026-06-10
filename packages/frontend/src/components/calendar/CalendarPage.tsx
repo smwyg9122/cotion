@@ -65,14 +65,14 @@ interface EventModalData {
 }
 
 const COLORS = [
-  { name: 'Red', value: '#ef4444', tailwind: 'bg-red-500' },
-  { name: 'Orange', value: '#f97316', tailwind: 'bg-orange-500' },
-  { name: 'Yellow', value: '#eab308', tailwind: 'bg-yellow-500' },
-  { name: 'Green', value: '#22c55e', tailwind: 'bg-green-500' },
-  { name: 'Blue', value: '#3b82f6', tailwind: 'bg-blue-500' },
-  { name: 'Purple', value: '#a855f7', tailwind: 'bg-purple-500' },
+  { name: 'Red', value: '#C0392B', tailwind: 'bg-red-500' },
+  { name: 'Orange', value: '#C56A3E', tailwind: 'bg-orange-500' },
+  { name: 'Yellow', value: '#B58A3E', tailwind: 'bg-yellow-500' },
+  { name: 'Green', value: '#2C8A4A', tailwind: 'bg-green-500' },
+  { name: 'Blue', value: '#2D6CDF', tailwind: 'bg-blue-500' },
+  { name: 'Purple', value: '#8A4FD8', tailwind: 'bg-purple-500' },
   { name: 'Pink', value: '#ec4899', tailwind: 'bg-pink-500' },
-  { name: 'Gray', value: '#6b7280', tailwind: 'bg-gray-500' },
+  { name: 'Gray', value: '#86868B', tailwind: 'bg-gray-500' },
 ];
 
 const KOREAN_DAYS = ['일', '월', '화', '수', '목', '금', '토'];
@@ -162,7 +162,7 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
             startDate: page.deadline,
             endDate: page.deadline,
             allDay: true,
-            color: '#9ca3af',
+            color: '#86868B',
             workspace,
             isDeadline: true,
             pageId: page.id,
@@ -390,7 +390,7 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
 
     // Empty cells for days before month starts
     for (let i = 0; i < firstDay; i++) {
-      calendarDays.push(<div key={`empty-${i}`} className="bg-gray-50 min-h-24"></div>);
+      calendarDays.push(<div key={`empty-${i}`} className="bg-[#F5F5F7] min-h-24"></div>);
     }
 
     // Days of month
@@ -405,13 +405,13 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
         <div
           key={`day-${day}`}
           onClick={() => handleCellClick(date)}
-          className={`min-h-24 p-2 cursor-pointer hover:bg-blue-50 border border-gray-200 transition-colors ${
-            isToday ? 'bg-blue-50' : 'bg-white'
+          className={`min-h-24 p-2 cursor-pointer hover:bg-[#FBF5F1] border border-[#E5E5EA] transition-colors ${
+            isToday ? 'bg-[#FBF5F1]' : 'bg-white'
           }`}
         >
           <div
             className={`text-sm font-semibold mb-1 ${
-              isToday ? 'text-blue-600' : 'text-gray-700'
+              isToday ? 'text-[#C56A3E]' : 'text-[#1D1D1F]'
             }`}
           >
             {day}
@@ -431,7 +431,7 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
               </div>
             ))}
             {dayEvents.length > 2 && (
-              <div className="text-xs text-gray-500 px-2">+{dayEvents.length - 2}개</div>
+              <div className="text-xs text-[#86868B] px-2">+{dayEvents.length - 2}개</div>
             )}
           </div>
         </div>
@@ -439,13 +439,13 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
     }
 
     return (
-      <div className="grid grid-cols-7 gap-0 border border-gray-300 rounded-lg overflow-hidden shadow-sm">
+      <div className="grid grid-cols-7 gap-0 border border-[#E5E5EA] rounded-2xl overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
         {/* Day headers */}
         {KOREAN_DAYS.map((day, idx) => (
           <div
             key={day}
-            className={`py-3 text-center text-sm font-semibold ${
-              idx === 0 || idx === 6 ? 'bg-red-50 text-red-700' : 'bg-gray-100 text-gray-700'
+            className={`py-3 text-center text-sm font-semibold bg-[#F5F5F7] ${
+              idx === 0 ? 'text-[#C2410C]' : idx === 6 ? 'text-[#2D6CDF]' : 'text-[#1D1D1F]'
             }`}
           >
             {day}
@@ -462,25 +462,29 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
     const hours = Array.from({ length: 13 }, (_, i) => i + 8); // 8am to 8pm
 
     return (
-      <div className="border border-gray-300 rounded-lg overflow-hidden shadow-sm bg-white">
+      <div className="border border-[#E5E5EA] rounded-2xl overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.04)] bg-white">
         {/* Header */}
-        <div className="grid grid-cols-8 border-b border-gray-300">
-          <div className="py-3 px-2 bg-gray-100 text-sm font-semibold text-gray-700 border-r border-gray-300">
+        <div className="grid grid-cols-8 border-b border-[#E5E5EA]">
+          <div className="py-3 px-2 bg-[#F5F5F7] text-sm font-semibold text-[#1D1D1F] border-r border-[#E5E5EA]">
             시간
           </div>
           {weekDays.map((date, idx) => (
             <div
               key={idx}
-              className={`py-3 px-2 text-center border-r border-gray-300 ${
-                idx === 0 || idx === 6 ? 'bg-red-50' : 'bg-gray-100'
-              }`}
+              className="py-3 px-2 text-center border-r border-[#E5E5EA] bg-[#F5F5F7]"
             >
-              <div className="text-sm font-semibold text-gray-700">{KOREAN_DAYS[date.getDay()]}</div>
+              <div
+                className={`text-sm font-semibold ${
+                  idx === 0 ? 'text-[#C2410C]' : idx === 6 ? 'text-[#2D6CDF]' : 'text-[#1D1D1F]'
+                }`}
+              >
+                {KOREAN_DAYS[date.getDay()]}
+              </div>
               <div
                 className={`text-xs ${
                   date.toDateString() === new Date().toDateString()
-                    ? 'text-blue-600 font-bold'
-                    : 'text-gray-600'
+                    ? 'text-[#C56A3E] font-bold'
+                    : 'text-[#6E6E73]'
                 }`}
               >
                 {date.getDate()}
@@ -491,8 +495,8 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
 
         {/* Time slots */}
         {hours.map((hour) => (
-          <div key={hour} className="grid grid-cols-8 border-b border-gray-200 min-h-16">
-            <div className="py-2 px-2 bg-gray-50 text-xs font-semibold text-gray-600 border-r border-gray-200">
+          <div key={hour} className="grid grid-cols-8 border-b border-[#F2F2F2] min-h-16">
+            <div className="py-2 px-2 bg-[#F5F5F7] text-xs font-semibold text-[#6E6E73] border-r border-[#E5E5EA]">
               {hour}:00
             </div>
             {weekDays.map((date, idx) => {
@@ -501,8 +505,8 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
                 <div
                   key={idx}
                   onClick={() => handleCellClick(date, hour)}
-                  className={`px-2 py-2 cursor-pointer hover:bg-blue-50 border-r border-gray-200 transition-colors ${
-                    idx === 0 || idx === 6 ? 'bg-red-50' : 'bg-white'
+                  className={`px-2 py-2 cursor-pointer hover:bg-[#FBF5F1] border-r border-[#F2F2F2] transition-colors ${
+                    idx === 0 || idx === 6 ? 'bg-[#FAFAFB]' : 'bg-white'
                   }`}
                 >
                   {slotEvents.slice(0, 1).map((event) => (
@@ -518,7 +522,7 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
                     </div>
                   ))}
                   {slotEvents.length > 1 && (
-                    <div className="text-xs text-gray-500">+{slotEvents.length - 1}</div>
+                    <div className="text-xs text-[#86868B]">+{slotEvents.length - 1}</div>
                   )}
                 </div>
               );
@@ -540,8 +544,8 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
       <div className="space-y-6">
         {/* All day events */}
         {allDayEvents.length > 0 && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <h3 className="text-sm font-semibold text-blue-900 mb-3">하루 종일</h3>
+          <div className="bg-[#F4E7E0] border border-[#F0D8C9] rounded-2xl p-4">
+            <h3 className="text-sm font-semibold text-[#9C4A2D] mb-3">하루 종일</h3>
             <div className="space-y-2">
               {allDayEvents.map((event) => (
                 <div
@@ -561,7 +565,7 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
         )}
 
         {/* Timed events */}
-        <div className="border border-gray-300 rounded-lg overflow-hidden shadow-sm bg-white">
+        <div className="border border-[#E5E5EA] rounded-2xl overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.04)] bg-white">
           {hours.map((hour) => {
             const slotEvents = timedEvents.filter((event) => {
               const eventStartTime = event.startDate.split('T')[1]?.substring(0, 5) || '00:00';
@@ -574,14 +578,14 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
             return (
               <div
                 key={hour}
-                className="grid grid-cols-2 border-b border-gray-200 min-h-16"
+                className="grid grid-cols-2 border-b border-[#F2F2F2] min-h-16"
               >
-                <div className="py-2 px-3 bg-gray-50 text-sm font-semibold text-gray-600 border-r border-gray-200">
+                <div className="py-2 px-3 bg-[#F5F5F7] text-sm font-semibold text-[#6E6E73] border-r border-[#E5E5EA]">
                   {hour}:00
                 </div>
                 <div
                   onClick={() => handleCellClick(currentDate, hour)}
-                  className="px-3 py-2 cursor-pointer hover:bg-blue-50 transition-colors space-y-1"
+                  className="px-3 py-2 cursor-pointer hover:bg-[#FBF5F1] transition-colors space-y-1"
                 >
                   {slotEvents.map((event) => (
                     <div
@@ -605,16 +609,16 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
   };
 
   return (
-    <div className="h-full flex flex-col bg-gray-50">
+    <div className="h-full flex flex-col bg-[#F5F5F7]">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 shadow-sm">
+      <div className="bg-white border-b border-[#E5E5EA] shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
         <div className="p-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Calendar className="w-6 h-6 text-blue-600" />
+              <div className="p-2 bg-[#F4E7E0] rounded-xl">
+                <Calendar className="w-6 h-6 text-[#C56A3E]" />
               </div>
-              <h1 className="text-3xl font-bold text-gray-900">캘린더</h1>
+              <h1 className="text-3xl font-bold text-[#1D1D1F]">캘린더</h1>
             </div>
             <button
               onClick={() => {
@@ -633,7 +637,7 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
                 });
                 setIsModalOpen(true);
               }}
-              className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+              className="flex items-center gap-2 bg-[#C56A3E] text-white px-4 py-2 rounded-[10px] hover:bg-[#B45C33] transition-colors font-medium"
             >
               <Plus size={20} />
               <span>이벤트 추가</span>
@@ -641,15 +645,15 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
           </div>
 
           {/* View mode tabs */}
-          <div className="flex gap-2 mb-6">
+          <div className="inline-flex gap-0.5 mb-6 bg-[#E9E9EB] rounded-[9px] p-0.5">
             {(['month', 'week', 'day'] as const).map((mode) => (
               <button
                 key={mode}
                 onClick={() => setViewMode(mode)}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                className={`px-4 py-1.5 rounded-[7px] font-medium transition-colors ${
                   viewMode === mode
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    ? 'bg-white shadow-[0_1px_2px_rgba(0,0,0,0.12)] text-[#1D1D1F]'
+                    : 'text-[#6E6E73] hover:text-[#1D1D1F]'
                 }`}
               >
                 {mode === 'month' ? '월간' : mode === 'week' ? '주간' : '일간'}
@@ -662,23 +666,23 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
             <div className="flex items-center gap-4">
               <button
                 onClick={handlePrevious}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 hover:bg-[#F2F2F7] rounded-[10px] transition-colors"
               >
-                <ChevronLeft size={20} className="text-gray-600" />
+                <ChevronLeft size={20} className="text-[#6E6E73]" />
               </button>
-              <h2 className="text-xl font-semibold text-gray-900 min-w-[180px]">
+              <h2 className="text-xl font-semibold text-[#1D1D1F] min-w-[180px]">
                 {getViewTitle()}
               </h2>
               <button
                 onClick={handleNext}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 hover:bg-[#F2F2F7] rounded-[10px] transition-colors"
               >
-                <ChevronRight size={20} className="text-gray-600" />
+                <ChevronRight size={20} className="text-[#6E6E73]" />
               </button>
             </div>
             <button
               onClick={handleToday}
-              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+              className="px-4 py-2 border border-[#E5E5EA] text-[#3A3A3C] rounded-[10px] hover:bg-[#F2F2F7] transition-colors font-medium"
             >
               오늘
             </button>
@@ -690,7 +694,7 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
       <div className="flex-1 overflow-auto p-6">
         {isLoading ? (
           <div className="flex items-center justify-center h-full">
-            <div className="text-gray-500">로딩 중...</div>
+            <div className="text-[#6E6E73]">로딩 중...</div>
           </div>
         ) : (
           <>
@@ -711,7 +715,7 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
         <div className="space-y-4">
           {/* Title input */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-[#1D1D1F] mb-2">
               제목 *
             </label>
             <input
@@ -721,13 +725,13 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
                 setModalData({ ...modalData, title: e.target.value })
               }
               placeholder="이벤트 제목"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 bg-white border border-[#D2D2D7] rounded-[10px] focus:outline-none focus:border-[#C56A3E] focus:ring-2 focus:ring-[#C56A3E]/15"
             />
           </div>
 
           {/* Description input */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-[#1D1D1F] mb-2">
               설명
             </label>
             <textarea
@@ -737,7 +741,7 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
               }
               placeholder="이벤트 설명 (선택사항)"
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              className="w-full px-3 py-2 bg-white border border-[#D2D2D7] rounded-[10px] focus:outline-none focus:border-[#C56A3E] focus:ring-2 focus:ring-[#C56A3E]/15 resize-none"
             />
           </div>
 
@@ -750,9 +754,9 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
               onChange={(e) =>
                 setModalData({ ...modalData, allDay: e.target.checked })
               }
-              className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+              className="w-4 h-4 text-[#C56A3E] rounded focus:ring-2 focus:ring-[#C56A3E]/20"
             />
-            <label htmlFor="allDay" className="text-sm font-medium text-gray-700">
+            <label htmlFor="allDay" className="text-sm font-medium text-[#1D1D1F]">
               하루 종일
             </label>
           </div>
@@ -760,7 +764,7 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
           {/* Date and time inputs */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-[#1D1D1F] mb-2">
                 시작 날짜 *
               </label>
               <input
@@ -769,12 +773,12 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
                 onChange={(e) =>
                   setModalData({ ...modalData, startDate: e.target.value })
                 }
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-white border border-[#D2D2D7] rounded-[10px] focus:outline-none focus:border-[#C56A3E] focus:ring-2 focus:ring-[#C56A3E]/15"
               />
             </div>
             {!modalData.allDay && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-[#1D1D1F] mb-2">
                   시작 시간
                 </label>
                 <input
@@ -783,7 +787,7 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
                   onChange={(e) =>
                     setModalData({ ...modalData, startTime: e.target.value })
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 bg-white border border-[#D2D2D7] rounded-[10px] focus:outline-none focus:border-[#C56A3E] focus:ring-2 focus:ring-[#C56A3E]/15"
                 />
               </div>
             )}
@@ -791,7 +795,7 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-[#1D1D1F] mb-2">
                 종료 날짜 *
               </label>
               <input
@@ -800,12 +804,12 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
                 onChange={(e) =>
                   setModalData({ ...modalData, endDate: e.target.value })
                 }
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-white border border-[#D2D2D7] rounded-[10px] focus:outline-none focus:border-[#C56A3E] focus:ring-2 focus:ring-[#C56A3E]/15"
               />
             </div>
             {!modalData.allDay && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-[#1D1D1F] mb-2">
                   종료 시간
                 </label>
                 <input
@@ -814,7 +818,7 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
                   onChange={(e) =>
                     setModalData({ ...modalData, endTime: e.target.value })
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 bg-white border border-[#D2D2D7] rounded-[10px] focus:outline-none focus:border-[#C56A3E] focus:ring-2 focus:ring-[#C56A3E]/15"
                 />
               </div>
             )}
@@ -822,7 +826,7 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
 
           {/* Color picker */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">
+            <label className="block text-sm font-medium text-[#1D1D1F] mb-3">
               색상
             </label>
             <div className="flex gap-3 flex-wrap">
@@ -833,7 +837,7 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
                     setModalData({ ...modalData, color: color.value })
                   }
                   className={`w-8 h-8 rounded-full transition-transform ${
-                    modalData.color === color.value ? 'ring-2 ring-offset-2 ring-gray-400 scale-110' : ''
+                    modalData.color === color.value ? 'ring-2 ring-offset-2 ring-[#86868B] scale-110' : ''
                   }`}
                   style={{ backgroundColor: color.value }}
                   title={color.name}
@@ -844,15 +848,15 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
 
           {/* Attendees picker */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-[#1D1D1F] mb-2">
               <div className="flex items-center gap-2">
                 <Users size={16} />
                 <span>참석자</span>
               </div>
             </label>
-            <div className="border border-gray-300 rounded-lg p-3 max-h-40 overflow-y-auto space-y-1">
+            <div className="border border-[#D2D2D7] rounded-[10px] p-3 max-h-40 overflow-y-auto space-y-1">
               {users.length === 0 ? (
-                <div className="text-sm text-gray-400">사용자 목록을 불러오는 중...</div>
+                <div className="text-sm text-[#86868B]">사용자 목록을 불러오는 중...</div>
               ) : (
                 users.map((u) => {
                   const isSelected = modalData.attendees.includes(u.id);
@@ -868,28 +872,28 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
                             : [...prev.attendees, u.id],
                         }));
                       }}
-                      className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+                      className={`w-full flex items-center gap-3 px-3 py-2 rounded-[10px] text-sm transition-colors ${
                         isSelected
-                          ? 'bg-blue-50 text-blue-700 font-medium'
-                          : 'hover:bg-gray-50 text-gray-700'
+                          ? 'bg-[#F4E7E0] text-[#9C4A2D] font-medium'
+                          : 'hover:bg-[#F2F2F7] text-[#3A3A3C]'
                       }`}
                     >
                       <div
                         className={`w-5 h-5 rounded border flex items-center justify-center flex-shrink-0 ${
-                          isSelected ? 'bg-blue-600 border-blue-600' : 'border-gray-300'
+                          isSelected ? 'bg-[#C56A3E] border-[#C56A3E]' : 'border-[#D2D2D7]'
                         }`}
                       >
                         {isSelected && <Check size={14} className="text-white" />}
                       </div>
                       <span>{u.name}</span>
-                      {u.title && <span className="text-xs text-gray-400">({u.title})</span>}
+                      {u.title && <span className="text-xs text-[#86868B]">({u.title})</span>}
                     </button>
                   );
                 })
               )}
             </div>
             {modalData.attendees.length > 0 && (
-              <div className="mt-2 text-xs text-blue-600">
+              <div className="mt-2 text-xs text-[#C56A3E]">
                 {modalData.attendees.length}명 선택됨
               </div>
             )}
@@ -897,10 +901,10 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
 
           {/* Workspace display */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-[#1D1D1F] mb-2">
               워크스페이스
             </label>
-            <div className="px-3 py-2 bg-gray-100 rounded-lg text-sm text-gray-700">
+            <div className="px-3 py-2 bg-[#F5F5F7] rounded-[10px] text-sm text-[#6E6E73]">
               {workspace}
             </div>
           </div>
@@ -910,7 +914,7 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
             {selectedEvent && !selectedEvent.isDeadline && (
               <button
                 onClick={handleDeleteEvent}
-                className="flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors font-medium"
+                className="flex items-center gap-2 px-4 py-2 text-[#C0392B] hover:bg-[#FBEBEB] rounded-[10px] transition-colors font-medium"
               >
                 <Trash2 size={18} />
                 <span>삭제</span>
@@ -918,14 +922,14 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
             )}
             <button
               onClick={handleCloseModal}
-              className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors font-medium"
+              className="px-4 py-2 border border-[#E5E5EA] text-[#3A3A3C] hover:bg-[#F2F2F7] rounded-[10px] transition-colors font-medium"
             >
               취소
             </button>
             <button
               onClick={handleSaveEvent}
               disabled={!modalData.title.trim()}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 transition-colors font-medium"
+              className="px-4 py-2 bg-[#C56A3E] text-white rounded-[10px] hover:bg-[#B45C33] disabled:bg-[#E5E5EA] disabled:text-[#86868B] transition-colors font-medium"
             >
               {selectedEvent ? '수정' : '생성'}
             </button>
