@@ -10,8 +10,6 @@ import { NicknameModal } from '../components/auth/NicknameModal';
 import { TrashView } from '../components/pages/TrashView';
 import { SearchBar } from '../components/pages/SearchBar';
 import { NotificationBell } from '../components/notifications/NotificationBell';
-import { TiptapEditor } from '../components/editor/TiptapEditor';
-import { CommentSection } from '../components/comments/CommentSection';
 import { Menu, X, Trash2, Plus, ChevronDown, ChevronRight, Check, Calendar, Package, Kanban, Coffee, FolderOpen, Palette, Zap, MessageCircle, FileText, Settings, Shield, Tag } from 'lucide-react';
 import { api } from '../services/api';
 import { KakaoLinkButton } from '../components/settings/KakaoLinkButton';
@@ -28,6 +26,12 @@ const DocumentLibrary = lazy(() => import('../components/documents/DocumentLibra
 const DesignLibrary = lazy(() => import('../components/design/DesignLibrary').then((m) => ({ default: m.DesignLibrary })));
 const V2TestPage = lazy(() => import('../components/test/V2TestPage').then((m) => ({ default: m.V2TestPage })));
 const AdminPage = lazy(() => import('../components/admin/AdminPage').then((m) => ({ default: m.AdminPage })));
+// The rich-text editor (Tiptap + ProseMirror) is the single heaviest dependency
+// (~600KB). It's only needed once a page is opened for editing, so lazy-load it
+// to keep the initial app bundle small and the first paint fast. Same for the
+// comment thread.
+const TiptapEditor = lazy(() => import('../components/editor/TiptapEditor').then((m) => ({ default: m.TiptapEditor })));
+const CommentSection = lazy(() => import('../components/comments/CommentSection').then((m) => ({ default: m.CommentSection })));
 import { CategorySelect } from '../components/common';
 
 // Simple loading state for lazy chunks — kept minimal because chunks load
@@ -819,24 +823,28 @@ export function HomePage() {
 
               {/* Editor Card */}
               <div className="bg-white rounded-2xl border border-[#E5E5EA] shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-6 sm:p-8">
-                <TiptapEditor
-                  key={selectedPageId}
-                  content={editedContent}
-                  onChange={setEditedContent}
-                  onSave={handleSave}
-                  pageId={selectedPageId!}
-                  userId={user?.id || ''}
-                  userName={user?.name || 'Anonymous'}
-                />
+                <Suspense fallback={<div className="text-[#86868B] text-sm py-10 text-center">에디터 불러오는 중…</div>}>
+                  <TiptapEditor
+                    key={selectedPageId}
+                    content={editedContent}
+                    onChange={setEditedContent}
+                    onSave={handleSave}
+                    pageId={selectedPageId!}
+                    userId={user?.id || ''}
+                    userName={user?.name || 'Anonymous'}
+                  />
+                </Suspense>
               </div>
 
               {/* Comments Card */}
               <div className="bg-white rounded-2xl border border-[#E5E5EA] shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-6 sm:p-8 mt-6">
-                <CommentSection
-                  pageId={selectedPageId!}
-                  userId={user?.id || ''}
-                  userName={user?.name || 'Anonymous'}
-                />
+                <Suspense fallback={<div className="text-[#86868B] text-sm py-6 text-center">댓글 불러오는 중…</div>}>
+                  <CommentSection
+                    pageId={selectedPageId!}
+                    userId={user?.id || ''}
+                    userName={user?.name || 'Anonymous'}
+                  />
+                </Suspense>
               </div>
             </div>
           ) : (
