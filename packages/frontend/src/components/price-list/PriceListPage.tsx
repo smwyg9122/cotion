@@ -38,8 +38,8 @@ export const PriceListPage: React.FC<PriceListPageProps> = () => {
             <Tag className="text-[#9C4A2D]" size={22} />
           </div>
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-[#1F1E1D]">아유타 커피 단가표</h1>
-            <p className="text-sm text-[#5B5B5A] mt-0.5">아유타상사 공식 가격표</p>
+            <h1 className="text-xl sm:text-2xl font-bold text-[#1D1D1F]">아유타 커피 단가표</h1>
+            <p className="text-sm text-[#6E6E73] mt-0.5">아유타상사 공식 가격표</p>
           </div>
         </div>
 
@@ -47,7 +47,7 @@ export const PriceListPage: React.FC<PriceListPageProps> = () => {
           <button
             type="button"
             onClick={() => setMode((m) => (m === 'image' ? 'pdf' : 'image'))}
-            className="inline-flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg border border-[#E8E4DC] text-[#3F3E3D] hover:bg-[#F5F2EE] transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg border border-[#E5E5EA] text-[#3F3E3D] hover:bg-[#F2F2F7] transition-colors"
             title={mode === 'image' ? '브라우저 PDF 뷰어로 보기 (데스크톱)' : '이미지로 보기 (모든 기기)'}
           >
             <FileText size={16} />
@@ -57,7 +57,7 @@ export const PriceListPage: React.FC<PriceListPageProps> = () => {
             href={PDF_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg border border-[#E8E4DC] text-[#3F3E3D] hover:bg-[#F5F2EE] transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg border border-[#E5E5EA] text-[#3F3E3D] hover:bg-[#F2F2F7] transition-colors"
           >
             <ExternalLink size={16} />
             새 탭에서 열기
@@ -74,7 +74,7 @@ export const PriceListPage: React.FC<PriceListPageProps> = () => {
       </div>
 
       {/* ─── 가격표 본문 ─── */}
-      <div className="rounded-xl border border-[#E8E4DC] bg-white overflow-hidden shadow-sm">
+      <div className="rounded-2xl border border-[#E5E5EA] bg-white overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
         {mode === 'image' ? (
           // 이미지 모드(기본): 항상 선명하게 렌더 — 모든 기기 호환
           <img
@@ -92,7 +92,7 @@ export const PriceListPage: React.FC<PriceListPageProps> = () => {
         )}
       </div>
 
-      <p className="text-xs text-[#9C9A93] mt-3 text-center">
+      <p className="text-xs text-[#86868B] mt-3 text-center">
         기본은 이미지로 표시됩니다. 확대·인쇄가 필요하면 「새 탭에서 열기」 또는 「PDF 다운로드」를 눌러주세요.
       </p>
     </div>

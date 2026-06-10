@@ -134,25 +134,25 @@ const INITIAL_FORM: BuyerFormData = {
   notes: '',
 };
 
-// Claude design — muted, warm status palette
+// Apple system-color tints — soft, cohesive on neutral surfaces
 const STATUS_STYLES: Record<BuyerStatus, { bg: string; text: string; dot: string; label: string }> = {
-  신규문의: { bg: 'bg-[#EDEAE4]', text: 'text-[#5B5B5A]', dot: 'bg-[#9C9A93]', label: '신규문의' },
-  연락완료: { bg: 'bg-[#E3E8EF]', text: 'text-[#4B5C73]', dot: 'bg-[#7388A6]', label: '연락완료' },
-  샘플발송: { bg: 'bg-[#DCE7F1]', text: 'text-[#3F5C7E]', dot: 'bg-[#5C7CA3]', label: '샘플발송' },
-  커핑완료: { bg: 'bg-[#E5DEF0]', text: 'text-[#5B4A7E]', dot: 'bg-[#7E6BA8]', label: '커핑완료' },
-  견적전달: { bg: 'bg-[#EBDFEF]', text: 'text-[#6B4A75]', dot: 'bg-[#9268A0]', label: '견적전달' },
-  테스트중: { bg: 'bg-[#F5E4C1]', text: 'text-[#7A5B1F]', dot: 'bg-[#B58A3E]', label: '테스트중' },
-  구매완료: { bg: 'bg-[#DDE9DC]', text: 'text-[#3F6240]', dot: 'bg-[#65885E]', label: '구매완료' },
-  재구매:   { bg: 'bg-[#C9DAC4]', text: 'text-[#2D5535]', dot: 'bg-[#4E7A4A]', label: '재구매' },
-  보류:     { bg: 'bg-[#F4D9C2]', text: 'text-[#7A4A1A]', dot: 'bg-[#B57534]', label: '보류' },
-  종료:     { bg: 'bg-[#EDD2CF]', text: 'text-[#7A3F37]', dot: 'bg-[#A35A50]', label: '종료' },
+  신규문의: { bg: 'bg-[#F2F2F7]', text: 'text-[#6E6E73]', dot: 'bg-[#AEAEB2]', label: '신규문의' },
+  연락완료: { bg: 'bg-[#EAF1FB]', text: 'text-[#2D6CDF]', dot: 'bg-[#5C8DEF]', label: '연락완료' },
+  샘플발송: { bg: 'bg-[#EAF1FB]', text: 'text-[#2D6CDF]', dot: 'bg-[#2D6CDF]', label: '샘플발송' },
+  커핑완료: { bg: 'bg-[#EDEBFB]', text: 'text-[#5B5BD6]', dot: 'bg-[#7B7BE0]', label: '커핑완료' },
+  견적전달: { bg: 'bg-[#F4EAFB]', text: 'text-[#8A4FD8]', dot: 'bg-[#A471E0]', label: '견적전달' },
+  테스트중: { bg: 'bg-[#FBF2DF]', text: 'text-[#9A6B16]', dot: 'bg-[#B58A3E]', label: '테스트중' },
+  구매완료: { bg: 'bg-[#E7F5EC]', text: 'text-[#2C8A4A]', dot: 'bg-[#34A85A]', label: '구매완료' },
+  재구매:   { bg: 'bg-[#E0F1E6]', text: 'text-[#1E7A3E]', dot: 'bg-[#2C8A4A]', label: '재구매' },
+  보류:     { bg: 'bg-[#FCEEE0]', text: 'text-[#B5651A]', dot: 'bg-[#D08A3E]', label: '보류' },
+  종료:     { bg: 'bg-[#F2F2F7]', text: 'text-[#86868B]', dot: 'bg-[#AEAEB2]', label: '종료' },
 };
 
 // 이모지 대신 컬러 점으로 관심도를 표현(깔끔한 디자인 가이드: no-emoji-icons)
 const INTEREST_LEVEL_STYLES: Record<BuyerInterestLevel, { dot: string; bg: string; text: string; label: string }> = {
   high:   { dot: 'bg-[#C2410C]', bg: 'bg-[#FBEAE3]', text: 'text-[#9C4A2D]', label: '높음' },
   medium: { dot: 'bg-[#B58A3E]', bg: 'bg-[#F5EBD3]', text: 'text-[#7A5B1F]', label: '중간' },
-  low:    { dot: 'bg-[#A8A6A0]', bg: 'bg-[#EDEAE4]', text: 'text-[#7B7975]', label: '낮음' },
+  low:    { dot: 'bg-[#A8A6A0]', bg: 'bg-[#EDEAE4]', text: 'text-[#86868B]', label: '낮음' },
 };
 
 interface BuyerStats {
@@ -429,17 +429,17 @@ export function AyutaBuyersPage({ workspace }: AyutaBuyersPageProps) {
   };
 
   return (
-    <div className="h-full flex flex-col bg-[#F5F2EE] claude-page">
+    <div className="h-full flex flex-col bg-[#F5F5F7] claude-page">
       {/* Header */}
-      <header className="bg-[#FAF9F7] border-b border-[#E8E4DC]">
-        <div className="px-8 pt-8 pb-6">
-          <div className="flex items-start justify-between mb-7">
+      <header className="bg-[#F5F5F7]">
+        <div className="px-8 pt-10 pb-6">
+          <div className="flex items-start justify-between mb-8">
             <div>
-              <p className="text-xs font-medium text-[#9C9A93] uppercase tracking-[0.12em] mb-2">Ayuta · CRM</p>
-              <h1 className="claude-heading text-[28px] leading-tight font-semibold text-[#1F1E1D]">
+              <p className="text-[13px] font-medium text-[#86868B] mb-1.5">Ayuta · CRM</p>
+              <h1 className="claude-heading text-[30px] leading-tight font-semibold text-[#1D1D1F]">
                 거래처 관리
               </h1>
-              <p className="text-sm text-[#5B5B5A] mt-1.5">아유타 커피의 거래처를 한곳에서 추적하고 영업 파이프라인을 관리하세요.</p>
+              <p className="text-[15px] text-[#6E6E73] mt-2">아유타 커피의 거래처를 한곳에서 추적하고 영업 파이프라인을 관리하세요.</p>
             </div>
             <button
               onClick={handleOpenAdd}
@@ -451,7 +451,7 @@ export function AyutaBuyersPage({ workspace }: AyutaBuyersPageProps) {
           </div>
 
           {/* Dashboard */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <StatCard
               icon={<CalendarDays className="w-[18px] h-[18px]" strokeWidth={1.8} />}
               label="오늘 재연락"
@@ -492,13 +492,13 @@ export function AyutaBuyersPage({ workspace }: AyutaBuyersPageProps) {
           {/* Filters */}
           <div className="flex flex-wrap items-center gap-2">
             <div className="relative flex-1 min-w-[220px] max-w-md">
-              <Search size={15} strokeWidth={1.8} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9C9A93]" />
+              <Search size={15} strokeWidth={1.8} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#86868B]" />
               <input
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="업체명, 담당자, 연락처, 인스타, 메모 검색"
-                className="claude-input w-full pl-9 pr-3 py-2 text-sm"
+                className="claude-input w-full rounded-full pl-10 pr-4 py-2.5 text-sm"
               />
             </div>
             <FilterSelect
@@ -524,25 +524,25 @@ export function AyutaBuyersPage({ workspace }: AyutaBuyersPageProps) {
                 onClick={() => {
                   setSearchTerm(''); setStatusFilter(''); setRegionFilter(''); setBusinessTypeFilter('');
                 }}
-                className="px-3 py-2 text-xs text-[#7B7975] hover:text-[#1F1E1D] hover:bg-[#EFECE7] rounded-lg transition-colors"
+                className="px-3 py-2 text-xs text-[#86868B] hover:text-[#1D1D1F] hover:bg-[#F2F2F7] rounded-lg transition-colors"
               >
                 필터 초기화
               </button>
             )}
-            <div className="ml-auto flex items-center gap-0.5 bg-[#EFECE7] rounded-lg p-0.5">
+            <div className="ml-auto flex items-center gap-0.5 bg-[#E9E9EB] rounded-[9px] p-0.5">
               <button
                 onClick={() => setViewMode('table')}
-                className={`p-1.5 rounded-md transition-colors ${
-                  viewMode === 'table' ? 'bg-white shadow-[0_1px_2px_rgba(31,30,29,0.06)] text-[#1F1E1D]' : 'text-[#7B7975]'
+                className={`px-2.5 py-1.5 rounded-[7px] transition-all ${
+                  viewMode === 'table' ? 'bg-white shadow-[0_1px_2px_rgba(0,0,0,0.12)] text-[#1D1D1F]' : 'text-[#86868B]'
                 }`}
-                title="테이블 보기"
+                title="목록 보기"
               >
                 <List size={15} strokeWidth={1.8} />
               </button>
               <button
                 onClick={() => setViewMode('card')}
-                className={`p-1.5 rounded-md transition-colors ${
-                  viewMode === 'card' ? 'bg-white shadow-[0_1px_2px_rgba(31,30,29,0.06)] text-[#1F1E1D]' : 'text-[#7B7975]'
+                className={`px-2.5 py-1.5 rounded-[7px] transition-all ${
+                  viewMode === 'card' ? 'bg-white shadow-[0_1px_2px_rgba(0,0,0,0.12)] text-[#1D1D1F]' : 'text-[#86868B]'
                 }`}
                 title="카드 보기"
               >
@@ -556,7 +556,7 @@ export function AyutaBuyersPage({ workspace }: AyutaBuyersPageProps) {
       {/* Content */}
       <div className="flex-1 overflow-auto px-8 py-6">
         {isLoading ? (
-          <div className="flex items-center justify-center h-64 text-[#7B7975] text-sm">불러오는 중…</div>
+          <div className="flex items-center justify-center h-64 text-[#86868B] text-sm">불러오는 중…</div>
         ) : error ? (
           <div className="flex items-center justify-center h-64 text-[#7A3F37] text-sm">{error}</div>
         ) : buyers.length === 0 ? (
@@ -603,32 +603,33 @@ export function AyutaBuyersPage({ workspace }: AyutaBuyersPageProps) {
       </Modal>
 
       <style>{`
-        .claude-page { font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif; }
-        .claude-heading { font-family: 'Tiempos Headline', 'GT Sectra', 'Source Serif Pro', Georgia, serif; letter-spacing: -0.01em; }
+        /* Apple HIG-inspired: SF system font, neutral surfaces, soft depth */
+        .claude-page { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+        .claude-heading { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif; letter-spacing: -0.02em; }
         .claude-btn-primary {
-          background: #C96442; color: #FFFFFF; border-radius: 8px;
+          background: #C56A3E; color: #FFFFFF; border-radius: 10px;
           transition: background-color 120ms ease, transform 80ms ease;
-          box-shadow: 0 1px 2px rgba(31, 30, 29, 0.08);
         }
-        .claude-btn-primary:hover { background: #B5573A; }
-        .claude-btn-primary:active { transform: translateY(1px); }
-        .claude-btn-primary:disabled { background: #D7D3CC; cursor: not-allowed; box-shadow: none; }
+        .claude-btn-primary:hover { background: #B45C33; }
+        .claude-btn-primary:active { transform: translateY(0.5px); }
+        .claude-btn-primary:disabled { background: #D2D2D7; cursor: not-allowed; box-shadow: none; }
         .claude-btn-ghost {
-          background: transparent; color: #1F1E1D; border-radius: 8px;
+          background: transparent; color: #1D1D1F; border-radius: 10px;
         }
-        .claude-btn-ghost:hover { background: #EFECE7; }
+        .claude-btn-ghost:hover { background: #EAEAEF; }
         .claude-input {
-          background: #FFFFFF; border: 1px solid #E8E4DC; border-radius: 8px;
-          color: #1F1E1D; outline: none;
-          transition: border-color 100ms ease, box-shadow 100ms ease;
+          background: #FFFFFF; border: 1px solid #D2D2D7; border-radius: 10px;
+          color: #1D1D1F; outline: none;
+          transition: border-color 120ms ease, box-shadow 120ms ease;
         }
-        .claude-input:focus { border-color: #C96442; box-shadow: 0 0 0 3px rgba(201, 100, 66, 0.15); }
+        .claude-input:focus { border-color: #C56A3E; box-shadow: 0 0 0 4px rgba(197, 106, 62, 0.12); }
         .claude-card {
-          background: #FAF9F7; border: 1px solid #E8E4DC; border-radius: 12px;
+          background: #FFFFFF; border-radius: 18px;
+          box-shadow: 0 0 0 0.5px rgba(0,0,0,0.04);
         }
         .claude-card-elevated {
-          background: #FFFFFF; border: 1px solid #E8E4DC; border-radius: 12px;
-          box-shadow: 0 1px 2px rgba(31, 30, 29, 0.04);
+          background: #FFFFFF; border-radius: 18px;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 0 0 0.5px rgba(0,0,0,0.045);
         }
       `}</style>
     </div>
@@ -638,15 +639,13 @@ export function AyutaBuyersPage({ workspace }: AyutaBuyersPageProps) {
 // ---------- StatCard ----------
 function StatCard({ icon, label, value, accent }: { icon: React.ReactNode; label: string; value: number; accent?: boolean }) {
   return (
-    <div className="claude-card-elevated px-5 py-4">
-      <div className="flex items-start justify-between gap-3">
+    <div className="claude-card-elevated px-5 py-5">
+      <div className="flex items-start justify-between">
         <div className="min-w-0">
-          <p className="text-[11px] font-medium text-[#7B7975] uppercase tracking-[0.08em]">{label}</p>
-          <p className={`claude-heading text-[26px] leading-none font-semibold mt-2 ${accent ? 'text-[#9C4A2D]' : 'text-[#1F1E1D]'}`}>{value}</p>
+          <p className="text-[13px] font-medium text-[#86868B]">{label}</p>
+          <p className={`claude-heading text-[30px] leading-none font-semibold mt-3 ${accent ? 'text-[#C56A3E]' : 'text-[#1D1D1F]'}`}>{value}</p>
         </div>
-        <div className={`p-1.5 rounded-lg ${accent ? 'text-[#9C4A2D] bg-[#FAEAE4]' : 'text-[#9C9A93] bg-[#EFECE7]'}`}>
-          {icon}
-        </div>
+        <span className={accent ? 'text-[#C56A3E]' : 'text-[#C7C7CC]'}>{icon}</span>
       </div>
     </div>
   );
@@ -668,7 +667,7 @@ function FilterSelect({ value, onChange, placeholder, options }: {
           <option key={opt.value} value={opt.value}>{opt.label}</option>
         ))}
       </select>
-      <ChevronDown size={13} strokeWidth={2} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#9C9A93] pointer-events-none" />
+      <ChevronDown size={13} strokeWidth={2} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#86868B] pointer-events-none" />
     </div>
   );
 }
@@ -680,8 +679,8 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
       <div className="w-12 h-12 rounded-full bg-[#FAEAE4] flex items-center justify-center mb-4">
         <Sparkles className="text-[#9C4A2D]" size={20} strokeWidth={1.8} />
       </div>
-      <h3 className="claude-heading text-xl text-[#1F1E1D] font-semibold mb-1.5">아직 거래처가 없습니다</h3>
-      <p className="text-sm text-[#7B7975] mb-5">첫 거래처를 등록하여 CRM을 시작해보세요.</p>
+      <h3 className="claude-heading text-xl text-[#1D1D1F] font-semibold mb-1.5">아직 거래처가 없습니다</h3>
+      <p className="text-sm text-[#86868B] mb-5">첫 거래처를 등록하여 CRM을 시작해보세요.</p>
       <button onClick={onAdd} className="claude-btn-primary inline-flex items-center gap-2 px-4 py-2 text-sm font-medium">
         <Plus size={14} /> 신규 거래처 등록
       </button>
@@ -710,7 +709,7 @@ function BuyerTable({
       <div className="overflow-x-auto">
         <table className="w-full min-w-[900px]">
           <thead>
-            <tr className="bg-[#F5F2EE] border-b border-[#E8E4DC]">
+            <tr className="border-b border-[#E5E5EA]">
               {[
                 { label: '거래처', align: 'left' },
                 { label: '담당자', align: 'left' },
@@ -723,7 +722,7 @@ function BuyerTable({
               ].map((h, i) => (
                 <th
                   key={i}
-                  className={`text-[11px] font-semibold text-[#7B7975] uppercase tracking-[0.08em] px-4 py-3 ${
+                  className={`text-[12px] font-medium text-[#86868B] px-5 py-3.5 ${
                     h.align === 'right' ? 'text-right' : h.align === 'center' ? 'text-center' : 'text-left'
                   }`}
                 >
@@ -738,25 +737,25 @@ function BuyerTable({
               const isToday = b.followUpDate === today;
               const meta = [b.businessType, b.region, b.size].filter(Boolean).join(' · ');
               return (
-                <tr key={b.id} className="border-b border-[#EFECE7] last:border-0 hover:bg-[#FBF8F4] transition-colors">
-                  <td className="px-4 py-3 min-w-[200px]">
-                    <div className="font-semibold text-[#1F1E1D] text-sm">{b.companyName}</div>
-                    <div className="text-[11px] text-[#9C9A93] mt-0.5">{meta || '—'}</div>
+                <tr key={b.id} className="border-b border-[#F2F2F7] last:border-0 hover:bg-[#FAFAFA] transition-colors">
+                  <td className="px-5 py-4 min-w-[200px]">
+                    <div className="font-semibold text-[#1D1D1F] text-sm">{b.companyName}</div>
+                    <div className="text-[11px] text-[#86868B] mt-0.5">{meta || '—'}</div>
                   </td>
-                  <td className="px-4 py-3 text-sm text-[#3F3E3D] whitespace-nowrap">{b.contactPerson || '—'}</td>
-                  <td className="px-4 py-3 text-sm whitespace-nowrap">
+                  <td className="px-5 py-4 text-sm text-[#3A3A3C] whitespace-nowrap">{b.contactPerson || '—'}</td>
+                  <td className="px-5 py-4 text-sm whitespace-nowrap">
                     <div className="space-y-0.5">
-                      {b.phone && <div className="text-[12px] text-[#3F3E3D]">{b.phone}</div>}
+                      {b.phone && <div className="text-[12px] text-[#3A3A3C]">{b.phone}</div>}
                       {b.kakaoId && <div className="text-[11px] text-[#7A5B1F]">카 · {b.kakaoId}</div>}
                       {b.instagram && <div className="text-[11px] text-[#9C4A2D]">@{b.instagram.replace(/^@/, '')}</div>}
-                      {!b.phone && !b.kakaoId && !b.instagram && <span className="text-[#C2BFB8]">—</span>}
+                      {!b.phone && !b.kakaoId && !b.instagram && <span className="text-[#C7C7CC]">—</span>}
                     </div>
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap">
+                  <td className="px-5 py-4 whitespace-nowrap">
                     <QuickStatusSelect current={b.status} onChange={(s) => onQuickStatusChange(b, s)} />
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap">{renderInterestLevel(b.interestLevel)}</td>
-                  <td className="px-4 py-3 text-sm whitespace-nowrap">
+                  <td className="px-5 py-4 whitespace-nowrap">{renderInterestLevel(b.interestLevel)}</td>
+                  <td className="px-5 py-4 text-sm whitespace-nowrap">
                     {b.followUpDate ? (
                       <span
                         className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${
@@ -764,31 +763,31 @@ function BuyerTable({
                             ? 'bg-[#EDD2CF] text-[#7A3F37]'
                             : isToday
                             ? 'bg-[#FAEAE4] text-[#9C4A2D]'
-                            : 'text-[#5B5B5A]'
+                            : 'text-[#6E6E73]'
                         }`}
                       >
                         {b.followUpDate}{isOverdue && ' · 지연'}{isToday && ' · 오늘'}
                       </span>
                     ) : (
-                      <span className="text-[#C2BFB8]">—</span>
+                      <span className="text-[#C7C7CC]">—</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-sm text-right whitespace-nowrap">
+                  <td className="px-5 py-4 text-sm text-right whitespace-nowrap">
                     {b.totalPurchaseAmount > 0 ? (
                       <div>
-                        <div className="text-[12px] text-[#1F1E1D] font-medium">₩{b.totalPurchaseAmount.toLocaleString()}</div>
-                        {b.totalPurchaseKg > 0 && <div className="text-[10px] text-[#9C9A93]">{b.totalPurchaseKg}kg</div>}
+                        <div className="text-[12px] text-[#1D1D1F] font-medium">₩{b.totalPurchaseAmount.toLocaleString()}</div>
+                        {b.totalPurchaseKg > 0 && <div className="text-[10px] text-[#86868B]">{b.totalPurchaseKg}kg</div>}
                         {b.repeatCount > 0 && <div className="text-[10px] text-[#3F6240]">재구매 {b.repeatCount}회</div>}
                       </div>
                     ) : (
-                      <span className="text-[#C2BFB8]">—</span>
+                      <span className="text-[#C7C7CC]">—</span>
                     )}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-5 py-4">
                     <div className="flex items-center justify-center gap-1">
                       <button
                         onClick={() => onEdit(b)}
-                        className="p-1.5 text-[#7B7975] hover:text-[#1F1E1D] hover:bg-[#EFECE7] rounded transition-colors"
+                        className="p-1.5 text-[#86868B] hover:text-[#1D1D1F] hover:bg-[#F2F2F7] rounded transition-colors"
                         title="수정"
                       >
                         <Pencil size={14} strokeWidth={1.8} />
@@ -804,7 +803,7 @@ function BuyerTable({
                           </button>
                           <button
                             onClick={() => setDeleteConfirmId(null)}
-                            className="p-1.5 text-[#7B7975] hover:bg-[#EFECE7] rounded transition-colors"
+                            className="p-1.5 text-[#86868B] hover:bg-[#F2F2F7] rounded transition-colors"
                           >
                             <X size={13} strokeWidth={2} />
                           </button>
@@ -812,7 +811,7 @@ function BuyerTable({
                       ) : (
                         <button
                           onClick={() => setDeleteConfirmId(b.id)}
-                          className="p-1.5 text-[#7B7975] hover:text-[#7A3F37] hover:bg-[#EDD2CF]/40 rounded transition-colors"
+                          className="p-1.5 text-[#86868B] hover:text-[#7A3F37] hover:bg-[#EDD2CF]/40 rounded transition-colors"
                           title="삭제"
                         >
                           <Trash2 size={14} strokeWidth={1.8} />
@@ -867,12 +866,12 @@ function BuyerCardGrid({ buyers, renderStatusBadge, renderInterestLevel, onEdit,
           <div
             key={b.id}
             onClick={() => onEdit(b)}
-            className="claude-card-elevated p-5 cursor-pointer hover:border-[#D7CFC0] hover:shadow-[0_4px_14px_rgba(31,30,29,0.06)] transition-all"
+            className="claude-card-elevated p-5 cursor-pointer hover:border-[#D2D2D7] hover:shadow-[0_4px_14px_rgba(31,30,29,0.06)] transition-all"
           >
             <div className="flex items-start justify-between mb-3">
               <div className="flex-1 min-w-0">
-                <h3 className="claude-heading text-[15px] font-semibold text-[#1F1E1D] truncate">{b.companyName}</h3>
-                <div className="flex items-center gap-2 mt-1 text-[11px] text-[#7B7975]">
+                <h3 className="claude-heading text-[15px] font-semibold text-[#1D1D1F] truncate">{b.companyName}</h3>
+                <div className="flex items-center gap-2 mt-1 text-[11px] text-[#86868B]">
                   {b.businessType && <span>{b.businessType}</span>}
                   {b.region && (
                     <span className="flex items-center gap-0.5">
@@ -887,7 +886,7 @@ function BuyerCardGrid({ buyers, renderStatusBadge, renderInterestLevel, onEdit,
             <div className="flex items-center gap-2 mb-3 flex-wrap">
               {renderStatusBadge(b.status)}
               {b.size && (
-                <span className="text-[11px] px-2 py-0.5 bg-[#EFECE7] text-[#5B5B5A] rounded-full">{b.size}</span>
+                <span className="text-[11px] px-2 py-0.5 bg-[#F2F2F7] text-[#6E6E73] rounded-full">{b.size}</span>
               )}
             </div>
 
@@ -901,7 +900,7 @@ function BuyerCardGrid({ buyers, renderStatusBadge, renderInterestLevel, onEdit,
               </div>
             )}
 
-            <div className="space-y-1 text-[12px] text-[#5B5B5A] mb-3">
+            <div className="space-y-1 text-[12px] text-[#6E6E73] mb-3">
               {b.contactPerson && <Row icon={<User size={11} />}>{b.contactPerson}</Row>}
               {b.phone && <Row icon={<Phone size={11} />}>{b.phone}</Row>}
               {b.email && <Row icon={<Mail size={11} />}><span className="truncate">{b.email}</span></Row>}
@@ -910,10 +909,10 @@ function BuyerCardGrid({ buyers, renderStatusBadge, renderInterestLevel, onEdit,
             </div>
 
             {(b.nextAction || b.followUpDate) && (
-              <div className="border-t border-[#EFECE7] pt-3 space-y-1">
+              <div className="border-t border-[#F2F2F7] pt-3 space-y-1">
                 {b.nextAction && (
-                  <div className="text-[12px] text-[#3F3E3D]">
-                    <span className="font-medium text-[#1F1E1D]">다음: </span>{b.nextAction}
+                  <div className="text-[12px] text-[#3A3A3C]">
+                    <span className="font-medium text-[#1D1D1F]">다음: </span>{b.nextAction}
                   </div>
                 )}
                 {b.followUpDate && (
@@ -923,7 +922,7 @@ function BuyerCardGrid({ buyers, renderStatusBadge, renderInterestLevel, onEdit,
                         ? 'text-[#7A3F37] font-semibold'
                         : isToday
                         ? 'text-[#9C4A2D] font-semibold'
-                        : 'text-[#7B7975]'
+                        : 'text-[#86868B]'
                     }`}
                   >
                     <CalendarDays size={11} />
@@ -943,7 +942,7 @@ function BuyerCardGrid({ buyers, renderStatusBadge, renderInterestLevel, onEdit,
 function Row({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
   return (
     <div className="flex items-center gap-1.5">
-      <span className="text-[#9C9A93] flex-shrink-0">{icon}</span>
+      <span className="text-[#86868B] flex-shrink-0">{icon}</span>
       <span>{children}</span>
     </div>
   );
@@ -1026,7 +1025,7 @@ function BuyerForm({ formData, setFormData, onSave, onCancel, isEdit, toggleInte
                   className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-colors ${
                     checked
                       ? 'bg-[#C96442] text-white border-[#C96442]'
-                      : 'bg-white text-[#3F3E3D] border-[#E8E4DC] hover:border-[#D7CFC0]'
+                      : 'bg-white text-[#3A3A3C] border-[#E5E5EA] hover:border-[#D2D2D7]'
                   }`}
                 >
                   {item}
@@ -1044,11 +1043,11 @@ function BuyerForm({ formData, setFormData, onSave, onCancel, isEdit, toggleInte
           </Field>
         </Grid>
         <div className="flex gap-6">
-          <label className="flex items-center gap-2 cursor-pointer text-sm text-[#3F3E3D]">
+          <label className="flex items-center gap-2 cursor-pointer text-sm text-[#3A3A3C]">
             <input type="checkbox" checked={formData.sampleSent} onChange={(e) => update('sampleSent', e.target.checked)} className="w-4 h-4 accent-[#C96442]" />
             샘플 발송
           </label>
-          <label className="flex items-center gap-2 cursor-pointer text-sm text-[#3F3E3D]">
+          <label className="flex items-center gap-2 cursor-pointer text-sm text-[#3A3A3C]">
             <input type="checkbox" checked={formData.cuppingDone} onChange={(e) => update('cuppingDone', e.target.checked)} className="w-4 h-4 accent-[#C96442]" />
             커핑 진행
           </label>
@@ -1142,7 +1141,7 @@ function BuyerForm({ formData, setFormData, onSave, onCancel, isEdit, toggleInte
         </Field>
       </Section>
 
-      <div className="flex justify-end gap-2 pt-3 border-t border-[#EFECE7]">
+      <div className="flex justify-end gap-2 pt-3 border-t border-[#F2F2F7]">
         <button
           onClick={onCancel}
           disabled={saving}
@@ -1166,7 +1165,7 @@ function BuyerForm({ formData, setFormData, onSave, onCancel, isEdit, toggleInte
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="space-y-4">
-      <h3 className="text-[12px] font-semibold text-[#9C4A2D] uppercase tracking-[0.1em] pb-2 border-b border-[#EFECE7]">
+      <h3 className="text-[12px] font-semibold text-[#9C4A2D] uppercase tracking-[0.1em] pb-2 border-b border-[#F2F2F7]">
         {title}
       </h3>
       <div className="space-y-4">{children}</div>
@@ -1181,7 +1180,7 @@ function Field({ label, required, children }: { label: string; required?: boolea
   return (
     <div>
       {label && (
-        <label className="block text-xs font-medium text-[#6B6A66] mb-1.5">
+        <label className="block text-xs font-medium text-[#6E6E73] mb-1.5">
           {label}
           {required && <span className="text-[#C96442] ml-0.5">*</span>}
         </label>
