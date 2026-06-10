@@ -378,24 +378,31 @@ export function AyutaBuyersPage({ workspace }: AyutaBuyersPageProps) {
   };
 
   const handleDelete = async (id: string) => {
+    // 낙관적 업데이트: 화면에서 즉시 제거하고 저장은 백그라운드에서. 실패 시 목록 복원.
+    setBuyers((prev) => prev.filter((b) => b.id !== id));
+    setDeleteConfirmId(null);
     try {
       await api.delete(`/ayuta-buyers/${id}`, { params: { workspace } });
-      setBuyers((prev) => prev.filter((b) => b.id !== id));
-      setDeleteConfirmId(null);
       fetchStats();
     } catch (err) {
       console.error('Failed to delete buyer:', err);
       alert(formatApiError(err, '거래처 삭제에 실패했습니다.'));
+      fetchBuyers(); // 실패 → 정확한 목록으로 복원
     }
   };
 
   const handleQuickStatusChange = async (buyer: AyutaBuyer, status: BuyerStatus) => {
+    if (buyer.status === status) return;
+    const prevStatus = buyer.status;
+    // 낙관적 업데이트: 드롭다운 선택 즉시 반영, 저장은 백그라운드. 실패 시 원복.
+    setBuyers((prev) => prev.map((b) => (b.id === buyer.id ? { ...b, status } : b)));
     try {
       await api.put(`/ayuta-buyers/${buyer.id}`, { status }, { params: { workspace } });
-      setBuyers((prev) => prev.map((b) => (b.id === buyer.id ? { ...b, status } : b)));
       fetchStats();
     } catch (err) {
       console.error('Failed to update status:', err);
+      setBuyers((prev) => prev.map((b) => (b.id === buyer.id ? { ...b, status: prevStatus } : b)));
+      alert(formatApiError(err, '상태 변경에 실패했습니다.'));
     }
   };
 
