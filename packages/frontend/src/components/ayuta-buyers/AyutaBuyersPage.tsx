@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   Plus,
   Pencil,
@@ -391,19 +391,35 @@ export function AyutaBuyersPage({ workspace }: AyutaBuyersPageProps) {
     }
   };
 
-  const handleQuickStatusChange = async (buyer: AyutaBuyer, status: BuyerStatus) => {
+  // 같은 buyer의 상태 PUT을 직렬화(서버 적용 순서 보장) + 시퀀스 가드(오래된
+  // 응답/실패가 더 최신 값을 덮어쓰지 못하게). codex council MEDIUM 반영.
+  const statusChain = useRef<Map<string, Promise<void>>>(new Map());
+  const statusSeq = useRef<Map<string, number>>(new Map());
+
+  const handleQuickStatusChange = (buyer: AyutaBuyer, status: BuyerStatus) => {
     if (buyer.status === status) return;
+    const id = buyer.id;
     const prevStatus = buyer.status;
-    // 낙관적 업데이트: 드롭다운 선택 즉시 반영, 저장은 백그라운드. 실패 시 원복.
-    setBuyers((prev) => prev.map((b) => (b.id === buyer.id ? { ...b, status } : b)));
-    try {
-      await api.put(`/ayuta-buyers/${buyer.id}`, { status }, { params: { workspace } });
-      fetchStats();
-    } catch (err) {
-      console.error('Failed to update status:', err);
-      setBuyers((prev) => prev.map((b) => (b.id === buyer.id ? { ...b, status: prevStatus } : b)));
-      alert(formatApiError(err, '상태 변경에 실패했습니다.'));
-    }
+    const seq = (statusSeq.current.get(id) || 0) + 1;
+    statusSeq.current.set(id, seq);
+    // 즉시 반영(낙관적 업데이트)
+    setBuyers((prev) => prev.map((b) => (b.id === id ? { ...b, status } : b)));
+    const run = async (): Promise<void> => {
+      try {
+        await api.put(`/ayuta-buyers/${id}`, { status }, { params: { workspace } });
+        if (statusSeq.current.get(id) === seq) fetchStats();
+      } catch (err) {
+        console.error('Failed to update status:', err);
+        // 더 최신 변경이 없을 때만 원복 → stale 실패가 최신 값을 덮지 않음
+        if (statusSeq.current.get(id) === seq) {
+          setBuyers((prev) => prev.map((b) => (b.id === id ? { ...b, status: prevStatus } : b)));
+          alert(formatApiError(err, '상태 변경에 실패했습니다.'));
+        }
+      }
+    };
+    // 이전 요청 뒤에 체이닝 → 동일 buyer에 대해 서버 적용 순서 보장
+    const chain = (statusChain.current.get(id) || Promise.resolve()).then(run, run);
+    statusChain.current.set(id, chain);
   };
 
   const toggleInterestItem = (item: BuyerInterestItem) => {
