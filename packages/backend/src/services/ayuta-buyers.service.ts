@@ -290,38 +290,36 @@ export class AyutaBuyersService {
     leads: number;
     newThisMonth: number;
   }> {
-    // Compare boundaries in Asia/Seoul so "today" and "this month" align with
-    // KST business hours, not UTC midnight.
-    const kstToday = db.raw("(now() AT TIME ZONE 'Asia/Seoul')::date");
-    const kstMonthStart = db.raw(
-      "(date_trunc('month', now() AT TIME ZONE 'Asia/Seoul')) AT TIME ZONE 'Asia/Seoul'"
-    );
-
-    const [todayFollowUpRow] = await db('ayuta_buyers')
+    // Single round-trip: all four counts via conditional aggregation
+    // (COUNT(*) FILTER) instead of 4 sequential queries — fewer DB round trips,
+    // noticeably faster under latency. KST boundaries so "today"/"this month"
+    // align with Asia/Seoul business hours, not UTC midnight.
+    const [row] = await db('ayuta_buyers')
       .where('workspace', workspace)
-      .andWhere('follow_up_date', kstToday)
-      .count<{ count: string }[]>('id as count');
+      .select(
+        db.raw(
+          `COUNT(*) FILTER (WHERE follow_up_date = (now() AT TIME ZONE 'Asia/Seoul')::date) AS today_follow_up`
+        ),
+        db.raw(`COUNT(*) FILTER (WHERE status IN ('구매완료', '재구매')) AS purchased`),
+        db.raw(
+          `COUNT(*) FILTER (WHERE status IN ('신규문의', '연락완료', '샘플발송', '커핑완료', '견적전달', '테스트중')) AS leads`
+        ),
+        db.raw(
+          `COUNT(*) FILTER (WHERE created_at >= (date_trunc('month', now() AT TIME ZONE 'Asia/Seoul')) AT TIME ZONE 'Asia/Seoul') AS new_this_month`
+        )
+      );
 
-    const [purchasedRow] = await db('ayuta_buyers')
-      .where('workspace', workspace)
-      .whereIn('status', ['구매완료', '재구매'])
-      .count<{ count: string }[]>('id as count');
-
-    const [leadsRow] = await db('ayuta_buyers')
-      .where('workspace', workspace)
-      .whereIn('status', ['신규문의', '연락완료', '샘플발송', '커핑완료', '견적전달', '테스트중'])
-      .count<{ count: string }[]>('id as count');
-
-    const [newThisMonthRow] = await db('ayuta_buyers')
-      .where('workspace', workspace)
-      .andWhere('created_at', '>=', kstMonthStart)
-      .count<{ count: string }[]>('id as count');
-
+    const r = row as unknown as {
+      today_follow_up: string;
+      purchased: string;
+      leads: string;
+      new_this_month: string;
+    };
     return {
-      todayFollowUp: parseInt(todayFollowUpRow.count as string, 10) || 0,
-      purchased: parseInt(purchasedRow.count as string, 10) || 0,
-      leads: parseInt(leadsRow.count as string, 10) || 0,
-      newThisMonth: parseInt(newThisMonthRow.count as string, 10) || 0,
+      todayFollowUp: parseInt(r.today_follow_up, 10) || 0,
+      purchased: parseInt(r.purchased, 10) || 0,
+      leads: parseInt(r.leads, 10) || 0,
+      newThisMonth: parseInt(r.new_this_month, 10) || 0,
     };
   }
 }

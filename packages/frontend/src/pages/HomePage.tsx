@@ -84,6 +84,20 @@ export function HomePage() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Keep the backend warm during an active session. Railway cold-starts the
+  // server after idle (~7-9s on the first request), which makes opening
+  // data-heavy pages (거래처/캘린더) feel slow. A tiny /health ping on mount and
+  // every 3 minutes keeps it awake so navigation stays fast. Errors are ignored.
+  useEffect(() => {
+    const healthBase = (api.defaults.baseURL || '').replace(/\/api\/?$/, '');
+    const ping = () => {
+      api.get('/health', { baseURL: healthBase }).catch(() => {});
+    };
+    ping();
+    const id = window.setInterval(ping, 180000); // 3분
+    return () => window.clearInterval(id);
+  }, []);
+
   useEffect(() => {
     if (user && user.name && /^Admin \d+$/.test(user.name)) {
       setShowNicknameModal(true);

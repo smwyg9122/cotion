@@ -1,0 +1,31 @@
+name: keep-backend-warm
+
+# 백엔드(Railway)가 유휴 시 잠들어 콜드 스타트(7~9초)가 발생하는 문제를 막기 위해
+# /health 를 주기적으로 핑해서 항상 깨어 있게 유지한다. 퍼블릭 레포라 Actions 무료.
+#
+# GitHub 스케줄러는 정시 실행을 보장하지 않으므로(지연 가능), 한 번 실행될 때
+# 내부에서 ~1분 간격으로 여러 번 핑해 5분 사이 공백을 메운다.
+
+on:
+  schedule:
+    - cron: '*/5 * * * *' # 5분마다 (GitHub 최소 간격)
+  workflow_dispatch: {}
+
+# 동시 실행 1개로 제한 (겹치면 새 것만 유지)
+concurrency:
+  group: keepalive
+  cancel-in-progress: false
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Ping backend /health repeatedly
+        run: |
+          URL="https://cotion-production.up.railway.app/health"
+          for i in $(seq 1 5); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 "$URL" || echo "000")
+            echo "ping $i -> $code at $(date -u +%H:%M:%S)"
+            if [ "$i" -lt 5 ]; then sleep 55; fi
+          done
