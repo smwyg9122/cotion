@@ -55,6 +55,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   async function logout() {
     try {
+      // 푸시 토큰 해제 (등록된 기기가 있으면) — accessToken이 유효할 때 먼저 호출
+      const fcmToken = localStorage.getItem('fcmToken');
+      if (fcmToken) {
+        await api.post('/devices/unregister', { token: fcmToken }).catch(() => {});
+        localStorage.removeItem('fcmToken');
+      }
       await api.post('/auth/logout');
     } catch (error) {
       console.error('Logout error:', error);
