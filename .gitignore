@@ -50,6 +50,9 @@ Thumbs.db
 *.keystore
 keystore.properties
 
+# Firebase 서비스 계정 키 (서버 발송 비밀 — 절대 커밋 금지)
+firebase-service-account.json
+
 # Integration test runtime artifacts (the test script itself IS committed)
 test-runtime/backend.log
 test-runtime/backend.pid

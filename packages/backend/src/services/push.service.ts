@@ -1,3 +1,4 @@
+import { readFileSync } from 'fs';
 import { initializeApp, cert, getApps, getApp } from 'firebase-admin/app';
 import { getMessaging, Messaging } from 'firebase-admin/messaging';
 import { db } from '../database/connection';
@@ -28,7 +29,11 @@ function getMessagingClient(): Messaging | null {
   }
 
   try {
-    const serviceAccount = JSON.parse(raw);
+    const trimmed = raw.trim();
+    // '{'로 시작하면 JSON 문자열(Railway 환경변수), 아니면 키 파일 경로(로컬)로 간주
+    const serviceAccount = trimmed.startsWith('{')
+      ? JSON.parse(trimmed)
+      : JSON.parse(readFileSync(trimmed, 'utf-8'));
     const app = getApps().length ? getApp() : initializeApp({ credential: cert(serviceAccount) });
     messagingClient = getMessaging(app);
     console.log('[push] Firebase Admin 초기화 완료 — 푸시 알림 활성화');

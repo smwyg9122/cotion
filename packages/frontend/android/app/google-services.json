@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "214379010221",
+    "project_id": "cotion-428ae",
+    "storage_bucket": "cotion-428ae.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:214379010221:android:0629b43524edf430fece24",
+        "android_client_info": {
+          "package_name": "com.cotion.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDYTB9aH-UIh4KRXlvxl_1ssl5lqWFYI6g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
