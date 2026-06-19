@@ -46,6 +46,10 @@ Thumbs.db
 *.bak
 .harness/backups/
 
+# Android 릴리스 서명 (절대 커밋 금지 — 분실 시 앱 업데이트 불가, 별도 백업 필수)
+*.keystore
+keystore.properties
+
 # Integration test runtime artifacts (the test script itself IS committed)
 test-runtime/backend.log
 test-runtime/backend.pid
