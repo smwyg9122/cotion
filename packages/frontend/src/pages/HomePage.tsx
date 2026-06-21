@@ -12,6 +12,7 @@ import { SearchBar } from '../components/pages/SearchBar';
 import { NotificationBell } from '../components/notifications/NotificationBell';
 import { Menu, X, Trash2, Plus, ChevronDown, ChevronRight, Check, Calendar, Package, Kanban, Coffee, FolderOpen, Palette, Zap, MessageCircle, FileText, Settings, Shield, Tag } from 'lucide-react';
 import { api } from '../services/api';
+import { Capacitor } from '@capacitor/core';
 import { KakaoLinkButton } from '../components/settings/KakaoLinkButton';
 // Heavy view components are lazy-loaded so the initial bundle stays small.
 // Routes that the user may never visit (admin, test, CRM, etc.) shouldn't
@@ -707,7 +708,9 @@ export function HomePage() {
             휴지통
           </button>
           <div className="px-3 py-2">
-            <KakaoLinkButton username={user?.username} />
+            {/* 카카오 연동(알림 발송)은 OAuth redirect가 capacitor:// origin에서 깨지고,
+                네이티브에서는 FCM 푸시가 알림을 대체하므로 웹에서만 노출한다. */}
+            {!Capacitor.isNativePlatform() && <KakaoLinkButton username={user?.username} />}
           </div>
           <button
             onClick={() => setIsPasswordChangeModalOpen(true)}

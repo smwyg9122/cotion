@@ -2,6 +2,7 @@ import { db } from '../database/connection';
 import { AppError } from '../middleware/error.middleware';
 import { API_ERRORS } from '@cotion/shared';
 import { KakaoService } from './kakao.service';
+import { PushService } from './push.service';
 import { getUserAccessibleWorkspaces } from './pages.service';
 
 export class NotificationsService {
@@ -70,6 +71,13 @@ export class NotificationsService {
       linkUrl
     ).catch((err) => console.error('멘션 카카오 발송 실패:', err));
 
+    // FCM 푸시 발송 (fire-and-forget — 실패해도 인앱·카카오 알림에 영향 없음)
+    PushService.sendToUsers([mentionedUserId], {
+      title: `[${ws}] 페이지 멘션`,
+      body: message,
+      data: { type: 'mention', pageId },
+    }).catch((err) => console.error('멘션 푸시 발송 실패:', err));
+
     return notification;
   }
 
@@ -106,6 +114,13 @@ export class NotificationsService {
         message,
         'https://cotion-ten.vercel.app'
       ).catch((err) => console.error(`카카오 알림 발송 실패 (user=${targetUserId}, type=${type}):`, err));
+
+      // FCM 푸시 발송 (fire-and-forget)
+      PushService.sendToUsers([targetUserId], {
+        title: kakaoTitle,
+        body: message,
+        data: { type, ...(pageId ? { pageId } : {}) },
+      }).catch((err) => console.error(`푸시 발송 실패 (user=${targetUserId}, type=${type}):`, err));
 
       return notification;
     } catch (err) {

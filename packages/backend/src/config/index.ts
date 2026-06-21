@@ -23,7 +23,17 @@ export const config = {
   },
 
   cors: {
-    origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+    // 웹(env로 지정된 Vercel·로컬) + 네이티브 앱(Capacitor) origin을 모두 허용.
+    // 배열로 두면 cors 미들웨어는 배열을 그대로 처리하고,
+    // csrf 미들웨어의 String(origin).split(',')도 동일하게 복원되어 양쪽이 호환된다.
+    origin: [
+      ...(process.env.CORS_ORIGIN || 'http://localhost:5173')
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean),
+      'https://localhost', // Capacitor Android (androidScheme: 'https')
+      'capacitor://localhost', // Capacitor iOS
+    ],
     credentials: true,
   },
 };

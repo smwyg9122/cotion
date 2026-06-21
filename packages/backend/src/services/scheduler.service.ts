@@ -1,5 +1,6 @@
 import cron from 'node-cron';
 import { db } from '../database/connection';
+import { PushService } from './push.service';
 
 // ─── TipTap JSON Helper Builders ────────────────────────────────────────────
 
@@ -235,6 +236,16 @@ export class SchedulerService {
           created_at: db.fn.now(),
         });
       }
+
+      // FCM 푸시 발송 (전체 사용자, fire-and-forget)
+      PushService.sendToUsers(
+        users.map((u: { id: string }) => u.id),
+        {
+          title: '📋 회의록 생성',
+          body: `${title} 문서가 생성되었습니다`,
+          data: { type: 'meeting_template', pageId: page.id },
+        }
+      ).catch((err) => console.error('회의 템플릿 푸시 실패:', err));
     } catch (error) {
       console.error(`❌ 회의 템플릿 생성 실패:`, error);
     }
@@ -259,6 +270,13 @@ export class SchedulerService {
           channel: 'internal',
           created_at: db.fn.now(),
         });
+
+        // FCM 푸시 발송 (fire-and-forget)
+        PushService.sendToUser(log.created_by, {
+          title: '☕ 팔로업 알림',
+          body: `${log.roastery_name} 팔로업 날짜입니다`,
+          data: { type: 'followup_reminder' },
+        }).catch((err) => console.error('팔로업 푸시 실패:', err));
 
         // Mark as notified
         await db('cupping_logs')

@@ -21,6 +21,7 @@ import ayutaBuyersRoutes from './routes/ayuta-buyers.routes';
 import priceItemsRoutes from './routes/price-items.routes';
 import kakaoRoutes from './routes/kakao.routes';
 import adminRoutes from './routes/admin.routes';
+import devicesRoutes from './routes/devices.routes';
 import { initializeWebSocketServer } from './websocket/collaboration.handler';
 import { SchedulerService } from './services/scheduler.service';
 
@@ -95,6 +96,8 @@ app.get('/health/schema', async (req, res) => {
       ['users', 'is_active'],
       ['users', 'allowed_workspaces'],
       ['sessions', 'refresh_token'],
+      // ─── device_tokens (FCM 푸시) ───
+      ['device_tokens', 'token'],
     ];
     const missing: string[] = [];
     for (const [table, column] of expected) {
@@ -121,6 +124,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/pages', pagesRoutes);
 app.use('/api/files', filesRoutes);
 app.use('/api/notifications', notificationsRoutes);
+app.use('/api/devices', devicesRoutes);
 app.use('/api/comments', commentsRoutes);
 app.use('/api/calendar', calendarRoutes);
 app.use('/api/clients', clientsRoutes);
