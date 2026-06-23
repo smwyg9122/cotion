@@ -45,9 +45,9 @@ export function SignupForm() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[#F5F5F7] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8" style={{ paddingTop: 'max(3rem, env(safe-area-inset-top))', paddingBottom: 'max(3rem, env(safe-area-inset-bottom))' }}>
       <div className="max-w-md w-full">
-        <div className="bg-white rounded-lg shadow-xl p-8 space-y-6">
+        <div className="bg-white rounded-2xl border border-[#E5E5EA] shadow-sm p-8 space-y-6">
           <div className="text-center">
             <div className="flex justify-center mb-4">
               <img

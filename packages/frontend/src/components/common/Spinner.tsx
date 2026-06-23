@@ -15,7 +15,7 @@ export function Spinner({ size = 'md', className = '' }: SpinnerProps) {
   return (
     <div className={`inline-block ${className}`}>
       <svg
-        className={`animate-spin ${sizeStyles[size]} text-blue-600`}
+        className={`animate-spin ${sizeStyles[size]} text-[#C56A3E]`}
         xmlns="http://www.w3.org/2000/svg"
         fill="none"
         viewBox="0 0 24 24"

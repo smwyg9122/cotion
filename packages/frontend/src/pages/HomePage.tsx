@@ -731,7 +731,7 @@ export function HomePage() {
       <div className="flex-1 flex flex-col overflow-hidden bg-[#F5F5F7] min-w-0">
         {/* Mobile top bar */}
         {isMobile && (
-          <div className="sticky top-0 z-20 bg-white border-b border-[#E5E5EA] px-3 py-2 flex items-center gap-2 flex-shrink-0">
+          <div className="sticky top-0 z-20 bg-white border-b border-[#E5E5EA] px-3 py-2 flex items-center gap-2 flex-shrink-0" style={{ paddingTop: 'calc(0.5rem + env(safe-area-inset-top))' }}>
             <button
               onClick={() => setIsSidebarOpen(true)}
               className="p-2 text-gray-500 hover:bg-[#F2F2F7] rounded-md"
