@@ -226,21 +226,24 @@ function CategorySection({ name, pages, onPageSelect, onCreatePage, onDeletePage
           <div className="flex items-center gap-0.5 flex-shrink-0">
             <button
               onClick={(e) => { e.stopPropagation(); setEditValue(name); setIsEditing(true); }}
-              className="p-0.5 hover:bg-gray-300/50 rounded transition-colors"
+              className="p-1 hover:bg-gray-300/50 rounded transition-colors"
+              aria-label="폴더 이름 변경"
               title="폴더 이름 변경"
             >
               <Pencil size={12} />
             </button>
             <button
               onClick={handleDelete}
-              className="p-0.5 hover:bg-red-100 hover:text-red-600 rounded transition-colors"
+              className="p-1 hover:bg-red-100 hover:text-red-600 rounded transition-colors"
+              aria-label="폴더 삭제"
               title="폴더 삭제 (페이지는 유지)"
             >
               <FolderMinus size={12} />
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); onCreatePage?.(undefined, name); }}
-              className="p-0.5 hover:bg-gray-300/50 rounded transition-colors"
+              className="p-1 hover:bg-gray-300/50 rounded transition-colors"
+              aria-label="이 폴더에 페이지 추가"
               title="이 폴더에 페이지 추가"
             >
               <Plus size={12} />
@@ -315,7 +318,7 @@ function PageNode({ page, onPageSelect, onCreatePage, onDeletePage, selectedPage
         onMouseLeave={() => setIsHovered(false)}
         className={`group flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg cursor-pointer transition-all ${
           isSelected
-            ? 'bg-blue-50 text-blue-700 font-medium border border-blue-200/60'
+            ? 'bg-[#FAF7F4] text-[#9C4A2D] font-medium border border-[#E7D6CC]'
             : 'text-gray-700 hover:bg-gray-100 border border-transparent'
         }`}
         style={{ paddingLeft: `${level * 20 + 12}px` }}
@@ -333,7 +336,8 @@ function PageNode({ page, onPageSelect, onCreatePage, onDeletePage, selectedPage
         {hasChildren ? (
           <button
             onClick={() => onToggleExpand?.(page.id)}
-            className="p-0.5 hover:bg-gray-300/50 rounded transition-colors"
+            aria-label={isExpanded ? '접기' : '펼치기'}
+            className="p-1 hover:bg-gray-300/50 rounded transition-colors"
           >
             {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
           </button>
@@ -359,6 +363,7 @@ function PageNode({ page, onPageSelect, onCreatePage, onDeletePage, selectedPage
                 onCreatePage?.(page.id);
               }}
               className="p-1 hover:bg-gray-300/50 rounded transition-colors"
+              aria-label="하위 페이지 추가"
               title="하위 페이지 추가"
             >
               <Plus size={14} />
@@ -369,6 +374,7 @@ function PageNode({ page, onPageSelect, onCreatePage, onDeletePage, selectedPage
                 onDeletePage?.(page.id);
               }}
               className="p-1 hover:bg-red-100 hover:text-red-600 rounded transition-colors"
+              aria-label="휴지통으로 이동"
               title="휴지통으로 이동"
             >
               <Trash2 size={14} />

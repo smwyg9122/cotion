@@ -394,7 +394,7 @@ export function HomePage() {
                 onClick={() => { setSidebarTab('admin'); setCurrentView('admin'); }}
                 className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-semibold transition-colors ${
                   sidebarTab === 'admin'
-                    ? 'text-purple-700 border-b-2 border-purple-600 bg-purple-50'
+                    ? 'text-[#9C4A2D] border-b-2 border-[#C56A3E] bg-[#FAF7F4]'
                     : 'text-gray-500 hover:text-gray-700 hover:bg-[#ECECEF]'
                 }`}
               >
@@ -420,7 +420,7 @@ export function HomePage() {
               onClick={() => { setSidebarTab('admin'); setCurrentView('admin'); }}
               className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-semibold transition-colors ${
                 sidebarTab === 'admin'
-                  ? 'text-purple-700 border-b-2 border-purple-600 bg-purple-50'
+                  ? 'text-[#9C4A2D] border-b-2 border-[#C56A3E] bg-[#FAF7F4]'
                   : 'text-gray-500 hover:text-gray-700 hover:bg-[#ECECEF]'
               }`}
             >
@@ -434,7 +434,7 @@ export function HomePage() {
         {sidebarTab === 'admin' ? (
           <div className="flex-1 flex items-center justify-center px-4 py-8">
             <div className="text-center text-gray-500 text-sm">
-              <Shield size={24} className="mx-auto mb-2 text-purple-400" />
+              <Shield size={24} className="mx-auto mb-2 text-gray-300" />
               <p className="font-medium text-gray-700">관리자 패널</p>
               <p className="text-xs text-gray-400 mt-1">오른쪽 메인 영역에서 관리자 기능을 사용하세요.</p>
             </div>

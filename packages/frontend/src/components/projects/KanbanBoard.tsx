@@ -111,13 +111,14 @@ export function KanbanBoard({ workspace, initialProjectId }: KanbanBoardProps) {
       const response = await api.get('/projects', { params: { workspace } });
       const projectList = response.data.data || [];
       setProjects(projectList);
-      if (projectList.length > 0 && !selectedProjectId) {
-        setSelectedProjectId(projectList[0].id);
+      if (projectList.length > 0) {
+        // 함수형 업데이트로 최신 값을 읽어, selectedProjectId를 deps에서 제거(중복 리페치 루프 방지)
+        setSelectedProjectId((prev) => prev || projectList[0].id);
       }
     } catch (err: any) {
       console.error('Failed to fetch projects:', err);
     }
-  }, [workspace, selectedProjectId]);
+  }, [workspace]);
 
   // Fetch tasks
   const fetchTasks = useCallback(async () => {

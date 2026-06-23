@@ -482,24 +482,24 @@ export function DocumentLibrary({ workspace }: DocumentLibraryProps) {
             {doc.createdAt ? new Date(doc.createdAt).toLocaleDateString('ko-KR') : '-'}
           </span>
           <div className="flex items-center gap-0.5">
-            <button onClick={(e) => handleOpenTagModal(e, doc)} className="p-1 text-[#86868B] hover:text-[#C56A3E] hover:bg-[#F4E7E0] rounded transition-colors opacity-0 group-hover:opacity-100" title="태그">
+            <button onClick={(e) => handleOpenTagModal(e, doc)} className="p-1 text-[#86868B] hover:text-[#C56A3E] hover:bg-[#F4E7E0] rounded transition-colors opacity-0 group-hover:opacity-100" title="태그" aria-label="태그">
               <UserPlus size={13} />
             </button>
             {doc.fileId && (
-              <button onClick={(e) => { e.stopPropagation(); handleDownloadFile(doc.fileId!); }} className="p-1 text-[#86868B] hover:text-[#C56A3E] hover:bg-[#F4E7E0] rounded transition-colors opacity-0 group-hover:opacity-100" title="다운로드">
+              <button onClick={(e) => { e.stopPropagation(); handleDownloadFile(doc.fileId!); }} className="p-1 text-[#86868B] hover:text-[#C56A3E] hover:bg-[#F4E7E0] rounded transition-colors opacity-0 group-hover:opacity-100" title="다운로드" aria-label="다운로드">
                 <Download size={13} />
               </button>
             )}
-            <button onClick={(e) => handleOpenEdit(e, doc)} className="p-1 text-[#86868B] hover:text-[#C56A3E] hover:bg-[#F4E7E0] rounded transition-colors opacity-0 group-hover:opacity-100" title="수정">
+            <button onClick={(e) => handleOpenEdit(e, doc)} className="p-1 text-[#86868B] hover:text-[#C56A3E] hover:bg-[#F4E7E0] rounded transition-colors opacity-0 group-hover:opacity-100" title="수정" aria-label="수정">
               <Edit size={13} />
             </button>
             {deleteConfirmId === doc.id ? (
               <div className="flex items-center gap-0.5">
-                <button onClick={(e) => handleDelete(e, doc.id)} className="p-1 text-white bg-[#E0352B] hover:bg-[#C42B22] rounded"><Check size={11} /></button>
-                <button onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(null); }} className="p-1 text-[#86868B] hover:text-[#3A3A3C] rounded"><X size={11} /></button>
+                <button onClick={(e) => handleDelete(e, doc.id)} className="p-1 text-white bg-[#E0352B] hover:bg-[#C42B22] rounded" aria-label="삭제 확인"><Check size={11} /></button>
+                <button onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(null); }} className="p-1 text-[#86868B] hover:text-[#3A3A3C] rounded" aria-label="삭제 취소"><X size={11} /></button>
               </div>
             ) : (
-              <button onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(doc.id); }} className="p-1 text-[#86868B] hover:text-[#E0352B] hover:bg-[#FBEAE3] rounded transition-colors opacity-0 group-hover:opacity-100" title="삭제">
+              <button onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(doc.id); }} className="p-1 text-[#86868B] hover:text-[#E0352B] hover:bg-[#FBEAE3] rounded transition-colors opacity-0 group-hover:opacity-100" title="삭제" aria-label="삭제">
                 <Trash2 size={13} />
               </button>
             )}
@@ -674,10 +674,10 @@ export function DocumentLibrary({ workspace }: DocumentLibraryProps) {
             <div className="flex items-center gap-2">
               {/* View mode toggle */}
               <div className="flex bg-[#F2F2F7] rounded-[10px] p-0.5">
-                <button onClick={() => setViewMode('grid')} className={`p-2 rounded-md transition-colors ${viewMode === 'grid' ? 'bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)] text-[#C56A3E]' : 'text-[#6E6E73] hover:text-[#1D1D1F]'}`} title="그리드 보기">
+                <button onClick={() => setViewMode('grid')} className={`p-2 rounded-md transition-colors ${viewMode === 'grid' ? 'bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)] text-[#C56A3E]' : 'text-[#6E6E73] hover:text-[#1D1D1F]'}`} title="그리드 보기" aria-label="그리드 보기">
                   <LayoutGrid size={18} />
                 </button>
-                <button onClick={() => setViewMode('kanban')} className={`p-2 rounded-md transition-colors ${viewMode === 'kanban' ? 'bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)] text-[#C56A3E]' : 'text-[#6E6E73] hover:text-[#1D1D1F]'}`} title="칸반 보기">
+                <button onClick={() => setViewMode('kanban')} className={`p-2 rounded-md transition-colors ${viewMode === 'kanban' ? 'bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)] text-[#C56A3E]' : 'text-[#6E6E73] hover:text-[#1D1D1F]'}`} title="칸반 보기" aria-label="칸반 보기">
                   <Columns size={18} />
                 </button>
               </div>
@@ -841,7 +841,7 @@ export function DocumentLibrary({ workspace }: DocumentLibraryProps) {
                       <User size={16} className="text-[#C56A3E]" />
                       <span className="text-sm font-medium text-[#9C4A2D]">{t.userName}</span>
                     </div>
-                    <button onClick={() => handleRemoveTag(t.userId)} className="p-1 text-[#C56A3E] hover:text-[#E0352B] transition-colors">
+                    <button onClick={() => handleRemoveTag(t.userId)} className="p-1 text-[#C56A3E] hover:text-[#E0352B] transition-colors" aria-label="태그 제거">
                       <XCircle size={16} />
                     </button>
                   </div>

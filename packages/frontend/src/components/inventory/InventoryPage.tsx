@@ -323,22 +323,25 @@ export function InventoryPage({ workspace }: InventoryPageProps) {
                           <div className="flex items-center justify-center gap-1">
                             <button
                               onClick={(e) => handleOpenTransaction(item.id, 'in', e)}
-                              className="p-1.5 text-[#2C8A4A] hover:text-[#247A3F] hover:bg-[#E7F5EC] rounded-[8px] transition-colors"
+                              className="p-2 text-[#2C8A4A] hover:text-[#247A3F] hover:bg-[#E7F5EC] rounded-[8px] transition-colors"
                               title="입고"
+                              aria-label="입고 처리"
                             >
                               <ArrowDownCircle size={18} />
                             </button>
                             <button
                               onClick={(e) => handleOpenTransaction(item.id, 'out', e)}
-                              className="p-1.5 text-[#C0392B] hover:text-[#A93226] hover:bg-[#FBEBEB] rounded-[8px] transition-colors"
+                              className="p-2 text-[#C0392B] hover:text-[#A93226] hover:bg-[#FBEBEB] rounded-[8px] transition-colors"
                               title="출고"
+                              aria-label="출고 처리"
                             >
                               <ArrowUpCircle size={18} />
                             </button>
                             <button
                               onClick={(e) => handleOpenEdit(item, e)}
-                              className="p-1.5 text-[#86868B] hover:text-[#C56A3E] hover:bg-[#F4E7E0] rounded-[8px] transition-colors"
+                              className="p-2 text-[#86868B] hover:text-[#C56A3E] hover:bg-[#F4E7E0] rounded-[8px] transition-colors"
                               title="수정"
+                              aria-label="재고 수정"
                             >
                               <Edit size={16} />
                             </button>
@@ -346,13 +349,17 @@ export function InventoryPage({ workspace }: InventoryPageProps) {
                               <div className="flex items-center gap-1">
                                 <button
                                   onClick={(e) => handleDelete(item.id, e)}
-                                  className="p-1.5 text-white bg-[#C0392B] hover:bg-[#A93226] rounded-[8px] transition-colors"
+                                  className="p-2 text-white bg-[#C0392B] hover:bg-[#A93226] rounded-[8px] transition-colors"
+                                  title="삭제 확인"
+                                  aria-label="재고 삭제 확인"
                                 >
                                   <Check size={14} />
                                 </button>
                                 <button
                                   onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(null); }}
-                                  className="p-1.5 text-[#86868B] hover:text-[#6E6E73] rounded-[8px] transition-colors"
+                                  className="p-2 text-[#86868B] hover:text-[#6E6E73] rounded-[8px] transition-colors"
+                                  title="삭제 취소"
+                                  aria-label="삭제 취소"
                                 >
                                   <X size={14} />
                                 </button>
@@ -360,8 +367,9 @@ export function InventoryPage({ workspace }: InventoryPageProps) {
                             ) : (
                               <button
                                 onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(item.id); }}
-                                className="p-1.5 text-[#86868B] hover:text-[#C0392B] hover:bg-[#FBEBEB] rounded-[8px] transition-colors"
+                                className="p-2 text-[#86868B] hover:text-[#C0392B] hover:bg-[#FBEBEB] rounded-[8px] transition-colors"
                                 title="삭제"
+                                aria-label="재고 삭제"
                               >
                                 <Trash2 size={16} />
                               </button>

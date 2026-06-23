@@ -53,6 +53,7 @@ export function Alert({ type = 'info', title, message, onClose }: AlertProps) {
         {onClose && (
           <button
             onClick={onClose}
+            aria-label="닫기"
             className={`ml-3 flex-shrink-0 ${style.text} hover:opacity-75`}
           >
             <XCircle size={18} />

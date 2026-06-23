@@ -67,6 +67,19 @@ const TABS: { key: AdminTab; label: string; icon: React.ReactNode }[] = [
   { key: 'workspaces', label: '워크스페이스', icon: <Building2 size={16} /> },
 ];
 
+// 날짜 안전 포맷터: null/undefined/유효하지 않은 값이면 런타임 에러 없이 '-' 반환
+const fmtDate = (v: unknown): string => {
+  if (!v) return '-';
+  const d = new Date(v as string);
+  return isNaN(d.getTime()) ? '-' : d.toLocaleDateString('ko-KR');
+};
+
+const fmtDateTime = (v: unknown): string => {
+  if (!v) return '-';
+  const d = new Date(v as string);
+  return isNaN(d.getTime()) ? '-' : d.toLocaleString('ko-KR');
+};
+
 export function AdminPage() {
   const [activeTab, setActiveTab] = useState<AdminTab>('users');
 
@@ -300,6 +313,7 @@ function UsersTab() {
                       <button
                         onClick={() => handleToggleActive(user.id)}
                         title={user.is_active ? '비활성화' : '활성화'}
+                        aria-label={user.is_active ? '비활성화' : '활성화'}
                         className={`p-1.5 rounded-md transition-colors ${
                           user.is_active
                             ? 'text-red-500 hover:bg-red-50'
@@ -311,6 +325,7 @@ function UsersTab() {
                       <button
                         onClick={() => openWorkspaceModal(user)}
                         title="워크스페이스 편집"
+                        aria-label="워크스페이스 편집"
                         className="p-1.5 rounded-md text-blue-500 hover:bg-blue-50 transition-colors"
                       >
                         <Building2 size={14} />
@@ -318,6 +333,7 @@ function UsersTab() {
                       <button
                         onClick={() => handleResetPassword(user.id, user.name)}
                         title="비밀번호 초기화"
+                        aria-label="비밀번호 초기화"
                         className="p-1.5 rounded-md text-orange-500 hover:bg-orange-50 transition-colors"
                       >
                         <RotateCcw size={14} />
@@ -564,6 +580,8 @@ function ContentTab() {
             </select>
             <button
               onClick={fetchPages}
+              title="새로고침"
+              aria-label="새로고침"
               className="flex items-center gap-1.5 px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
             >
               <RefreshCw size={14} />
@@ -595,7 +613,7 @@ function ContentTab() {
                       <td className="px-4 py-3 text-gray-600">{page.workspace}</td>
                       <td className="px-4 py-3 text-gray-600">{page.category || '-'}</td>
                       <td className="px-4 py-3 text-gray-600">{page.creator_name || '-'}</td>
-                      <td className="px-4 py-3 text-gray-500">{new Date(page.created_at).toLocaleDateString('ko-KR')}</td>
+                      <td className="px-4 py-3 text-gray-500">{fmtDate(page.created_at)}</td>
                       <td className="px-4 py-3 text-center">
                         {page.is_deleted && (
                           <span className="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">삭제됨</span>
@@ -767,7 +785,7 @@ function SystemTab() {
               <tbody>
                 {activityLogs.map((log, idx) => (
                   <tr key={log.id || idx} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{new Date(log.timestamp).toLocaleString('ko-KR')}</td>
+                    <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{fmtDateTime(log.timestamp)}</td>
                     <td className="px-4 py-3 text-gray-700">{log.user_name}</td>
                     <td className="px-4 py-3 text-gray-700">{log.action}</td>
                     <td className="px-4 py-3 text-gray-600">{log.target || '-'}</td>
@@ -816,7 +834,7 @@ function SystemTab() {
               <tbody>
                 {kakaoLogs.map((log, idx) => (
                   <tr key={log.id || idx} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{new Date(log.timestamp).toLocaleString('ko-KR')}</td>
+                    <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{fmtDateTime(log.timestamp)}</td>
                     <td className="px-4 py-3 text-gray-700">{log.user_name}</td>
                     <td className="px-4 py-3 text-gray-600">{log.type}</td>
                     <td className="px-4 py-3 text-gray-600 truncate max-w-sm">{log.message}</td>
@@ -1014,7 +1032,7 @@ function WorkspacesTab() {
               <div className="flex items-center gap-4">
                 <span className="text-sm text-gray-500">{ws.member_count ?? '?'}명</span>
                 {ws.created_at && (
-                  <span className="text-xs text-gray-400">{new Date(ws.created_at).toLocaleDateString('ko-KR')}</span>
+                  <span className="text-xs text-gray-400">{fmtDate(ws.created_at)}</span>
                 )}
                 <button
                   onClick={(e) => {
@@ -1023,6 +1041,7 @@ function WorkspacesTab() {
                   }}
                   className="p-1.5 text-red-400 hover:bg-red-50 hover:text-red-600 rounded-md transition-colors"
                   title="워크스페이스 삭제"
+                  aria-label="워크스페이스 삭제"
                 >
                   <Trash2 size={14} />
                 </button>

@@ -54,7 +54,7 @@ export function CategorySelect({ value, onChange, options, placeholder = '카테
     <div ref={containerRef} className="relative w-full">
       <div
         className={`flex items-center gap-2 px-3 py-2 border rounded-lg text-sm transition-colors ${
-          isOpen ? 'border-blue-400 ring-2 ring-blue-100' : 'border-gray-300 hover:border-gray-400'
+          isOpen ? 'border-[#C56A3E] ring-2 ring-[#C56A3E]/15' : 'border-gray-300 hover:border-gray-400'
         } bg-white`}
       >
         <Tag size={14} className="text-gray-400 flex-shrink-0" />
@@ -71,6 +71,7 @@ export function CategorySelect({ value, onChange, options, placeholder = '카테
           <button
             type="button"
             onClick={handleClear}
+            aria-label="지우기"
             className="p-0.5 text-gray-400 hover:text-gray-600 rounded transition-colors"
           >
             <X size={12} />
@@ -80,6 +81,7 @@ export function CategorySelect({ value, onChange, options, placeholder = '카테
           <button
             type="button"
             onClick={() => setIsOpen(!isOpen)}
+            aria-label="카테고리 목록"
             className="p-0.5 text-gray-400 hover:text-gray-600 rounded transition-colors"
           >
             <ChevronDown size={14} className={`transition-transform ${isOpen ? 'rotate-180' : ''}`} />
@@ -95,8 +97,8 @@ export function CategorySelect({ value, onChange, options, placeholder = '카테
                 key={opt}
                 type="button"
                 onClick={() => handleSelect(opt)}
-                className={`w-full px-3 py-2 text-left text-sm hover:bg-blue-50 hover:text-blue-700 transition-colors flex items-center gap-2 ${
-                  opt === value ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'
+                className={`w-full px-3 py-2 text-left text-sm hover:bg-[#FAF7F4] hover:text-[#9C4A2D] transition-colors flex items-center gap-2 ${
+                  opt === value ? 'bg-[#FAF7F4] text-[#9C4A2D] font-medium' : 'text-gray-700'
                 }`}
               >
                 <Tag size={12} className="flex-shrink-0 opacity-60" />

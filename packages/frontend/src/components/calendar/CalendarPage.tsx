@@ -390,7 +390,7 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
 
     // Empty cells for days before month starts
     for (let i = 0; i < firstDay; i++) {
-      calendarDays.push(<div key={`empty-${i}`} className="bg-[#F5F5F7] min-h-24"></div>);
+      calendarDays.push(<div key={`empty-${i}`} className="bg-[#F5F5F7] min-h-16 sm:min-h-24"></div>);
     }
 
     // Days of month
@@ -405,7 +405,7 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
         <div
           key={`day-${day}`}
           onClick={() => handleCellClick(date)}
-          className={`min-h-24 p-2 cursor-pointer hover:bg-[#FBF5F1] border border-[#E5E5EA] transition-colors ${
+          className={`min-h-16 sm:min-h-24 p-2 cursor-pointer hover:bg-[#FBF5F1] border border-[#E5E5EA] transition-colors ${
             isToday ? 'bg-[#FBF5F1]' : 'bg-white'
           }`}
         >
@@ -463,6 +463,8 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
 
     return (
       <div className="border border-[#E5E5EA] rounded-2xl overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.04)] bg-white">
+        <div className="overflow-x-auto">
+        <div className="min-w-[640px]">
         {/* Header */}
         <div className="grid grid-cols-8 border-b border-[#E5E5EA]">
           <div className="py-3 px-2 bg-[#F5F5F7] text-sm font-semibold text-[#1D1D1F] border-r border-[#E5E5EA]">
@@ -529,6 +531,8 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
             })}
           </div>
         ))}
+        </div>
+        </div>
       </div>
     );
   };
@@ -666,6 +670,7 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
             <div className="flex items-center gap-4">
               <button
                 onClick={handlePrevious}
+                aria-label="이전"
                 className="p-2 hover:bg-[#F2F2F7] rounded-[10px] transition-colors"
               >
                 <ChevronLeft size={20} className="text-[#6E6E73]" />
@@ -675,6 +680,7 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
               </h2>
               <button
                 onClick={handleNext}
+                aria-label="다음"
                 className="p-2 hover:bg-[#F2F2F7] rounded-[10px] transition-colors"
               >
                 <ChevronRight size={20} className="text-[#6E6E73]" />
@@ -698,6 +704,12 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
           </div>
         ) : (
           <>
+            {events.length === 0 && (
+              <div className="flex flex-col items-center justify-center text-center py-8 mb-4">
+                <Calendar className="w-8 h-8 text-[#C7C7CC] mb-2" />
+                <div className="text-sm text-[#86868B]">일정이 없습니다</div>
+              </div>
+            )}
             {viewMode === 'month' && renderMonthView()}
             {viewMode === 'week' && renderWeekView()}
             {viewMode === 'day' && renderDayView()}
@@ -836,6 +848,7 @@ export function CalendarPage({ workspace, onNavigateToPage }: CalendarPageProps)
                   onClick={() =>
                     setModalData({ ...modalData, color: color.value })
                   }
+                  aria-label={`색상 선택: ${color.name}`}
                   className={`w-8 h-8 rounded-full transition-transform ${
                     modalData.color === color.value ? 'ring-2 ring-offset-2 ring-[#86868B] scale-110' : ''
                   }`}

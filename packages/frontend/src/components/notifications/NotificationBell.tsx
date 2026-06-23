@@ -62,7 +62,8 @@ export function NotificationBell({ onPageSelect }: NotificationBellProps) {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={handleToggle}
-        className="relative p-1 text-gray-500 hover:text-gray-700 transition-colors"
+        aria-label="알림"
+        className="relative p-2 text-gray-500 hover:text-gray-700 transition-colors"
       >
         <Bell size={18} />
         {unreadCount > 0 && (

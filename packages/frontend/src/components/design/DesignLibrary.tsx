@@ -291,7 +291,7 @@ export function DesignLibrary({ workspace }: DesignLibraryProps) {
       <div
         key={asset.id}
         onClick={() => setDetailAsset(asset)}
-        className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md hover:border-violet-200 transition-all overflow-hidden group cursor-pointer"
+        className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md hover:border-[#E7D6CC] transition-all overflow-hidden group cursor-pointer"
       >
         {/* Image preview */}
         {isImage && asset.fileId ? (
@@ -304,8 +304,8 @@ export function DesignLibrary({ workspace }: DesignLibraryProps) {
             />
           </div>
         ) : (
-          <div className="h-28 bg-gradient-to-br from-violet-50 to-purple-50 flex items-center justify-center">
-            <CatIcon size={40} className="text-violet-300" />
+          <div className="h-28 bg-[#FAF7F4] flex items-center justify-center">
+            <CatIcon size={40} className="text-[#D9B9A6]" />
           </div>
         )}
 
@@ -328,20 +328,20 @@ export function DesignLibrary({ workspace }: DesignLibraryProps) {
           </span>
           <div className="flex items-center gap-0.5">
             {asset.fileId && (
-              <button onClick={(e) => { e.stopPropagation(); handleDownloadFile(asset.fileId!); }} className="p-1 text-gray-400 hover:text-violet-600 hover:bg-violet-50 rounded transition-colors opacity-0 group-hover:opacity-100" title="다운로드">
+              <button onClick={(e) => { e.stopPropagation(); handleDownloadFile(asset.fileId!); }} className="p-1 text-gray-400 hover:text-[#C56A3E] hover:bg-[#FAF7F4] rounded transition-colors opacity-0 group-hover:opacity-100" title="다운로드" aria-label="다운로드">
                 <Download size={13} />
               </button>
             )}
-            <button onClick={(e) => handleOpenEdit(e, asset)} className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors opacity-0 group-hover:opacity-100" title="수정">
+            <button onClick={(e) => handleOpenEdit(e, asset)} className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors opacity-0 group-hover:opacity-100" title="수정" aria-label="수정">
               <Edit size={13} />
             </button>
             {deleteConfirmId === asset.id ? (
               <div className="flex items-center gap-0.5">
-                <button onClick={(e) => handleDelete(e, asset.id)} className="p-1 text-white bg-red-500 hover:bg-red-600 rounded"><Check size={11} /></button>
-                <button onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(null); }} className="p-1 text-gray-400 hover:text-gray-600 rounded"><X size={11} /></button>
+                <button onClick={(e) => handleDelete(e, asset.id)} className="p-1 text-white bg-red-500 hover:bg-red-600 rounded" aria-label="삭제 확인"><Check size={11} /></button>
+                <button onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(null); }} className="p-1 text-gray-400 hover:text-gray-600 rounded" aria-label="삭제 취소"><X size={11} /></button>
               </div>
             ) : (
-              <button onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(asset.id); }} className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors opacity-0 group-hover:opacity-100" title="삭제">
+              <button onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(asset.id); }} className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors opacity-0 group-hover:opacity-100" title="삭제" aria-label="삭제">
                 <Trash2 size={13} />
               </button>
             )}
@@ -407,7 +407,7 @@ export function DesignLibrary({ workspace }: DesignLibraryProps) {
               {detailAsset.fileId ? (
                 <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-violet-100 rounded-lg"><Paperclip size={20} className="text-violet-600" /></div>
+                    <div className="p-2 bg-[#FAF7F4] rounded-lg"><Paperclip size={20} className="text-[#C56A3E]" /></div>
                     <div>
                       <p className="text-sm font-medium text-gray-900">{detailAsset.fileName || '첨부 파일'}</p>
                       <div className="flex items-center gap-3 text-xs text-gray-500 mt-0.5">
@@ -416,7 +416,7 @@ export function DesignLibrary({ workspace }: DesignLibraryProps) {
                       </div>
                     </div>
                   </div>
-                  <button onClick={() => handleDownloadFile(detailAsset.fileId!)} className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-violet-600 text-white hover:bg-violet-700 rounded-lg">
+                  <button onClick={() => handleDownloadFile(detailAsset.fileId!)} className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-[#C56A3E] text-white hover:bg-[#B45C33] rounded-lg">
                     <Download size={16} /><span>다운로드</span>
                   </button>
                 </div>
@@ -456,17 +456,17 @@ export function DesignLibrary({ workspace }: DesignLibraryProps) {
     >
       {/* Drag overlay */}
       {isDragging && (
-        <div className="absolute inset-0 z-50 bg-violet-50/90 border-4 border-dashed border-violet-400 rounded-xl flex flex-col items-center justify-center pointer-events-none">
-          <Upload size={64} className="text-violet-500 mb-4" />
-          <p className="text-2xl font-bold text-violet-700">디자인 파일을 여기에 놓으세요</p>
-          <p className="text-sm text-violet-500 mt-2">이미지, AI, Sketch 등 모든 파일 형식 지원</p>
+        <div className="absolute inset-0 z-50 bg-[#FAF7F4]/90 border-4 border-dashed border-[#C56A3E] rounded-xl flex flex-col items-center justify-center pointer-events-none">
+          <Upload size={64} className="text-[#C56A3E] mb-4" />
+          <p className="text-2xl font-bold text-[#9C4A2D]">디자인 파일을 여기에 놓으세요</p>
+          <p className="text-sm text-[#C56A3E] mt-2">이미지, AI, Sketch 등 모든 파일 형식 지원</p>
         </div>
       )}
 
       {isUploading && (
         <div className="absolute inset-0 z-50 bg-white/80 flex flex-col items-center justify-center">
-          <div className="animate-spin w-10 h-10 border-4 border-violet-600 border-t-transparent rounded-full mb-4"></div>
-          <p className="text-lg font-semibold text-violet-700">파일 업로드 중...</p>
+          <div className="animate-spin w-10 h-10 border-4 border-[#C56A3E] border-t-transparent rounded-full mb-4"></div>
+          <p className="text-lg font-semibold text-[#9C4A2D]">파일 업로드 중...</p>
         </div>
       )}
 
@@ -475,10 +475,10 @@ export function DesignLibrary({ workspace }: DesignLibraryProps) {
         <div className="p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-violet-100 rounded-lg"><Palette className="w-6 h-6 text-violet-600" /></div>
+              <div className="p-2 bg-[#FAF7F4] rounded-lg"><Palette className="w-6 h-6 text-[#C56A3E]" /></div>
               <h1 className="text-3xl font-bold text-gray-900">디자인 라이브러리</h1>
             </div>
-            <button onClick={handleOpenAdd} className="flex items-center gap-2 bg-violet-600 text-white px-4 py-2 rounded-lg hover:bg-violet-700 transition-colors font-medium">
+            <button onClick={handleOpenAdd} className="flex items-center gap-2 bg-[#C56A3E] text-white px-4 py-2 rounded-lg hover:bg-[#B45C33] transition-colors font-medium">
               <Plus size={20} /><span>디자인 추가</span>
             </button>
           </div>
@@ -486,13 +486,13 @@ export function DesignLibrary({ workspace }: DesignLibraryProps) {
           {/* Search */}
           <div className="relative mb-4">
             <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && fetchAssets()} placeholder="디자인 검색..." className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 bg-gray-50" />
+            <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && fetchAssets()} placeholder="디자인 검색..." className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C56A3E] bg-gray-50" />
           </div>
 
           {/* Category filters */}
           <div className="flex gap-2 flex-wrap">
             {CATEGORY_FILTERS.map((f) => (
-              <button key={f.key} onClick={() => setCategoryFilter(f.key)} className={`px-4 py-2 rounded-lg font-medium transition-colors text-sm ${categoryFilter === f.key ? 'bg-violet-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>
+              <button key={f.key} onClick={() => setCategoryFilter(f.key)} className={`px-4 py-2 rounded-lg font-medium transition-colors text-sm ${categoryFilter === f.key ? 'bg-[#C56A3E] text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>
                 {f.label}
               </button>
             ))}
@@ -511,7 +511,7 @@ export function DesignLibrary({ workspace }: DesignLibraryProps) {
             <Palette size={48} className="mb-4" />
             <p className="text-lg">등록된 디자인 자산이 없습니다.</p>
             <p className="text-sm mt-1">파일을 드래그하여 빠르게 추가할 수도 있습니다.</p>
-            <button onClick={handleOpenAdd} className="mt-4 text-violet-600 hover:text-violet-700 font-medium">+ 새 디자인 추가</button>
+            <button onClick={handleOpenAdd} className="mt-4 text-[#C56A3E] hover:text-[#9C4A2D] font-medium">+ 새 디자인 추가</button>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -527,11 +527,11 @@ export function DesignLibrary({ workspace }: DesignLibraryProps) {
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">제목 *</label>
-            <input type="text" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} placeholder="디자인 제목" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500" />
+            <input type="text" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} placeholder="디자인 제목" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C56A3E]" />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">카테고리</label>
-            <select value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500">
+            <select value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C56A3E]">
               <option value="ui">UI 디자인</option>
               <option value="logo">로고</option>
               <option value="banner">배너</option>
@@ -542,14 +542,14 @@ export function DesignLibrary({ workspace }: DesignLibraryProps) {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">설명</label>
-            <textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} placeholder="디자인 설명 (선택사항)" rows={3} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none" />
+            <textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} placeholder="디자인 설명 (선택사항)" rows={3} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C56A3E] resize-none" />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">파일 업로드</label>
-            <div onClick={() => fileInputRef.current?.click()} className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-violet-400 hover:bg-violet-50 transition-colors">
+            <div onClick={() => fileInputRef.current?.click()} className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-[#C56A3E] hover:bg-[#FAF7F4] transition-colors">
               <Upload size={24} className="mx-auto mb-2 text-gray-400" />
               {formData.file ? (
-                <div><p className="text-sm text-violet-600 font-medium">{formData.file.name}</p><p className="text-xs text-gray-400 mt-1">{formatFileSize(formData.file.size)}</p></div>
+                <div><p className="text-sm text-[#C56A3E] font-medium">{formData.file.name}</p><p className="text-xs text-gray-400 mt-1">{formatFileSize(formData.file.size)}</p></div>
               ) : selectedAsset?.fileId ? (
                 <div><p className="text-sm text-gray-500">현재 파일: {selectedAsset.fileName || '첨부 파일'}</p><p className="text-xs text-gray-400 mt-1">클릭하여 새 파일로 변경</p></div>
               ) : (
@@ -561,7 +561,7 @@ export function DesignLibrary({ workspace }: DesignLibraryProps) {
 
           <div className="flex gap-3 justify-end pt-4">
             <button onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg font-medium" disabled={isSaving}>취소</button>
-            <button onClick={handleSave} disabled={!formData.title.trim() || isSaving} className="px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 disabled:bg-gray-300 transition-colors font-medium min-w-[80px] flex items-center justify-center">
+            <button onClick={handleSave} disabled={!formData.title.trim() || isSaving} className="px-4 py-2 bg-[#C56A3E] text-white rounded-lg hover:bg-[#B45C33] disabled:bg-gray-300 transition-colors font-medium min-w-[80px] flex items-center justify-center">
               {isSaving ? <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full"></div> : selectedAsset ? '수정' : '추가'}
             </button>
           </div>

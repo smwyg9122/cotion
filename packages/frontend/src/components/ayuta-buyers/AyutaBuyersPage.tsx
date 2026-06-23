@@ -559,6 +559,7 @@ export function AyutaBuyersPage({ workspace }: AyutaBuyersPageProps) {
                   viewMode === 'table' ? 'bg-white shadow-[0_1px_2px_rgba(0,0,0,0.12)] text-[#1D1D1F]' : 'text-[#86868B]'
                 }`}
                 title="목록 보기"
+                aria-label="목록 보기"
               >
                 <List size={15} strokeWidth={1.8} />
               </button>
@@ -568,6 +569,7 @@ export function AyutaBuyersPage({ workspace }: AyutaBuyersPageProps) {
                   viewMode === 'card' ? 'bg-white shadow-[0_1px_2px_rgba(0,0,0,0.12)] text-[#1D1D1F]' : 'text-[#86868B]'
                 }`}
                 title="카드 보기"
+                aria-label="카드 보기"
               >
                 <LayoutGrid size={15} strokeWidth={1.8} />
               </button>
@@ -810,8 +812,9 @@ function BuyerTable({
                     <div className="flex items-center justify-center gap-1">
                       <button
                         onClick={() => onEdit(b)}
-                        className="p-1.5 text-[#86868B] hover:text-[#1D1D1F] hover:bg-[#F2F2F7] rounded transition-colors"
+                        className="p-2 text-[#86868B] hover:text-[#1D1D1F] hover:bg-[#F2F2F7] rounded transition-colors"
                         title="수정"
+                        aria-label="거래처 수정"
                       >
                         <Pencil size={14} strokeWidth={1.8} />
                       </button>
@@ -819,14 +822,17 @@ function BuyerTable({
                         <div className="flex items-center gap-1">
                           <button
                             onClick={() => onDelete(b.id)}
-                            className="p-1.5 text-white bg-[#A35A50] hover:bg-[#8C4A41] rounded transition-colors"
+                            className="p-2 text-white bg-[#A35A50] hover:bg-[#8C4A41] rounded transition-colors"
                             title="삭제 확인"
+                            aria-label="거래처 삭제 확인"
                           >
                             <Check size={13} strokeWidth={2} />
                           </button>
                           <button
                             onClick={() => setDeleteConfirmId(null)}
-                            className="p-1.5 text-[#86868B] hover:bg-[#F2F2F7] rounded transition-colors"
+                            className="p-2 text-[#86868B] hover:bg-[#F2F2F7] rounded transition-colors"
+                            title="삭제 취소"
+                            aria-label="삭제 취소"
                           >
                             <X size={13} strokeWidth={2} />
                           </button>
@@ -834,8 +840,9 @@ function BuyerTable({
                       ) : (
                         <button
                           onClick={() => setDeleteConfirmId(b.id)}
-                          className="p-1.5 text-[#86868B] hover:text-[#7A3F37] hover:bg-[#EDD2CF]/40 rounded transition-colors"
+                          className="p-2 text-[#86868B] hover:text-[#7A3F37] hover:bg-[#EDD2CF]/40 rounded transition-colors"
                           title="삭제"
+                          aria-label="거래처 삭제"
                         >
                           <Trash2 size={14} strokeWidth={1.8} />
                         </button>

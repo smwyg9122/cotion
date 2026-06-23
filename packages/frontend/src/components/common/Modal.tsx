@@ -52,14 +52,14 @@ export function Modal({
     <div className="fixed inset-0 z-50 overflow-y-auto">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
+        className="fixed inset-0 bg-black/40 transition-opacity"
         onClick={onClose}
       />
 
       {/* Modal */}
       <div className="flex min-h-full items-center justify-center p-4">
         <div
-          className={`relative bg-white rounded-lg shadow-xl w-full ${sizeStyles[size]} transform transition-all`}
+          className={`relative bg-white rounded-2xl shadow-xl w-full ${sizeStyles[size]} transform transition-all`}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
@@ -68,7 +68,8 @@ export function Modal({
               <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
               <button
                 onClick={onClose}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
+                aria-label="닫기"
+                className="text-gray-400 hover:text-gray-600 transition-colors p-1 -m-1"
               >
                 <X size={20} />
               </button>
